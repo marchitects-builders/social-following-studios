@@ -1,848 +1,729 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+
+const BRAND_LOGO = "/brand/sfs-logo.png";
+const LOGOS_APPROVED = "/logos-approved.png";
 
 const NAV = [
-  { label: "01 Home", href: "#/" },
-  { label: "02 The Program", href: "#/infrastructure" },
-  { label: "03 Case Studies", href: "#/case-studies" },
-  { label: "04 Contact", href: "#/contact" },
+  { label: "Infrastructure", href: "#/infrastructure", route: "/infrastructure" },
+  { label: "Case Studies", href: "#/case-studies", route: "/case-studies" },
+  { label: "About", href: "#/", route: "/about" },
+  { label: "Contact", href: "#/contact", route: "/contact" },
 ];
-
-const BOOKING_URL = "https://app.cal.com/socialfollowing";
-const CONTACT_FORM_ENDPOINT = "https://crm.zoho.com/crm/WebToLeadForm";
-const ZOHO_RETURN_URL = "https://socialfollowingstudios.com/#/thank-you";
-const MAILING_LIST_ENDPOINT = "#";
-const BRAND_LOGO_PATH = "/brand/sfs-logo.png";
-
-const MARQUEE_NAMES = [
-  "Stanford University",
-  "City of Concord",
-  "Drew Medical",
-  "Roux",
-  "DGRP",
-  "Parade of Youth",
-  "The Anthemist",
-  "D55",
-  "PG&E",
-];
-
-
-
-const COPY = {
-  home: {
-    headline: "Your database, reactivated.",
-    sub: "Social Following Studios reactivates dormant contact databases for organizations operating under active compliance mandates, with a 95% inbox placement record across every program we run.",
-    ctaPrimary: "BOOK YOUR ASSESSMENT",
-    ctaSecondary: "View Case Studies",
-    trustedKicker: "TRUSTED BY",
-    authorityKicker: "THE PROGRAM",
-    authorityHeadline: "When a database stops producing revenue, the source of the performance gap is the program managing it.",
-    authorityBody: "Organizations operating under active compliance mandates have built contact databases from years of earned permission and documented relationship. When that database stops producing revenue, the source of the performance gap is the program managing it.",
-    authoritySub: "Social Following Studios operates as the full program owner, managing strategy, execution, reporting, and channel coordination through one team from open to close.",
-    proofKicker: "PROOF",
-    proofBody: "A compliance sector client completed a coordinated reactivation sequence across three live channels simultaneously. More than 14,000 disengaged contacts returned to active status within 14 days, from the existing database and within the existing program budget.",
-    proofStatement: "Your database, reactivated.",
-    closingHeadline: "Your database, reactivated.",
-    closingSub: "We are accepting assessment calls for organizations ready to understand what their existing database can produce. There is no proposal before the assessment. The assessment produces the numbers. The numbers drive the decision.",
-    closingCta: "Book Your Assessment",
-  },
-  infrastructure: {
-    kicker: "THE PROGRAM",
-    h1: "One program. Every channel.",
-    sub: "Managed end-to-end by Social Following Studios.",
-    layers: [
-      {
-        note: "01 We Assess It",
-        title: "We audit the database.",
-        desc: "We assess your contact database, deliverability health, and channel infrastructure to identify exactly where the reactivation gap is.",
-      },
-      {
-        note: "02 We Build It",
-        title: "We build the program.",
-        desc: "We build the full reactivation program across every live channel — email, conversational, and voice — coordinated from one team.",
-      },
-      {
-        note: "03 We Run It",
-        title: "We run the deployment.",
-        desc: "We execute the program, manage deliverability, and report on reactivation progress against your program targets.",
-      },
-    ],
-    whoWeServe: {
-      kicker: "WHO WE SERVE",
-      headline: "Organizations with dormant databases and active compliance obligations.",
-      body: "We work with organizations that have built real contact databases from years of earned permission — legal, government, healthcare, real estate, and manufacturing — whose outreach programs have gone quiet.",
-      closing: "",
-    },
-    howItWorks: {
-      kicker: "HOW IT WORKS",
-      headline: "All engagements begin with a Database Assessment.",
-      tiers: [
-        {
-          title: "Assessment",
-          desc: "A focused audit of your database, deliverability health, and channel gaps — delivered as a written report with a clear reactivation path.",
-        },
-        {
-          title: "Full Program",
-          desc: "Your complete reactivation program, built and launched across every live channel within your existing budget and infrastructure.",
-        },
-        {
-          title: "Retained Management",
-          desc: "We manage the program on an ongoing basis with monthly deliverability reporting and reactivation tracking tied to your program targets.",
-        },
-      ],
-    },
-    outroLines: [],
-    outroSub: "",
-    cta: "BOOK YOUR ASSESSMENT",
-  },
-  caseStudies: {
-    kicker: "CASE STUDIES",
-    title: "Results from real engagements.",
-    cards: [
-      {
-        badge: "A federal housing agency recovered constituent engagement at program scale without new budget or new infrastructure.",
-        narrative: "A federal housing agency managing constituent communication across active waitlist programs engaged Social Following Studios to run the full outreach program. Coordinated communication reached applicants across every live channel within the existing program infrastructure. Constituent engagement returned to active status at program scale.",
-        quote: "",
-        quoteAttrib: "",
-      },
-      {
-        badge: "A plaintiff database reached multi-million dollar resolution after competing firms had already reached the same claimant pool.",
-        narrative: "A plaintiff database had gone dormant while competing firms reached the same claimant pool. The industry average inbox placement rate sits at 83.5%. Outreach that does not reach the inbox does not reach the claimant. We ran the deliverability program at 95% inbox placement, sequenced the outreach, and built the communication program around claimant trust. The matter reached multi-million dollar resolution.",
-        quote: "Our messaging reached our claimants. That was the difference.",
-        quoteAttrib: "Managing Attorney, mass tort firm — quoted anonymously at client's request",
-      },
-      {
-        badge: "A regional broker produced 11 signed listing agreements in 45 days from a database the business had stopped using.",
-        narrative: "A regional broker had a past-client database of buyers and sellers who had gone quiet while the business spent money acquiring new leads. A unified reactivation sequence ran across email, conversational, and voice channels simultaneously. The existing database produced 11 signed listing agreements within 45 days without new list acquisition or additional spend.",
-        quote: "The buyers and sellers we thought were gone came back through the same list we had ignored for years.",
-        quoteAttrib: "",
-      },
-      {
-        badge: "A manufacturing organization recovered procurement relationships that had stopped responding after a program transition.",
-        narrative: "A manufacturing organization had a vendor and procurement contact database that had gone quiet after a program transition while relationships representing active buying history stopped responding entirely. A reactivation sequence ran across the existing database. Procurement contacts returned to active engagement within the first program cycle without new list acquisition or additional budget.",
-        quote: "We recovered relationships we assumed were gone permanently.",
-        quoteAttrib: "",
-      },
-    ],
-    outroLines: [],
-    cta: "BOOK YOUR ASSESSMENT",
-  },
-  contact: {
-    kicker: "CONTACT",
-    title: "Book Your Call.",
-    sub: "Every engagement starts with a Database Assessment. There is no proposal before the assessment. The assessment produces the numbers. The numbers drive the decision.",
-    submitIdle: "SUBMIT",
-    submitDone: "SUBMITTED",
-  },
-  shell: {
-    brand: "Social Following Studios",
-    brandSub: "Database Reactivation",
-    topCta: "BOOK YOUR ASSESSMENT",
-    footerSub: "An imprint of Marchitects.",
-    terms: "Terms",
-    privacy: "Privacy",
-  },
-};
-
-const POLICY_TEMPLATE = {
-  siteName: "Social Following Studios",
-  email: "support@socialfollowingstudios.com",
-  updatedAt: "January 1, 2026",
-};
-
-const TERMS_POLICY = {
-  title: "Terms of Service",
-  intro:
-    "These Terms govern your use of Social Following Studios and any related pages, forms, and services.",
-  sections: [
-    {
-      heading: "Use of the site",
-      body: "You agree to use this site for lawful business purposes only and not to disrupt or misuse the platform.",
-    },
-    {
-      heading: "Service information",
-      body: "Service descriptions and availability may change over time. We can update, pause, or remove offerings without prior notice.",
-    },
-    {
-      heading: "Limitation of liability",
-      body: "The site and content are provided as-is. To the maximum extent allowed by law, we are not liable for indirect or consequential damages.",
-    },
-  ],
-};
-
-const PRIVACY_POLICY = {
-  title: "Privacy Policy",
-  intro:
-    "This policy explains how Social Following Studios collects, uses, and protects the information you submit.",
-  sections: [
-    {
-      heading: "Information we collect",
-      body: "We collect information you provide in forms, including name, email, phone number, and business details needed to deliver services.",
-    },
-    {
-      heading: "How we use data",
-      body: "We use submitted information to respond to inquiries, deliver requested services, and improve operations and customer support.",
-    },
-    {
-      heading: "Data sharing",
-      body: "We do not sell personal data. We may share information with trusted providers only when required to run or support our services.",
-    },
-  ],
-};
-
-function cx(...parts) {
-  return parts.filter(Boolean).join(" ");
-}
 
 function useHashRoute() {
   const getRoute = () => {
-    const h = (window.location.hash || "#/").toLowerCase();
-    const r = h.replace(/^#/, "");
-    return r.startsWith("/") ? r : `/${r}`;
+    const raw = (window.location.hash || "#/").replace(/^#/, "");
+    return raw.startsWith("/") ? raw : `/${raw}`;
   };
   const [route, setRoute] = useState("/");
+
   useEffect(() => {
-    const onHash = () => setRoute(getRoute());
-    onHash();
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    const syncRoute = () => setRoute(getRoute());
+    syncRoute();
+    window.addEventListener("hashchange", syncRoute);
+    return () => window.removeEventListener("hashchange", syncRoute);
   }, []);
+
   return route;
 }
 
-function Button({ href, children, variant = "primary" }) {
-  const base =
-    "inline-flex items-center justify-center px-7 py-3 text-sm font-semibold tracking-wide rounded-full transition-all active:scale-[0.98] relative z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2";
-  const styles =
-    variant === "primary"
-      ? "bg-emerald-600 text-white hover:bg-emerald-500 shadow-sm"
-      : "bg-white text-[#0A0A0A] border border-black/15 hover:border-black/30 hover:bg-white shadow-sm";
+function Arrow() {
   return (
-    <a href={href} className={cx(base, styles)}>
-      {children}
-    </a>
-  );
-}
-
-function PolicyPage({ policy }) {
-  return (
-    <section className="relative z-10 max-w-4xl mx-auto px-6 md:px-12 py-20 text-[#0A0A0A]">
-      <p className="text-sm font-black tracking-[0.28em] uppercase text-emerald-400/90 mb-4">Last Updated: {POLICY_TEMPLATE.updatedAt}</p>
-      <h1 className="text-4xl md:text-5xl font-black tracking-tight uppercase mb-5">{policy.title}</h1>
-      <p className="text-[17px] leading-7 text-[#0A0A0A]/75 mb-10">{policy.intro}</p>
-      <div className="space-y-8">
-        {policy.sections.map((section) => (
-          <article key={section.heading} className="border border-black/10 bg-black/[0.03] p-6 md:p-8">
-            <h2 className="text-xl md:text-2xl font-black uppercase tracking-wide mb-3">{section.heading}</h2>
-            <p className="text-[17px] leading-7 text-[#0A0A0A]/75">{section.body}</p>
-          </article>
-        ))}
-      </div>
-      <p className="mt-10 text-[17px] text-[#0A0A0A]/75">
-        Questions? Contact {POLICY_TEMPLATE.siteName} at {POLICY_TEMPLATE.email}.
-      </p>
-    </section>
-  );
-}
-
-function LiquidBackground() {
-  const containerRef = useRef(null);
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js";
-    script.async = true;
-    document.head.appendChild(script);
-    script.onload = () => {
-      const THREE = window.THREE;
-      class TouchTexture {
-        constructor() {
-          this.size = 128;
-          this.width = this.height = this.size;
-          this.maxAge = 64;
-          this.radius = 0.15 * this.size;
-          this.speed = 1 / this.maxAge;
-          this.trail = [];
-          this.last = null;
-          this.initTexture();
-        }
-        initTexture() {
-          this.canvas = document.createElement("canvas");
-          this.canvas.width = this.width;
-          this.canvas.height = this.height;
-          this.ctx = this.canvas.getContext("2d");
-          this.ctx.fillStyle = "black";
-          this.ctx.fillRect(0, 0, this.width, this.height);
-          this.texture = new THREE.Texture(this.canvas);
-        }
-        update() {
-          this.ctx.fillStyle = "black";
-          this.ctx.fillRect(0, 0, this.width, this.height);
-          for (let i = this.trail.length - 1; i >= 0; i--) {
-            const point = this.trail[i];
-            let f = point.force * this.speed * (1 - point.age / this.maxAge);
-            point.x += point.vx * f;
-            point.y += point.vy * f;
-            point.age++;
-            if (point.age > this.maxAge) {
-              this.trail.splice(i, 1);
-            } else {
-              const pos = { x: point.x * this.width, y: (1 - point.y) * this.height };
-              let intensity =
-                point.age < this.maxAge * 0.3
-                  ? Math.sin((point.age / (this.maxAge * 0.3)) * (Math.PI / 2))
-                  : 1.0 - point.age / this.maxAge;
-              intensity *= point.force;
-              let offset = this.size * 5;
-              this.ctx.shadowOffsetX = this.ctx.shadowOffsetY = offset;
-              this.ctx.shadowBlur = this.radius;
-              this.ctx.shadowColor = `rgba(${((point.vx + 1) / 2) * 255}, ${((point.vy + 1) / 2) * 255}, ${intensity * 255}, ${0.3 * intensity})`;
-              this.ctx.beginPath();
-              this.ctx.fillStyle = "rgba(255,0,0,1)";
-              this.ctx.arc(pos.x - offset, pos.y - offset, this.radius, 0, Math.PI * 2);
-              this.ctx.fill();
-            }
-          }
-          this.texture.needsUpdate = true;
-        }
-        addTouch(point) {
-          if (this.last) {
-            const dx = point.x - this.last.x,
-              dy = point.y - this.last.y;
-            if (dx === 0 && dy === 0) return;
-            const dd = dx * dx + dy * dy;
-            let d = Math.sqrt(dd);
-            this.trail.push({
-              x: point.x,
-              y: point.y,
-              age: 0,
-              force: Math.min(dd * 20000, 2.0),
-              vx: dx / d,
-              vy: dy / d,
-            });
-          }
-          this.last = { x: point.x, y: point.y };
-        }
-      }
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      containerRef.current.appendChild(renderer.domElement);
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.z = 50;
-      const touchTexture = new TouchTexture();
-      const uniforms = {
-        uTime: { value: 0 },
-        uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-        uColor1: { value: new THREE.Vector3(0.07, 0.74, 0.5) },
-        uColor2: { value: new THREE.Vector3(0.91, 0.92, 0.92) },
-        uSpeed: { value: 0.55 },
-        uIntensity: { value: 0.85 },
-        uTouchTexture: { value: touchTexture.texture },
-        uGrainIntensity: { value: 0.08 },
-        uDarkNavy: { value: new THREE.Vector3(0.88, 0.89, 0.90) },
-        uGradientSize: { value: 0.5 },
-        uGradientCount: { value: 8.0 },
-        uColor1Weight: { value: 0.6 },
-        uColor2Weight: { value: 1.8 },
-      };
-      const material = new THREE.ShaderMaterial({
-        uniforms,
-        vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-        fragmentShader: `
-          uniform float uTime; uniform vec2 uResolution; uniform vec3 uColor1, uColor2, uDarkNavy;
-          uniform float uSpeed, uIntensity, uGrainIntensity, uGradientSize, uColor1Weight, uColor2Weight;
-          uniform sampler2D uTouchTexture; varying vec2 vUv;
-          float grain(vec2 uv, float time) { vec2 grainUv = uv * uResolution * 0.5; return fract(sin(dot(grainUv + time, vec2(12.9898, 78.233))) * 43758.5453) * 2.0 - 1.0; }
-          vec3 getGradientColor(vec2 uv, float time) {
-            float s = uSpeed; vec3 color = vec3(0.0);
-            for(int i=0; i<8; i++) {
-                float fi = float(i);
-                vec2 c = vec2(0.5 + sin(time * s * (0.4 + fi * 0.02)) * 0.4, 0.5 + cos(time * s * (0.5 + fi * 0.03)) * 0.4);
-                float inf = 1.0 - smoothstep(0.0, uGradientSize, length(uv - c));
-                color += ((i % 2 == 0) ? uColor1 : uColor2) * inf * (0.5 + 0.5 * sin(time * s * (0.8 + fi*0.1))) * ((i % 2 == 0) ? uColor1Weight : uColor2Weight);
-            }
-            color = clamp(color * uIntensity, 0.0, 1.0);
-            return mix(uDarkNavy, color, max(length(color), 0.1));
-          }
-          void main() {
-            vec2 uv = vUv; vec4 touchTex = texture2D(uTouchTexture, uv);
-            uv += vec2(-(touchTex.r * 2.0 - 1.0), -(touchTex.g * 2.0 - 1.0)) * 0.5 * touchTex.b;
-            vec3 color = getGradientColor(uv, uTime); color += grain(uv, uTime) * uGrainIntensity;
-            gl_FragColor = vec4(color, 1.0);
-          }
-        `,
-      });
-      scene.add(new THREE.Mesh(new THREE.PlaneGeometry(150, 150, 1, 1), material));
-      const clock = new THREE.Clock();
-      const animate = () => {
-        uniforms.uTime.value += clock.getDelta() * 0.85;
-        touchTexture.update();
-        renderer.render(scene, camera);
-        requestAnimationFrame(animate);
-      };
-      animate();
-      const handleMove = (e) => {
-        const x = (e.clientX || (e.touches && e.touches[0].clientX)) / window.innerWidth;
-        const y = 1 - (e.clientY || (e.touches && e.touches[0].clientY)) / window.innerHeight;
-        touchTexture.addTouch({ x, y });
-      };
-      window.addEventListener("mousemove", handleMove);
-      window.addEventListener("touchmove", handleMove);
-      window.addEventListener("resize", () => {
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-      });
-    };
-    return () => {
-      const s = document.querySelector('script[src*="three.min.js"]');
-      if (s) document.head.removeChild(s);
-    };
-  }, []);
-  return <div ref={containerRef} className="fixed inset-0 -z-30 bg-[#E8E9EA]" />;
-}
-
-function InnerBackground() {
-  return (
-    <div className="fixed inset-0 -z-30">
-      <div className="absolute inset-0 bg-[#E8E9EA]" />
-      <div className="absolute -top-56 left-1/2 h-[980px] w-[980px] -translate-x-1/2 rounded-full bg-emerald-400/10 blur-[140px]" />
-      <div className="absolute -top-32 -left-48 h-[720px] w-[720px] rounded-full bg-white/40 blur-[110px]" />
-      <div className="absolute -bottom-48 -right-48 h-[820px] w-[820px] rounded-full bg-emerald-300/8 blur-[150px]" />
-    </div>
-  );
-}
-
-function Grid({ opacityClass = "opacity-20" }) {
-  return (
-    <svg
-      className={`fixed inset-0 h-full w-full -z-20 pointer-events-none ${opacityClass}`}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <defs>
-        <pattern id="archGrid" width="100" height="100" patternUnits="userSpaceOnUse">
-          <path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(0,0,0,0.15)" strokeWidth="0.5" />
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#archGrid)" />
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-function ScrollingMarquee() {
-  const names = [...MARQUEE_NAMES, ...MARQUEE_NAMES];
+function Button({ children = "Book Your Assessment", className = "" }) {
   return (
-    <div className="relative overflow-hidden w-full py-3">
-      <div
-        className="flex gap-12 whitespace-nowrap"
-        style={{
-          animation: "marquee 28s linear infinite",
-          width: "max-content",
-        }}
-      >
-        {names.map((name, i) => (
-          <span
-            key={i}
-            className="text-sm font-black tracking-[0.28em] uppercase text-[#0A0A0A]/50"
-          >
-            {name}
-          </span>
+    <a className={`btn btn-primary ${className}`} href="#/contact">
+      {children}
+      <Arrow />
+    </a>
+  );
+}
+
+function Logo({ className = "" }) {
+  return <img className={`logo ${className}`} src={BRAND_LOGO} alt="Social Following Studios" />;
+}
+
+function Plane({ className = "" }) {
+  return (
+    <svg className={`paper-plane ${className}`} viewBox="0 0 300 180" aria-hidden="true">
+      <defs>
+        <linearGradient id="planeWing" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0" stopColor="#fff" />
+          <stop offset="1" stopColor="#e7e2d9" />
+        </linearGradient>
+        <linearGradient id="planeFold" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0" stopColor="#f9f8f4" />
+          <stop offset="1" stopColor="#d8d2c9" />
+        </linearGradient>
+        <filter id="planeShadow" x="-20%" y="-40%" width="140%" height="180%">
+          <feDropShadow dx="0" dy="18" stdDeviation="14" floodColor="#131313" floodOpacity=".12" />
+        </filter>
+      </defs>
+      <g filter="url(#planeShadow)">
+        <path d="M19 111 272 20 211 150z" fill="url(#planeWing)" />
+        <path d="M19 111l143-15 49 54z" fill="#ded9d0" />
+        <path d="M162 96 272 20 201 112z" fill="#f7f5ef" />
+        <path d="m162 96 10 42 29-26z" fill="url(#planeFold)" />
+        <path d="m19 111 143-15L272 20" fill="none" stroke="#d8d2c9" strokeWidth="1.5" />
+      </g>
+    </svg>
+  );
+}
+
+function Header({ route }) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [route]);
+
+  return (
+    <header className="site-header">
+      <a className="brand" href="#/" aria-label="Social Following Studios home">
+        <Logo />
+      </a>
+      <nav className="nav-links" aria-label="Primary navigation">
+        {NAV.map((item) => (
+          <a key={item.href} className={route === item.route ? "active" : ""} href={item.href}>
+            {item.label}
+          </a>
         ))}
+      </nav>
+      <a className="btn btn-primary nav-cta" href="#/contact">Book Your Assessment</a>
+      <button className="menu-button" type="button" aria-expanded={open} aria-controls="mobile-menu" onClick={() => setOpen((value) => !value)}>
+        <span />
+        <span />
+        <span />
+      </button>
+      {open && (
+        <nav id="mobile-menu" className="mobile-menu" aria-label="Mobile navigation">
+          {NAV.map((item) => (
+            <a key={item.href} href={item.href}>
+              {item.label}
+            </a>
+          ))}
+          <a href="#/contact">Book Your Assessment</a>
+        </nav>
+      )}
+    </header>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="site-footer">
+      <div className="footer-main">
+        <div className="footer-brand">
+          <Logo />
+          <p>We build and manage mission-critical communication infrastructure that drives real-world results.</p>
+        </div>
+        <form className="footer-signup" onSubmit={(event) => event.preventDefault()}>
+          <p>Join our mailing list for the latest insights.</p>
+          <div className="signup-row">
+            <input type="email" placeholder="Email address" aria-label="Email address" />
+            <button type="submit">Join</button>
+          </div>
+        </form>
+        <div className="footer-legal">
+          <a href="#/terms">Terms</a>
+          <a href="#/privacy">Privacy</a>
+        </div>
       </div>
+      <div className="footer-bottom">© 2024 Social Following Studios. An imprint of M Architects.</div>
+    </footer>
+  );
+}
+
+function Chart() {
+  return (
+    <svg viewBox="0 0 420 210" role="img" aria-label="Audience reactivation potential increasing from January to June">
+      <defs>
+        <linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="#008b61" stopOpacity=".2" />
+          <stop offset="1" stopColor="#008b61" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <g stroke="#e4ded6" strokeWidth="1">
+        <path d="M0 38h420" />
+        <path d="M0 78h420" />
+        <path d="M0 118h420" />
+        <path d="M0 158h420" />
+      </g>
+      <path d="M0 170 22 140 42 125 63 137 86 112 108 92 130 88 152 105 174 110 196 103 218 112 240 104 262 74 284 70 306 58 328 55 350 36 372 14 420 14 420 190 0 190Z" fill="url(#chartFill)" />
+      <path d="M0 170c18-26 25-38 42-45s23 13 44-13 32-28 54-16 28 16 50 10 22 6 44-14 18-20 40-21 23-13 44-17 20-14 36-27 11-13 30-13h36" fill="none" stroke="#008b61" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="420" cy="14" r="6" fill="#008b61" stroke="#dfece5" strokeWidth="5" />
+      <g fill="#6a706b" fontFamily="DM Sans, Arial, sans-serif" fontSize="11">
+        <text x="0" y="207">JAN</text>
+        <text x="78" y="207">FEB</text>
+        <text x="155" y="207">MAR</text>
+        <text x="235" y="207">APR</text>
+        <text x="312" y="207">MAY</text>
+        <text x="392" y="207">JUN</text>
+      </g>
+    </svg>
+  );
+}
+
+function AssessmentSummary() {
+  return (
+    <article className="visual-panel assessment-card" aria-label="Assessment summary">
+      <div className="panel-head">
+        <p className="card-label">Assessment Summary</p>
+        <span className="status-pill">
+          <span className="dot" />
+          Ready to Reactivate
+        </span>
+      </div>
+      <div className="summary-main">
+        <div className="summary-score">
+          <p className="serif small-serif">Audience Reactivation Potential</p>
+          <p className="big-percent">83%</p>
+          <p className="summary-copy">High potential to reach dormant connections across your channels.</p>
+        </div>
+        <div className="chart">
+          <Chart />
+        </div>
+      </div>
+      <div className="stats-row">
+        <Metric label="Reachable Contacts" value="246K" caption="+18% vs last 6 months" />
+        <Metric label="Dormant Revenue" value="$3.8M" caption="Estimated opportunity" />
+        <Metric label="Data Health" value="78%" caption="Above industry average" />
+      </div>
+      <div className="panel-foot">
+        <span className="check-icon">✓</span>
+        Infrastructure in place. Channels connected. Ready to deploy.
+      </div>
+    </article>
+  );
+}
+
+function Metric({ label, value, caption }) {
+  return (
+    <div className="stat">
+      <p className="metric-label">{label}</p>
+      <div className="stat-value">{value}</div>
+      <div className="stat-caption">{caption}</div>
     </div>
   );
 }
 
-function BrandLogo({ className = "", priority = false }) {
-  const [imageFailed, setImageFailed] = useState(false);
-  if (imageFailed) {
-    return <span className="text-lg md:text-2xl font-black tracking-[0.08em] uppercase text-[#0A0A0A]">Social Following Studios</span>;
-  }
+function HeroCopy({ eyebrow, title, body, showButton = true }) {
   return (
-    <img
-      src={BRAND_LOGO_PATH}
-      alt="Social Following Studios"
-      className={cx("block h-auto w-full max-w-full object-contain", className)}
-      loading={priority ? "eager" : "lazy"}
-      decoding="async"
-      onError={() => setImageFailed(true)}
-    />
+    <div className="hero-copy">
+      <p className="eyebrow">{eyebrow}</p>
+      <h1>{title}</h1>
+      <div className="green-rule" />
+      <p className="lead">{body}</p>
+      {showButton && <Button />}
+    </div>
+  );
+}
+
+function BriefCard({ children, next = false }) {
+  return (
+    <div className={`brief-card ${next ? "next-steps" : ""}`}>
+      <div className="brief-icon" aria-hidden="true">
+        {next ? (
+          <span className="check-icon">✓</span>
+        ) : (
+          <svg width="58" height="58" viewBox="0 0 64 64" fill="none">
+            <path d="m32 6 14 8v16l-14 8-14-8V14zM18 30l14-8 14 8M32 22v16" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            <path d="m16 42 10-6 10 6v12l-10 6-10-6zM38 42l10-6 10 6v12l-10 6-10-6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+          </svg>
+        )}
+      </div>
+      {!next && <div className="brief-divider" />}
+      {children}
+    </div>
+  );
+}
+
+function CtaBand({ title, copy, cta = "Book Your Assessment" }) {
+  return (
+    <section className="page-shell">
+      <div className={`cta-band ${copy ? "with-copy" : ""}`}>
+        <h2>{title}</h2>
+        {copy && <p>{copy}</p>}
+        <Plane className="cta-plane" />
+        <Button>{cta}</Button>
+      </div>
+    </section>
   );
 }
 
 function Home() {
   return (
-    <div className="relative pt-12 space-y-16">
-      <section className="relative z-10 md:min-h-[calc(100vh-170px)] flex flex-col justify-center max-w-3xl">
-        <h1 className="text-[clamp(2.4rem,9vw,5rem)] font-bold leading-[1.05] text-[#0A0A0A]" style={{fontFamily: "'Lora', Georgia, serif"}}>
-          {COPY.home.headline}
-        </h1>
-        <p className="mt-6 text-[17px] text-[#0A0A0A]/75 font-semibold leading-relaxed max-w-2xl">{COPY.home.sub}</p>
-        <div className="mt-8 md:mt-10 flex flex-col sm:flex-row flex-wrap gap-3 md:gap-4">
-          <Button href={BOOKING_URL}>{COPY.home.ctaPrimary}</Button>
-          <Button href="#/case-studies" variant="secondary">
-            {COPY.home.ctaSecondary}
-          </Button>
-        </div>
-      </section>
-
-      <section className="relative z-10 border-t border-b border-black/10 py-10 md:py-14">
-        <div className="text-xs font-semibold tracking-[0.18em] text-[#4A4F54] uppercase mb-8 text-center">{COPY.home.trustedKicker}</div>
-        <img
-          src="/logos-approved.png"
-          alt="Trusted by Stanford University, Drew Medical, The Anthemist, City of Concord, DGRP Baysound, Rhythm and Roux, Parade of Youth"
-          className="w-full max-w-5xl mx-auto object-contain"
+    <>
+      <section className="page-shell hero">
+        <HeroCopy
+          eyebrow="Data. Infrastructure. Results."
+          title={<>Your database,<br />reactivated.</>}
+          body="You have the database. You may have the platform. You are not getting the result. Social Following Studios is a full-service email program management firm that takes over the program entirely. Assessment, build, deployment, and deliverability. And produces the outcome."
         />
+        <Plane className="home-plane" />
+        <svg className="flight-path home-flight" viewBox="0 0 360 260" aria-hidden="true">
+          <path d="M30 210c95-14 11-112 96-154 60-30 129 5 200-42" />
+        </svg>
+        <AssessmentSummary />
       </section>
 
-      <section className="relative z-10 border border-black/10 bg-white/60">
-        <div className="aspect-video w-full flex flex-col items-center justify-center gap-4 bg-[#E8E9EA]">
-          <div className="w-16 h-16 rounded-full border-2 border-emerald-600 flex items-center justify-center">
-            <svg className="w-6 h-6 text-emerald-600 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      <section id="about" className="page-shell section">
+        <article className="copy-card">
+          <p className="section-label">Why It Stops Working</p>
+          <h2>Most email programs fail for the same reason.</h2>
+          <p>The database is real. The platform is paid for. The team is busy with everything else. Nobody is running the program. Klaviyo doesn't run it. HubSpot doesn't run it. Salesforce Marketing Cloud doesn't run it. You do. Or nobody does. Social Following Studios runs it. We take over the full program from assessment to deployment and manage it as the program owner.</p>
+        </article>
+      </section>
+
+      <section className="page-shell section">
+        <article className="copy-card wide-copy">
+          <p className="section-label">Who We Serve</p>
+          <h2>Organizations with dormant databases and active compliance obligations.</h2>
+          <p>We work with organizations that have built real contact databases from years of earned permission. Legal firms managing plaintiff communication across active case lifecycles. Government agencies with constituent outreach obligations tied to regulatory deadlines. Healthcare organizations governed by HIPAA-compliant communication requirements. Real estate operations with dormant investor and buyer databases. Manufacturing organizations with vendor and procurement networks that have stopped responding. Organizations whose program is paid for and not producing. Organizations whose outreach has gone quiet and whose team lacks the capacity or the expertise to fix it permanently.</p>
+        </article>
+      </section>
+
+      <CtaBand title="Let’s put your database to work." />
+    </>
+  );
+}
+
+function SystemDiagram() {
+  const inputs = [
+    ["CRM", "user"],
+    ["Historical Engagement", "chart"],
+    ["Compliance Data", "shield"],
+    ["Audience Records", "users"],
+  ];
+  const outputs = [
+    ["Email", "mail"],
+    ["SMS", "chat"],
+    ["Voice", "phone"],
+    ["Direct Mail", "mail"],
+  ];
+
+  return (
+    <article className="visual-panel system-card" aria-label="Unified data system diagram">
+      <div className="system-diagram">
+        <DiagramSide label="Inputs" items={inputs} />
+        <div className="diagram-center">
+          <div className="diagram-core">
+            <Logo />
+            <span>Unified Data System</span>
           </div>
-          <p className="text-sm font-medium text-[#4A4F54]" style={{fontFamily:"'Lora', Georgia, serif"}}>Program Explainer — Coming Soon</p>
         </div>
-      </section>
+        <DiagramSide label="Outputs" items={outputs} />
+      </div>
+    </article>
+  );
+}
 
-      <section className="mt-6 relative z-10 border border-black/10 bg-white/60 backdrop-blur-xl p-8 md:p-16">
-        <div className="text-xs font-semibold tracking-[0.18em] text-emerald-600 uppercase mb-4">{COPY.home.authorityKicker}</div>
-        <h2 className="text-[clamp(1.6rem,5vw,2.5rem)] font-semibold text-[#0A0A0A] leading-snug mb-6" style={{fontFamily: "'Lora', Georgia, serif"}}>{COPY.home.authorityHeadline}</h2>
-        <p className="text-[17px] text-[#0A0A0A]/75 font-semibold leading-relaxed mb-6">{COPY.home.authorityBody}</p>
-        <p className="text-[17px] text-[#0A0A0A]/75 font-semibold leading-relaxed">{COPY.home.authoritySub}</p>
-      </section>
-
-      <section className="mt-0 relative z-10 border border-emerald-500/30 bg-emerald-50/60 p-8 md:p-16">
-        <div className="text-xs font-semibold tracking-[0.18em] text-emerald-600 uppercase mb-4">{COPY.home.proofKicker}</div>
-        <p className="text-[17px] text-[#0A0A0A]/80 font-semibold leading-relaxed mb-8">{COPY.home.proofBody}</p>
-        <div className="text-[clamp(1.8rem,5vw,2.5rem)] font-semibold text-emerald-600" style={{fontFamily: "'Lora', Georgia, serif"}}>{COPY.home.proofStatement}</div>
-      </section>
+function DiagramSide({ label, items }) {
+  return (
+    <div className="diagram-side">
+      <p className="diagram-label">{label}</p>
+      {items.map(([title, icon]) => (
+        <div className="diagram-tile" key={title}>
+          <Icon name={icon} />
+          <span>{title}</span>
+        </div>
+      ))}
     </div>
   );
 }
 
+function Icon({ name, className = "" }) {
+  const props = { className: `line-icon ${className}`, viewBox: "0 0 72 72", fill: "none", "aria-hidden": true };
+  const paths = {
+    database: (
+      <>
+        <ellipse cx="36" cy="15" rx="22" ry="9" />
+        <path d="M14 15v37c0 5 10 9 22 9s22-4 22-9V15M14 34c0 5 10 9 22 9s22-4 22-9M14 49c0 5 10 9 22 9s22-4 22-9" />
+      </>
+    ),
+    gear: (
+      <>
+        <path d="M36 8v10M36 54v10M8 36h10M54 36h10M16 16l7 7M49 49l7 7M56 16l-7 7M23 49l-7 7" />
+        <circle cx="36" cy="36" r="18" />
+        <circle cx="36" cy="36" r="7" />
+      </>
+    ),
+    network: (
+      <>
+        <circle cx="36" cy="12" r="5" />
+        <circle cx="16" cy="48" r="5" />
+        <circle cx="56" cy="48" r="5" />
+        <circle cx="36" cy="58" r="5" />
+        <path d="M36 17v17M36 34 16 43M36 34l20 9M36 34v19" />
+      </>
+    ),
+    trend: (
+      <>
+        <path d="M14 58h44M14 58V10" />
+        <path d="m21 47 10-13 10 5 15-23" />
+        <circle cx="21" cy="47" r="3" fill="currentColor" />
+        <circle cx="31" cy="34" r="3" fill="currentColor" />
+        <circle cx="41" cy="39" r="3" fill="currentColor" />
+        <circle cx="56" cy="16" r="3" fill="currentColor" />
+      </>
+    ),
+    mail: (
+      <>
+        <path d="M12 20h48v34H12z" />
+        <path d="m14 22 22 19 22-19" />
+      </>
+    ),
+    phone: <path d="M24 12h10l4 15-7 5c5 9 10 14 19 19l5-7 15 4v10c0 3-2 5-5 5C35 63 9 37 9 17c0-3 2-5 5-5z" />,
+    calendar: (
+      <>
+        <rect x="14" y="18" width="44" height="40" rx="2" />
+        <path d="M24 10v14M48 10v14M14 30h44M24 39h6M34 39h6M44 39h6M24 49h6M34 49h6M44 49h6" />
+      </>
+    ),
+    user: (
+      <>
+        <circle cx="36" cy="21" r="9" />
+        <path d="M19 58c3-12 8.7-18 17-18s14 6 17 18" />
+      </>
+    ),
+    users: (
+      <>
+        <circle cx="26" cy="25" r="7" />
+        <circle cx="47" cy="27" r="6" />
+        <path d="M12 58c2.5-10 7-15 14-15s11.5 5 14 15M37 58c2-8 5.5-12 11-12s9 4 11 12" />
+      </>
+    ),
+    chart: (
+      <>
+        <path d="M14 58h44M20 52V34M34 52V20M48 52V12" />
+        <path d="m15 42 13-13 9 9 18-24" />
+      </>
+    ),
+    shield: (
+      <>
+        <path d="M36 8 56 16v17c0 15-8 24-20 31-12-7-20-16-20-31V16z" />
+        <path d="m26 35 7 7 14-17" />
+      </>
+    ),
+    chat: <path d="M14 32c0-12 9.6-20 22-20s22 8 22 20-9.6 20-22 20c-3 0-5.7-.4-8.2-1.3L16 56l4.4-9.3C16.4 43 14 37.8 14 32z" />,
+    search: (
+      <>
+        <circle cx="30" cy="30" r="17" />
+        <path d="m43 43 15 15" />
+      </>
+    ),
+    pen: (
+      <>
+        <path d="M20 58 30 28l23-18 9 9-18 23z" />
+        <path d="m30 28 14 14M48 14l10-10" />
+      </>
+    ),
+  };
+
+  return <svg {...props}>{paths[name]}</svg>;
+}
+
 function Infrastructure() {
-  const { whoWeServe, howItWorks } = COPY.infrastructure;
+  const features = [
+    ["database", "1. Unified Database", "We consolidate your contact records, suppress duplicates, and establish the clean list architecture the program runs on."],
+    ["gear", "2. Rules Engine", "Segmentation logic, compliance suppression rules, and behavioral triggers are built before deployment. The right message reaches the right contact under the right conditions."],
+    ["network", "3. Channel Orchestration", "Deployment runs across email, conversational, and voice channels simultaneously from one team. One program. Every live channel your contacts use."],
+    ["trend", "4. Real-time Monitoring", "Deliverability is actively governed every send cycle. That rate holds because it is managed, not configured once and left. 95% inbox placement is an output of ongoing governance, not a platform feature. The industry average sits at 83.1% across major ESPs (EmailTooltester, 2026). Nearly one in six messages never reaches the inbox before a single person decides whether to respond."],
+  ];
+
+  const steps = [
+    ["01", "Ingest", "We pull the data your program already owns. List age, engagement history, delivery performance. And map the distance between current output and recoverable value."],
+    ["02", "Process", "We build sequences for each segment: reactivation flows for dormant contacts, compliance communications for active records, and retention programs for engaged audiences."],
+    ["03", "Evaluate", "We audit deliverability infrastructure, authentication records, and sending history. Every gap between your current inbox placement rate and 95% is identified and addressed before deployment."],
+    ["04", "Engage", "We execute delivery with full authentication, reputation management, and real-time monitoring. Every message routes through infrastructure built for inbox placement, not volume."],
+  ];
+
   return (
-    <div className="pt-12 space-y-20 relative z-10">
-      <div className="max-w-4xl text-left">
-        <div className="text-sm font-black tracking-[0.5em] text-emerald-500 uppercase mb-8">{COPY.infrastructure.kicker}</div>
-        <h1 className="text-[clamp(2.25rem,10vw,8rem)] font-black tracking-tighter text-[#0A0A0A] leading-[0.92] whitespace-pre-line">{COPY.infrastructure.h1}</h1>
-        <p className="mt-12 text-2xl md:text-4xl text-[#0A0A0A]/75 font-semibold">{COPY.infrastructure.sub}</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {COPY.infrastructure.layers.map((L) => (
-          <div
-            key={L.title}
-            className="bg-white/60 backdrop-blur-md p-10 text-left border border-black/10 hover:bg-emerald-500/5 transition-colors h-full relative z-10"
-          >
-            <div className="text-sm font-black tracking-[0.3em] text-emerald-500 mb-6">{L.note}</div>
-            <h3 className="text-2xl font-black text-[#0A0A0A] mb-6 uppercase">{L.title}</h3>
-            <p className="text-[17px] text-[#0A0A0A]/75 font-semibold leading-relaxed">{L.desc}</p>
-          </div>
-        ))}
-      </div>
-
-      <section className="border border-black/10 bg-white/60 backdrop-blur-xl p-6 md:p-8 relative z-10">
-        <div className="max-w-2xl">
-          <div className="text-xs font-black tracking-[0.4em] text-emerald-500 uppercase mb-4">{whoWeServe.kicker}</div>
-          <h3 className="text-2xl md:text-3xl font-black tracking-tight text-[#0A0A0A] leading-tight mb-4">{whoWeServe.headline}</h3>
-          <p className="text-[17px] text-[#0A0A0A]/75 font-semibold leading-relaxed">{whoWeServe.body}</p>
-        </div>
+    <>
+      <section className="page-shell hero narrow">
+        <HeroCopy eyebrow="Data. Infrastructure. Results." title={<>One system.<br />Every channel.</>} body="Social Following Studios manages the full program infrastructure. Database, sequences, deployment, and deliverability. From one team with one accountable outcome." />
+        <SystemDiagram />
       </section>
 
-      <section className="relative z-10">
-        <div className="text-sm font-black tracking-[0.5em] text-emerald-500 uppercase mb-8">{howItWorks.kicker}</div>
-        <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-[#0A0A0A] leading-none mb-14">{howItWorks.headline}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {howItWorks.tiers.map((tier) => (
-            <div key={tier.title} className="border border-black/10 bg-white/60 p-10 hover:bg-emerald-500/5 transition-colors">
-              <h3 className="text-xl font-black text-[#0A0A0A] uppercase mb-4">{tier.title}</h3>
-              <p className="text-[17px] text-[#0A0A0A]/75 font-semibold leading-relaxed">{tier.desc}</p>
-            </div>
+      <section className="page-shell section">
+        <BriefCard>
+          <div className="brief-content">
+            <h2>What we build for your program.</h2>
+            <p>Every program we manage runs on a unified database layer. We ingest your existing contacts, segment by engagement history and channel behavior, and map the reactivation path before the first send goes out. You do not manage the infrastructure. We do.</p>
+          </div>
+        </BriefCard>
+      </section>
+
+      <section className="page-shell section">
+        <div className="cards-grid four">
+          {features.map(([icon, title, copy]) => (
+            <article className="card" key={title}>
+              <Icon name={icon} className="icon-large" />
+              <h3>{title}</h3>
+              <div className="small-rule" />
+              <p>{copy}</p>
+            </article>
           ))}
         </div>
       </section>
 
-      <section className="text-center py-20 border-t border-black/10 relative z-10">
-        {COPY.infrastructure.outroLines.length > 0 && (
-          <p className="text-3xl md:text-5xl font-black text-[#0A0A0A] leading-tight mb-12">
-            {COPY.infrastructure.outroLines.map((line) => (
-              <React.Fragment key={line}>
-                {line}
-                <br />
-              </React.Fragment>
-            ))}
-          </p>
-        )}
-        <Button href={BOOKING_URL}>{COPY.infrastructure.cta}</Button>
-      </section>
-    </div>
+      <Process steps={steps} />
+      <CtaBand title="Your program, under management." />
+    </>
+  );
+}
+
+function Process({ steps, three = false }) {
+  return (
+    <section className="page-shell process">
+      <p className="section-label">How It Works</p>
+      <div className={`process-grid ${three ? "three" : ""}`}>
+        {steps.map(([number, title, copy]) => (
+          <article className="process-step" key={title}>
+            <div className="process-heading">
+              <span className="process-number">{number}</span>
+              <span className="process-title">{title}</span>
+            </div>
+            <div className="small-rule" />
+            <p>{copy}</p>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 
 function CaseStudies() {
+  const cases = [
+    {
+      type: "Government",
+      title: "Federal housing agency",
+      outcome: "A federal housing agency recovered constituent engagement at program scale without new budget or new infrastructure.",
+      narrative: "A federal housing agency managing constituent communication across active waitlist programs engaged Social Following Studios to run the full outreach program. Coordinated communication reached applicants across every live channel within the existing program infrastructure. Constituent engagement returned to active status at program scale.",
+    },
+    {
+      type: "Manufacturing",
+      title: "Manufacturing organization",
+      outcome: "A manufacturing organization recovered procurement relationships that had stopped responding after a program transition.",
+      narrative: "A manufacturing organization had a vendor and procurement contact database that had gone quiet after a program transition while relationships representing active buying history stopped responding entirely. A reactivation sequence ran across the existing database. Procurement contacts returned to active engagement within the first program cycle. Existing database. Existing budget.",
+      quote: "We recovered relationships we assumed were gone permanently.",
+    },
+    {
+      type: "Real Estate",
+      title: "Regional broker",
+      outcome: "A regional broker produced 11 signed listing agreements in 45 days from a database the business had stopped using.",
+      narrative: "A regional broker had a past-client database of buyers and sellers who had gone quiet while the business spent money acquiring new leads. A unified reactivation sequence ran across email, conversational, and voice channels simultaneously. The existing database and existing budget produced 11 signed listing agreements within 45 days.",
+      quote: "The buyers and sellers we thought were gone came back through the same list we had ignored for years.",
+    },
+  ];
+
   return (
-    <div className="pt-12 relative z-10">
-      <div className="text-left mb-24 max-w-4xl">
-        <div className="text-sm font-black tracking-[0.5em] text-emerald-500 uppercase mb-8">{COPY.caseStudies.kicker}</div>
-        <h1 className="text-[clamp(2.2rem,10vw,6rem)] font-black tracking-tighter text-[#0A0A0A] leading-[0.92]">{COPY.caseStudies.title}</h1>
-        {COPY.caseStudies.sub && <p className="mt-8 text-[17px] text-[#0A0A0A]/75 font-semibold leading-tight">{COPY.caseStudies.sub}</p>}
-      </div>
-
-      <div className="space-y-8 relative z-10">
-        {COPY.caseStudies.cards.map((cs, i) => (
-          <div key={cs.badge} className="border border-black/10 bg-white/60 p-10 md:p-14 hover:bg-white/80 transition-all relative z-10">
-            <p className="text-[1.15rem] font-semibold text-[#0A0A0A] leading-snug mb-6" style={{fontFamily: "'Lora', Georgia, serif"}}>{cs.badge}</p>
-            <p className="text-[17px] font-semibold text-[#0A0A0A]/80 leading-relaxed mb-8">{cs.narrative}</p>
-            {cs.quote && (
-              <blockquote className="border-l-2 border-emerald-500 pl-6">
-                <p className="text-[17px] font-black text-[#0A0A0A] leading-relaxed italic">&ldquo;{cs.quote}&rdquo;</p>
-                {cs.quoteAttrib && <cite className="mt-2 block text-sm font-black tracking-[0.2em] uppercase text-[#4A4F54] not-italic">{cs.quoteAttrib}</cite>}
-              </blockquote>
-            )}
+    <>
+      <section className="page-shell hero case-hero">
+        <HeroCopy eyebrow="Case Studies" title={<>Results from<br />real engagements.</>} body="Every case below began with a database the organization already owned and a program that had stopped producing. Existing infrastructure. Existing budget." showButton={false} />
+        <article className="visual-panel featured-card" aria-label="Featured case study">
+          <div className="panel-head">
+            <p className="card-label">Featured Case Study</p>
+            <span className="status-pill"><span className="dot" />Legal / Mass Tort</span>
           </div>
-        ))}
-      </div>
-
-      <div className="mb-24 py-12 border-y border-black/10 overflow-hidden relative z-10">
-        <ScrollingMarquee />
-      </div>
-
-      <section className="text-center py-24 mt-24 relative z-10">
-        <Button href={BOOKING_URL}>{COPY.caseStudies.cta}</Button>
+          <div className="featured-proof">
+            <p className="card-label">Legal / Mass Tort</p>
+            <h2>A plaintiff database reached multi-million dollar resolution after competing firms reached the same claimant pool.</h2>
+            <p>A plaintiff database had gone dormant while competing firms reached the same claimant pool. Inbox placement determines whether the claimant sees the message. We ran the deliverability program at 95% inbox placement, sequenced the outreach, and built the communication program around claimant trust. The matter reached multi-million dollar resolution.</p>
+            <div className="quote-block compact">
+              <blockquote>“Our messaging reached our claimants. That was the difference.”</blockquote>
+              <cite>— Managing Attorney, mass tort firm. Quoted anonymously at client's request</cite>
+            </div>
+          </div>
+        </article>
       </section>
 
-      <section className="border border-emerald-500/40 bg-emerald-50/60 p-8 sm:p-12 md:p-20 relative z-10">
-        <h2 className="text-[clamp(1.8rem,6vw,3rem)] font-semibold text-[#0A0A0A] leading-snug mb-6" style={{fontFamily: "'Lora', Georgia, serif"}}>{COPY.home.closingHeadline}</h2>
-        <p className="text-[17px] text-[#0A0A0A]/75 font-medium leading-relaxed max-w-2xl mb-10">{COPY.home.closingSub}</p>
-        <Button href={BOOKING_URL}>{COPY.home.closingCta}</Button>
+      <section className="page-shell">
+        <div className="logo-bar">
+          <p className="section-label">Trusted By Organizations That Lead</p>
+          <img src={LOGOS_APPROVED} alt="Trusted organizations" />
+        </div>
       </section>
-    </div>
+
+      <section className="page-shell section">
+        <div className="case-section-title">
+          <h2>Case Study Grid</h2>
+          <div className="small-rule" />
+        </div>
+        <div className="case-grid proof-grid">
+          {cases.map(({ type, title, outcome, narrative, quote }) => (
+            <article className="card case-card" key={title}>
+              <p className="card-label">{type}</p>
+              <h3>{title}</h3>
+              <p className="case-outcome">{outcome}</p>
+              <p>{narrative}</p>
+              {quote && <p className="case-author">“{quote}”</p>}
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <CtaBand title="Your database has a case study in it." copy="Start with the Assessment and find out what it can produce." />
+    </>
   );
 }
 
 function Contact() {
   return (
-    <div className="pt-12 max-w-5xl mx-auto relative z-10">
-      <section id="contact" className="border border-black/10 bg-white/60 backdrop-blur-xl px-5 sm:px-8 md:px-16 py-10 sm:py-14 md:py-20">
-        <div className="text-center max-w-3xl mx-auto">
-          <div className="text-xs font-semibold tracking-[0.18em] text-emerald-600 uppercase mb-6">{COPY.contact.kicker}</div>
-          <h1 className="text-[clamp(2.2rem,10vw,4.5rem)] font-semibold text-[#0A0A0A] leading-tight" style={{fontFamily: "'Lora', Georgia, serif"}}>{COPY.contact.title}</h1>
-          <div className="h-[2px] w-24 bg-emerald-500/90 mx-auto mt-8 mb-8" />
-          <p className="text-[17px] text-[#0A0A0A]/80 font-semibold leading-relaxed">{COPY.contact.sub}</p>
-        </div>
-        <form
-          action={CONTACT_FORM_ENDPOINT}
-          method="POST"
-          className="mt-14 grid grid-cols-1 md:grid-cols-2 gap-5"
-        >
-          <input type="hidden" name="xnQsjsdp" value="b45ce04ddd76914bbfeade30ab0a6e86446ed07ddcd64b5425a1a4d9d5a467b8" readOnly />
-          <input type="hidden" name="zc_gad" id="zc_gad" value="" readOnly />
-          <input type="hidden" name="xmIwtLD" value="97ca543a3d1ea88492628d126d9ab329b04cea167679b0225170279c6fc6e4f3684dbc3fb82c598c93398f0f68dcd29b" readOnly />
-          <input type="hidden" name="actionType" value="TGVhZHM=" readOnly />
-          <input type="hidden" name="returnURL" value={ZOHO_RETURN_URL} readOnly />
-          <input type="hidden" name="aG9uZXlwb3Q" value="" readOnly />
+    <>
+      <section className="page-shell hero contact-layout">
+        <HeroCopy eyebrow="Start the conversation." title={<>Book your<br />assessment.</>} body="Every engagement begins with a Database Assessment. The assessment produces the numbers. The numbers drive the decision." showButton={false} />
+        <Plane className="contact-plane" />
+        <svg className="flight-path contact-flight" viewBox="0 0 360 260" aria-hidden="true">
+          <path d="M15 212c92-20 20-96 92-120 50-17 84 8 73-45-10-48 71-58 151-28" />
+        </svg>
+        <BookingForm />
+        <ExpectCard />
+      </section>
 
-          <div>
-            <label htmlFor="company" className="block text-xs font-black tracking-[0.2em] uppercase text-[#4A4F54] mb-2">Company *</label>
-            <input id="company" type="text" name="Company" required placeholder="Company" className="w-full min-h-11 bg-black/[0.03] border border-black/20 px-4 md:px-5 py-3 md:py-4 text-[17px] font-semibold text-[#0A0A0A] placeholder:text-black/35 focus:outline-none focus:border-emerald-500" />
-          </div>
-
-          <div>
-            <label htmlFor="designation" className="block text-xs font-black tracking-[0.2em] uppercase text-[#4A4F54] mb-2">Title</label>
-            <input id="designation" type="text" name="Designation" placeholder="Title" className="w-full min-h-11 bg-black/[0.03] border border-black/20 px-4 md:px-5 py-3 md:py-4 text-[17px] font-semibold text-[#0A0A0A] placeholder:text-black/35 focus:outline-none focus:border-emerald-500" />
-          </div>
-
-          <div>
-            <label htmlFor="firstName" className="block text-xs font-black tracking-[0.2em] uppercase text-[#4A4F54] mb-2">First Name</label>
-            <input id="firstName" type="text" name="First Name" placeholder="First Name (optional)" className="w-full min-h-11 bg-black/[0.03] border border-black/20 px-4 md:px-5 py-3 md:py-4 text-[17px] font-semibold text-[#0A0A0A] placeholder:text-black/35 focus:outline-none focus:border-emerald-500" />
-          </div>
-
-          <div>
-            <label htmlFor="email" className="block text-xs font-black tracking-[0.2em] uppercase text-[#4A4F54] mb-2">Email</label>
-            <input id="email" type="email" name="Email" placeholder="Email" className="w-full min-h-11 bg-black/[0.03] border border-black/20 px-4 md:px-5 py-3 md:py-4 text-[17px] font-semibold text-[#0A0A0A] placeholder:text-black/35 focus:outline-none focus:border-emerald-500" />
-          </div>
-
-          <div>
-            <label htmlFor="lastName" className="block text-xs font-black tracking-[0.2em] uppercase text-[#4A4F54] mb-2">Last Name *</label>
-            <input id="lastName" type="text" name="Last Name" required placeholder="Last Name" className="w-full min-h-11 bg-black/[0.03] border border-black/20 px-4 md:px-5 py-3 md:py-4 text-[17px] font-semibold text-[#0A0A0A] placeholder:text-black/35 focus:outline-none focus:border-emerald-500" />
-          </div>
-
-          <div>
-            <label htmlFor="primaryChannel" className="block text-xs font-black tracking-[0.2em] uppercase text-[#4A4F54] mb-2">Primary Channel</label>
-            <input id="primaryChannel" type="text" name="LEADCF2" placeholder="Primary Channel" className="w-full min-h-11 bg-black/[0.03] border border-black/20 px-4 md:px-5 py-3 md:py-4 text-[17px] font-semibold text-[#0A0A0A] placeholder:text-black/35 focus:outline-none focus:border-emerald-500" />
-          </div>
-
-          <div className="md:col-span-2">
-            <label htmlFor="audienceDescription" className="block text-xs font-black tracking-[0.2em] uppercase text-[#4A4F54] mb-2">Audience Description</label>
-            <textarea id="audienceDescription" name="Description" placeholder="Audience Description" rows={3} className="w-full bg-black/[0.03] border border-black/20 px-4 md:px-5 py-3 md:py-4 text-[17px] font-semibold text-[#0A0A0A] placeholder:text-black/35 focus:outline-none focus:border-emerald-500" />
-          </div>
-
-          <div className="md:col-span-2">
-            <label htmlFor="additionalContext" className="block text-xs font-black tracking-[0.2em] uppercase text-[#4A4F54] mb-2">Additional Context</label>
-            <textarea id="additionalContext" name="LEADCF1" placeholder="Additional Context" rows={4} className="w-full bg-black/[0.03] border border-black/20 px-4 md:px-5 py-3 md:py-4 text-[17px] font-semibold text-[#0A0A0A] placeholder:text-black/35 focus:outline-none focus:border-emerald-500" />
-          </div>
-
-          <div className="md:col-span-2 flex justify-start mt-2">
-            <button type="submit" className="min-h-11 bg-emerald-600 px-8 md:px-10 py-3 text-sm font-semibold rounded-full text-white hover:bg-emerald-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2">
-              {COPY.contact.submitIdle}
-            </button>
-          </div>
-        </form>
-
-        <div className="mt-12 border border-black/10 bg-black/[0.03] p-6 md:p-8">
-          <p className="text-sm font-black tracking-[0.3em] uppercase text-emerald-500 mb-3">Qualification</p>
-          <p className="text-[17px] text-[#0A0A0A]/75 font-semibold leading-relaxed">
-            We review every assessment request and engage with operators whose database and channels are ready to activate.
-          </p>
+      <section className="page-shell section">
+        <p className="section-label connect-title">Other Ways To Connect</p>
+        <div className="cards-grid contact-two">
+          <ContactCard icon="mail" title="Email" body="hello@socialfollowingstudios.com" />
+          <ContactCard icon="shield" title="Note" body="We do not accept unsolicited vendor or platform pitches through this form." />
         </div>
       </section>
+
+      <section className="page-shell section">
+        <BriefCard next>
+          <div className="next-copy">
+            <p className="section-label">Next Steps</p>
+            <p>We accept assessment calls for organizations ready to understand what their existing database can produce. There is no sales call before the assessment. The assessment is the first step.</p>
+          </div>
+        </BriefCard>
+      </section>
+
+      <CtaBand title="Your database, reactivated." copy="The assessment produces the numbers. The numbers drive the decision." />
+    </>
+  );
+}
+
+function BookingForm() {
+  return (
+    <form className="form-card" action="https://crm.zoho.com/crm/WebToLeadForm" method="POST">
+      <input type="hidden" name="xnQsjsdp" value="b45ce04ddd76914bbfeade30ab0a6e86446ed07ddcd64b5425a1a4d9d5a467b8" readOnly />
+      <input type="hidden" name="xmIwtLD" value="97ca543a3d1ea88492628d126d9ab329b04cea167679b0225170279c6fc6e4f3684dbc3fb82c598c93398f0f68dcd29b" readOnly />
+      <input type="hidden" name="actionType" value="TGVhZHM=" readOnly />
+      <input type="hidden" name="returnURL" value="https://socialfollowingstudios.com/#/thank-you" readOnly />
+      <p className="card-label">Schedule your assessment call.</p>
+      <div className="form-grid">
+        <Field label="Name" name="Last Name" required full />
+        <Field label="Organization" name="Company" required full />
+        <Field label="Email" name="Email" type="email" required full />
+        <Field label="Brief description of your program situation" name="Description" textarea required full />
+      </div>
+      <div className="form-actions">
+        <button className="btn btn-primary" type="submit">
+          Request Assessment
+          <Arrow />
+        </button>
+        <div className="privacy-note">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.7" />
+            <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          </svg>
+          <span>Your information is secure and will never be shared.</span>
+        </div>
+      </div>
+    </form>
+  );
+}
+
+function Field({ label, name, type = "text", full = false, textarea = false, required = false, placeholder = "" }) {
+  return (
+    <div className={`field ${full ? "full" : ""}`}>
+      <label htmlFor={name}>{label}</label>
+      {textarea ? <textarea id={name} name={name} placeholder={placeholder} required={required} /> : <input id={name} name={name} type={type} required={required} />}
     </div>
   );
 }
 
+function SelectField({ label, name, options, full = false }) {
+  return (
+    <div className={`field ${full ? "full" : ""}`}>
+      <label htmlFor={name}>{label}</label>
+      <select id={name} name={name}>
+        {options.map((option) => (
+          <option key={option}>{option}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function ExpectCard() {
+  return (
+    <aside className="expect-card">
+      <p className="card-label">What happens after you submit.</p>
+      <div className="expect-list">
+        <Expect number="01" body="You will receive a confirmation within one business day." />
+        <Expect number="02" body="A brief intake call is scheduled. 20 minutes. To confirm program context." />
+        <Expect number="03" body="The assessment is conducted against your database and deliverability infrastructure." />
+        <Expect number="04" body="You receive a written report identifying database health, channel gaps, and your reactivation path." />
+        <Expect number="05" body="The program architecture follows from the assessment. The first send follows from the architecture." />
+      </div>
+    </aside>
+  );
+}
+
+function Expect({ number, title, body }) {
+  return (
+    <div className="expect-item">
+      <strong>{number}</strong>
+      <div className="small-rule" />
+      {title && <h3>{title}</h3>}
+      <p>{body}</p>
+    </div>
+  );
+}
+
+function ContactCard({ icon, title, body, link, href = "#/contact" }) {
+  return (
+    <article className="card contact-card">
+      <Icon name={icon} className="icon-large" />
+      <h3>{title}</h3>
+      <div className="small-rule" />
+      <p>{body}</p>
+      {link && <a className="text-link" href={href}>{link}</a>}
+    </article>
+  );
+}
+
+function PolicyPage({ title }) {
+  return (
+    <section className="page-shell policy-page">
+      <p className="eyebrow">Social Following Studios</p>
+      <h1>{title}</h1>
+      <div className="green-rule" />
+      <p className="lead">This page is being updated. Contact hello@socialfollowingstudios.com for the current policy details.</p>
+      <Button>Contact Us</Button>
+    </section>
+  );
+}
 
 function ThankYou() {
   return (
-    <div className="pt-20 max-w-4xl mx-auto relative z-10">
-      <section className="border border-black/10 bg-white/60 backdrop-blur-xl px-8 md:px-16 py-16 text-center">
-        <h1 className="text-4xl md:text-6xl font-black tracking-tight text-[#0A0A0A]">Thanks. We got your request.</h1>
-        <p className="mt-6 text-[17px] text-[#0A0A0A]/75 font-semibold">Our team will review and follow up shortly.</p>
-        <div className="mt-10">
-          <Button href="#/">Back Home</Button>
-        </div>
-      </section>
-    </div>
+    <section className="page-shell policy-page">
+      <p className="eyebrow">Request Received</p>
+      <h1>Thanks. We got your request.</h1>
+      <div className="green-rule" />
+      <p className="lead">Our team will review and follow up shortly.</p>
+      <a className="btn btn-primary" href="#/">Back Home</a>
+    </section>
   );
 }
 
-function Shell({ children, route }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [route]);
-
-  const active = (href) => {
-    const r = href.replace(/^#/, "").toLowerCase();
-    return route === r || (route === "/" && r === "/");
-  };
-
-  return (
-    <div className="min-h-screen text-[#0A0A0A] selection:bg-emerald-500 selection:text-white relative" style={{fontFamily: "'Inter', system-ui, sans-serif"}}>
-      {route === "/" ? <LiquidBackground /> : <InnerBackground />}
-      <Grid opacityClass={route === "/" ? "opacity-20" : "opacity-10"} />
-
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur-xl">
-        <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-2 px-4 sm:px-6 md:px-12 py-3 md:py-4">
-          <a href="#/" className="group min-w-0 shrink">
-            <BrandLogo className="w-[140px] sm:w-[180px] md:w-[260px]" priority />
-          </a>
-          <nav className="hidden md:flex gap-1 md:gap-2 mr-2 md:mr-6" style={{fontFamily: "'Lora', Georgia, serif"}}>
-            {NAV.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className={cx(
-                  "px-4 py-2 text-base font-medium rounded-full transition-colors whitespace-nowrap",
-                  active(item.href) ? "text-emerald-600 bg-emerald-50" : "text-[#555] hover:text-[#0A0A0A] hover:bg-black/5"
-                )}
-              >
-                {item.label}
-              </a>
-            ))}
-          </nav>
-          <div className="hidden md:block shrink-0">
-            <a
-              href={BOOKING_URL}
-              className="inline-flex items-center px-5 py-2.5 text-sm font-semibold rounded-full bg-emerald-600 text-white hover:bg-emerald-500 transition-colors whitespace-nowrap shadow-sm"
-              style={{fontFamily: "'Lora', Georgia, serif"}}
-            >
-              {COPY.shell.topCta}
-            </a>
-          </div>
-          <button
-            onClick={() => setMobileMenuOpen((open) => !open)}
-            className="md:hidden min-h-11 min-w-11 border border-black/20 bg-white/60 text-[#0A0A0A] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
-            aria-label="Toggle menu"
-            aria-expanded={mobileMenuOpen}
-            aria-controls="mobile-nav"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {mobileMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
-        </div>
-        {mobileMenuOpen && (
-          <div id="mobile-nav" className="md:hidden border-t border-black/10 bg-[#E8E9EA]/98 px-4 py-4 space-y-3">
-            <a
-              href={BOOKING_URL}
-              className="flex items-center justify-center py-3 px-4 text-sm font-semibold rounded-full bg-emerald-600 text-white hover:bg-emerald-500 transition-colors"
-            >
-              {COPY.shell.topCta}
-            </a>
-            {NAV.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className={cx(
-                  "flex items-center justify-center py-3 px-4 text-sm font-medium rounded-full transition-colors",
-                  active(item.href) ? "text-emerald-600 bg-emerald-50" : "text-[#555] hover:text-[#0A0A0A] hover:bg-black/5"
-                )}
-              >
-                {item.label}
-              </a>
-            ))}
-          </div>
-        )}
-      </header>
-
-      <main className="max-w-[1800px] mx-auto px-4 sm:px-6 md:px-12 pt-28 md:pt-32 pb-24 md:pb-48 relative z-10 text-base md:text-lg leading-relaxed">{children}</main>
-
-      <footer className="border-t border-black/10 bg-[#E8E9EA] relative z-50">
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 md:px-12 py-12 md:py-16 grid lg:grid-cols-3 gap-10 md:gap-16">
-          <div>
-            <BrandLogo className="w-[180px] sm:w-[220px] md:w-[300px] mb-4" />
-            <div className="text-sm font-medium text-[#777]">{COPY.shell.footerSub}</div>
-          </div>
-          <form
-            action={MAILING_LIST_ENDPOINT}
-            onSubmit={(e) => e.preventDefault()}
-            className="border border-black/10 bg-black/[0.03] p-6"
-          >
-            <p className="text-base font-semibold text-[#0A0A0A] mb-4">Join our mailing list for the latest insights.</p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="email"
-                required
-                placeholder="Email"
-                className="flex-1 bg-transparent border border-black/20 px-4 py-3 text-xs text-[#0A0A0A] placeholder:text-black/50 focus:outline-none focus:border-emerald-500"
-              />
-              <button type="submit" className="min-h-11 bg-emerald-600 px-5 py-3 text-sm font-semibold rounded-full hover:bg-emerald-500 text-white">
-                Join
-              </button>
-            </div>
-          </form>
-          <div className="flex flex-col md:flex-row lg:flex-col gap-6 text-sm font-medium text-[#777] lg:items-end">
-            <a href="#/terms" className="hover:text-emerald-500 transition-colors">
-              {COPY.shell.terms}
-            </a>
-            <a href="#/privacy" className="hover:text-emerald-500 transition-colors">
-              {COPY.shell.privacy}
-            </a>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-}
-
-export default function App() {
+function App() {
   const route = useHashRoute();
   const page = useMemo(() => {
     switch (route) {
@@ -853,9 +734,9 @@ export default function App() {
       case "/contact":
         return <Contact />;
       case "/terms":
-        return <PolicyPage policy={TERMS_POLICY} />;
+        return <PolicyPage title="Terms" />;
       case "/privacy":
-        return <PolicyPage policy={PRIVACY_POLICY} />;
+        return <PolicyPage title="Privacy" />;
       case "/thank-you":
         return <ThankYou />;
       default:
@@ -863,5 +744,13 @@ export default function App() {
     }
   }, [route]);
 
-  return <Shell route={route}>{page}</Shell>;
+  return (
+    <>
+      <Header route={route} />
+      <main>{page}</main>
+      <Footer />
+    </>
+  );
 }
+
+export default App;
