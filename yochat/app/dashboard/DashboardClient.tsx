@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import type {
   AnalyticsEvent,
   AutomationRule,
@@ -70,23 +70,72 @@ type CampaignVerification = {
 };
 
 type Tab = "overview" | "inbox" | "contacts" | "automations" | "campaigns" | "knowledge" | "analytics" | "test" | "settings";
+type NavIcon = "spark" | "inbox" | "people" | "flow" | "send" | "book" | "chart" | "lab" | "settings";
 
-const tabs: Array<{ id: Tab; label: string }> = [
-  { id: "overview", label: "Overview" },
-  { id: "inbox", label: "Inbox" },
-  { id: "contacts", label: "Contacts" },
-  { id: "automations", label: "Automations" },
-  { id: "campaigns", label: "Campaigns" },
-  { id: "knowledge", label: "Knowledge" },
-  { id: "analytics", label: "Analytics" },
-  { id: "test", label: "Test Lab" },
-  { id: "settings", label: "Settings" },
+const tabs: Array<{ id: Tab; label: string; icon: NavIcon }> = [
+  { id: "overview", label: "Overview", icon: "spark" },
+  { id: "inbox", label: "Inbox", icon: "inbox" },
+  { id: "contacts", label: "Contacts", icon: "people" },
+  { id: "automations", label: "Automations", icon: "flow" },
+  { id: "campaigns", label: "Campaigns", icon: "send" },
+  { id: "knowledge", label: "Knowledge", icon: "book" },
+  { id: "analytics", label: "Analytics", icon: "chart" },
+  { id: "test", label: "Test Lab", icon: "lab" },
+  { id: "settings", label: "Settings", icon: "settings" },
 ];
 
 const brandColor: Record<BrandKey, string> = {
-  marchitects: "#7dd3fc",
-  "social-following": "#c4b5fd",
-  aafc: "#86efac",
+  marchitects: "#00d6c9",
+  "social-following": "#8b5cf6",
+  aafc: "#ff7a59",
+};
+
+const pageCopy: Record<Tab, { kicker: string; title: string; description: string }> = {
+  overview: {
+    kicker: "Live command center",
+    title: "Every conversation, one clear signal.",
+    description: "See what needs attention, what is converting, and what YoChat is handling across all three brands.",
+  },
+  inbox: {
+    kicker: "Unified inbox",
+    title: "People first. Threads second.",
+    description: "Move quickly between active conversations, handoffs, and the context behind every reply.",
+  },
+  contacts: {
+    kicker: "Audience intelligence",
+    title: "Know who is leaning in.",
+    description: "Review contact details, intent, tags, and relationship history without losing the human story.",
+  },
+  automations: {
+    kicker: "Journey studio",
+    title: "Build momentum on purpose.",
+    description: "Tune the triggers, rules, and follow-ups that turn attention into meaningful action.",
+  },
+  campaigns: {
+    kicker: "Campaign studio",
+    title: "Launch with proof, not hope.",
+    description: "Test the complete reply-to-list journey safely before a single real audience member sees it.",
+  },
+  knowledge: {
+    kicker: "Brand intelligence",
+    title: "Give every reply a point of view.",
+    description: "Keep each brand’s facts, voice, and boundaries current so automation stays accurate and recognizable.",
+  },
+  analytics: {
+    kicker: "Signal report",
+    title: "See what people do next.",
+    description: "Read the behavioral trail behind conversations, handoffs, opt-ins, and conversion intent.",
+  },
+  test: {
+    kicker: "Safe test lab",
+    title: "Break it here. Trust it everywhere.",
+    description: "Exercise the full engine with realistic scenarios while every external delivery remains locked.",
+  },
+  settings: {
+    kicker: "System controls",
+    title: "Power with a safety switch.",
+    description: "Manage brand behavior, data retention, integrations, scheduling, and operational boundaries.",
+  },
 };
 
 function ago(value: string): string {
@@ -286,35 +335,55 @@ export default function DashboardClient() {
   }
 
   if (!data) return <main className="dashboard-loading">Opening Yochat Control Room…</main>;
+  const activePage = pageCopy[tab];
 
   return (
     <main className="dashboard-shell">
       <aside className="dashboard-sidebar">
-        <div>
-          <p className="eyebrow">YOCHAT</p>
-          <h1 className="dashboard-logo">Control Room</h1>
-          <p className="sidebar-subtitle">Rashida’s three-brand messaging engine</p>
+        <div className="brand-lockup">
+          <span className="yochat-mark" aria-hidden="true">
+            <span />
+            <span />
+          </span>
+          <div>
+            <p className="dashboard-logo">YOCHAT</p>
+            <p className="sidebar-subtitle">Signal Studio</p>
+          </div>
+        </div>
+        <div className="workspace-card">
+          <span className="workspace-avatar">R</span>
+          <span><strong>Rashida’s workspace</strong><small>3 brands · live operations</small></span>
+          <span className="workspace-chevron" aria-hidden="true">⌄</span>
         </div>
         <nav className="dashboard-nav" aria-label="Dashboard">
           {tabs.map((item) => (
             <button className={tab === item.id ? "active" : ""} key={item.id} onClick={() => setTab(item.id)}>
-              {item.label}
+              <DashboardIcon name={item.icon} />
+              <span>{item.label}</span>
+              {item.id === "inbox" && data.handoffs.filter((handoff) => handoff.status !== "resolved").length > 0 ? (
+                <span className="nav-count">{data.handoffs.filter((handoff) => handoff.status !== "resolved").length}</span>
+              ) : null}
             </button>
           ))}
         </nav>
         <div className="sidebar-footer">
-          <span className={`storage-pill ${data.storageMode}`}>{data.storageMode === "redis" ? "Persistent storage" : "Preview storage"}</span>
-          <button className="text-button" onClick={logout}>Sign out</button>
+          <div className="system-mini-card">
+            <span className={`system-live-dot ${data.storageMode}`} />
+            <span><strong>{data.storageMode === "redis" ? "System live" : "Preview mode"}</strong><small>{data.storageMode === "redis" ? "Persistent storage connected" : "Connect storage before launch"}</small></span>
+          </div>
+          <button className="sidebar-signout" onClick={logout}><DashboardIcon name="settings" /><span>Sign out</span></button>
         </div>
       </aside>
 
       <section className="dashboard-main">
         <header className="dashboard-header">
-          <div>
-            <p className="eyebrow">{tabs.find((item) => item.id === tab)?.label}</p>
-            <h2>{tab === "test" ? "Safe Test Lab" : "Yochat operations"}</h2>
+          <div className="page-intro">
+            <p className="eyebrow">{activePage.kicker}</p>
+            <h2>{activePage.title}</h2>
+            <p>{activePage.description}</p>
           </div>
           <div className="header-actions">
+            <span className="live-pill"><span /> Live</span>
             <button
               className={data.settings.globalAutomationPaused ? "primary-button small" : "secondary-button"}
               disabled={busy}
@@ -341,6 +410,27 @@ export default function DashboardClient() {
             {data.storageMode === "memory" ? (
               <div className="warning-card"><strong>Preview storage is active.</strong> The dashboard works, but production history will persist only after the free Redis store is connected.</div>
             ) : null}
+            <section className="signal-stage">
+              <div className="signal-stage-copy">
+                <p className="stage-label">Today’s signal</p>
+                <h3>YoChat is listening across every brand.</h3>
+                <p>
+                  {data.messages.length} messages are in view, {data.handoffs.filter((item) => item.status !== "resolved").length} need a human,
+                  and the delivery engine is {data.operational.failedJobs === 0 ? "running clean." : `tracking ${data.operational.failedJobs} failed jobs.`}
+                </p>
+                <div className="stage-actions">
+                  <button className="ink-button" onClick={() => setTab("inbox")}>Open live inbox <span aria-hidden="true">↗</span></button>
+                  <button className="ghost-button" onClick={() => setTab("test")}>Run a safe test</button>
+                </div>
+              </div>
+              <div className="signal-stage-visual">
+                <img src="/images/yochat-signal-studio.webp" alt="Creative director confidently managing conversations from her phone" />
+                <div className="floating-signal">
+                  <span className="signal-orbit" aria-hidden="true" />
+                  <span><strong>Reply engine ready</strong><small>Instagram · Messenger · Test channel</small></span>
+                </div>
+              </div>
+            </section>
             <div className="metric-grid">
               <Metric label="Contacts" value={data.contacts.length} />
               <Metric label="Conversations" value={data.conversations.length} />
@@ -584,8 +674,23 @@ export default function DashboardClient() {
   );
 }
 
+function DashboardIcon({ name }: { name: NavIcon }) {
+  const paths: Record<NavIcon, ReactNode> = {
+    spark: <><path d="M12 2.5 14 9l6.5 2-6.5 2-2 6.5-2-6.5-6.5-2L10 9l2-6.5Z" /><path d="m18 3 .7 2.3L21 6l-2.3.7L18 9l-.7-2.3L15 6l2.3-.7L18 3Z" /></>,
+    inbox: <><path d="M4 5.5h16v13H4z" /><path d="M4 14h4l1.5 2h5L16 14h4" /></>,
+    people: <><path d="M8.5 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" /><path d="M3.5 19v-2.2c0-2 2.2-3.8 5-3.8s5 1.8 5 3.8V19" /><path d="M16 11a2.5 2.5 0 1 0 0-5" /><path d="M16 13c2.5 0 4.5 1.5 4.5 3.4V19" /></>,
+    flow: <><rect x="3" y="4" width="7" height="5" rx="1" /><rect x="14" y="15" width="7" height="5" rx="1" /><path d="M10 6.5h4a3 3 0 0 1 3 3V15" /><path d="m14.5 12.5 2.5 2.5 2.5-2.5" /></>,
+    send: <><path d="m3 11 17-7-7 17-2.5-7.5L3 11Z" /><path d="m10.5 13.5 4-4" /></>,
+    book: <><path d="M4 4.5h6.5c1.2 0 2 .8 2 2V20c0-1.3-.8-2-2-2H4z" /><path d="M20 4.5h-5.5c-1.2 0-2 .8-2 2V20c0-1.3.8-2 2-2H20z" /></>,
+    chart: <><path d="M4 19V9" /><path d="M10 19V4" /><path d="M16 19v-7" /><path d="M22 19H2" /></>,
+    lab: <><path d="M9 3h6" /><path d="M10 3v5l-5 9a2.5 2.5 0 0 0 2.2 3.7h9.6A2.5 2.5 0 0 0 19 17l-5-9V3" /><path d="M7.5 15h9" /></>,
+    settings: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z" /></>,
+  };
+  return <svg aria-hidden="true" className="dashboard-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7">{paths[name]}</svg>;
+}
+
 function Metric({ label, value }: { label: string; value: number }) {
-  return <article className="metric-card"><span>{label}</span><strong>{value}</strong></article>;
+  return <article className="metric-card"><span>{label}</span><strong>{value}</strong><small><i /> Live total</small></article>;
 }
 
 function Empty({ text }: { text: string }) {
