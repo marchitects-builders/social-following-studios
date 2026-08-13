@@ -260,6 +260,86 @@ h3 {
   box-shadow: var(--shadow);
 }
 
+.avatar-hero .hero-copy {
+  max-width: 590px;
+}
+
+.avatar-hero h1 {
+  max-width: 570px;
+}
+
+.avatar-kicker {
+  margin: -12px 0 0;
+  color: var(--green);
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+
+.twin-visual {
+  min-height: 510px;
+  padding: 26px 28px 12px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background:
+    radial-gradient(circle at 50% 43%, rgba(184, 215, 204, .4), transparent 27%),
+    linear-gradient(145deg, rgba(255, 255, 255, .94), rgba(244, 250, 246, .78));
+}
+
+.twin-visual-labels {
+  display: flex;
+  justify-content: space-between;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+.twin-visual svg {
+  width: 100%;
+  height: 100%;
+}
+
+.twin-figure {
+  fill: rgba(255, 255, 255, .52);
+  stroke: var(--ink);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.3;
+}
+
+.twin-figure-digital {
+  fill: rgba(184, 215, 204, .1);
+  stroke: var(--green);
+}
+
+.twin-face-line {
+  fill: none;
+}
+
+.twin-detail {
+  fill: none;
+  opacity: .18;
+  stroke-width: 1;
+}
+
+.twin-signal {
+  fill: var(--green);
+  stroke: url(#twinSignal);
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.twin-signal-glow {
+  fill: rgba(0, 139, 97, .16);
+  filter: url(#twinGlow);
+  stroke: none;
+}
+
+.avatar-statement h2 {
+  max-width: 920px;
+}
+
 .panel-head {
   min-height: 76px;
   padding: 0 34px;
@@ -1172,6 +1252,10 @@ h3 {
     max-width: 760px;
   }
 
+  .twin-visual {
+    width: 100%;
+  }
+
   .expect-card {
     min-height: auto;
   }
@@ -1244,6 +1328,15 @@ h3 {
   .hero {
     min-height: auto;
     padding-top: 42px;
+  }
+
+  .avatar-hero {
+    gap: 34px;
+  }
+
+  .twin-visual {
+    min-height: 430px;
+    padding: 22px 18px 4px;
   }
 
   h1 {
@@ -1337,5 +1430,15 @@ h3 {
 
   .btn {
     width: 100%;
+  }
+
+  .twin-visual {
+    min-height: 340px;
+    padding: 18px 12px 0;
+  }
+
+  .twin-visual-labels {
+    padding: 0 5px;
+    font-size: 10px;
   }
 }

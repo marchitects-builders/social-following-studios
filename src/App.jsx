@@ -5,6 +5,7 @@ const LOGOS_APPROVED = "/logos-approved.png";
 
 const NAV = [
   { label: "Infrastructure", href: "#/infrastructure", route: "/infrastructure" },
+  { label: "Avatar Studio", href: "#/avatar-studio", route: "/avatar-studio" },
   { label: "Case Studies", href: "#/case-studies", route: "/case-studies" },
   { label: "About", href: "#/", route: "/about" },
   { label: "Contact", href: "#/contact", route: "/contact" },
@@ -289,6 +290,79 @@ function Home() {
       </section>
 
       <CtaBand title="Let’s put your database to work." />
+    </>
+  );
+}
+
+function AvatarStudioVisual() {
+  return (
+    <article className="visual-panel twin-visual" aria-label="A person facing their digital twin">
+      <div className="twin-visual-labels" aria-hidden="true">
+        <span>Original</span>
+        <span>Digital Twin</span>
+      </div>
+      <svg viewBox="0 0 720 500" role="img" aria-labelledby="twin-visual-title twin-visual-description">
+        <title id="twin-visual-title">Your digital twin, ready to carry your presence</title>
+        <desc id="twin-visual-description">Two human profiles face one another, connected by a shared signal.</desc>
+        <defs>
+          <linearGradient id="twinSignal" x1="0" x2="1">
+            <stop offset="0" stopColor="#b8d7cc" stopOpacity="0" />
+            <stop offset=".5" stopColor="#008b61" />
+            <stop offset="1" stopColor="#b8d7cc" stopOpacity="0" />
+          </linearGradient>
+          <filter id="twinGlow" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation="10" />
+          </filter>
+        </defs>
+
+        <g className="twin-signal" aria-hidden="true">
+          <path d="M274 216H446" />
+          <circle cx="326" cy="216" r="4" />
+          <circle cx="360" cy="216" r="7" />
+          <circle cx="394" cy="216" r="4" />
+          <circle className="twin-signal-glow" cx="360" cy="216" r="30" />
+        </g>
+
+        <g className="twin-figure twin-figure-original">
+          <path d="M244 138c-12-29-42-48-76-42-39 7-63 45-55 84 4 20 15 35 31 46l-8 55c-4 27-18 47-43 59l-28 14v50h248v-50l-29-14c-27-13-42-35-44-64l-3-40c19-13 31-34 31-58 0-10-2-19-6-28l-28-12Z" />
+          <path className="twin-face-line" d="M237 151c13 7 20 17 20 29 0 11-7 19-20 25l-17 7" />
+          <circle cx="216" cy="172" r="4" />
+        </g>
+
+        <g className="twin-figure twin-figure-digital">
+          <path d="M476 138c12-29 42-48 76-42 39 7 63 45 55 84-4 20-15 35-31 46l8 55c4 27 18 47 43 59l28 14v50H407v-50l29-14c27-13 42-35 44-64l3-40c-19-13-31-34-31-58 0-10 2-19 6-28l28-12Z" />
+          <path className="twin-face-line" d="M483 151c-13 7-20 17-20 29 0 11 7 19 20 25l17 7" />
+          <circle cx="504" cy="172" r="4" />
+          <path className="twin-detail" d="M510 113v270M540 103v289M570 114v269M600 154v229M430 354h220M452 322h176M468 290h144" />
+        </g>
+      </svg>
+    </article>
+  );
+}
+
+function AvatarStudio() {
+  return (
+    <>
+      <section className="page-shell hero narrow avatar-hero">
+        <div className="hero-copy">
+          <p className="eyebrow">Avatar Studio</p>
+          <h1>Your Twin Everywhere.</h1>
+          <div className="green-rule" />
+          <p className="lead">We create a digital twin that carries your expertise across video, content, campaigns, and customer touchpoints.</p>
+          <p className="avatar-kicker">One source. More presence.</p>
+        </div>
+        <AvatarStudioVisual />
+      </section>
+
+      <section className="page-shell section">
+        <article className="copy-card avatar-statement">
+          <p className="section-label">Your Presence, Extended</p>
+          <h2>Your expertise should not depend on you being in the room.</h2>
+          <p>Avatar Studio creates a digital version of you built to carry your voice, knowledge, and presence wherever the work needs to happen.</p>
+        </article>
+      </section>
+
+      <CtaBand title="Your twin is ready to go further." cta="Create Your Twin" />
     </>
   );
 }
@@ -729,6 +803,8 @@ function App() {
     switch (route) {
       case "/infrastructure":
         return <Infrastructure />;
+      case "/avatar-studio":
+        return <AvatarStudio />;
       case "/case-studies":
         return <CaseStudies />;
       case "/contact":
