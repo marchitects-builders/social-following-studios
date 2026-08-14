@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 
 const BRAND_LOGO = "/brand/sfs-logo.png";
 const LOGOS_APPROVED = "/logos-approved.png";
+const SITE_META = { imprint: "MARCHITECTS" };
 
 const NAV = [
   { label: "Infrastructure", href: "#/infrastructure", route: "/infrastructure" },
@@ -36,9 +37,9 @@ function Arrow() {
   );
 }
 
-function Button({ children = "Book Your Assessment", className = "" }) {
+function Button({ children = "Book Your Assessment", className = "", href = "#assessment" }) {
   return (
-    <a className={`btn btn-primary ${className}`} href="#/contact">
+    <a className={`btn btn-primary ${className}`} href={href}>
       {children}
       <Arrow />
     </a>
@@ -95,7 +96,7 @@ function Header({ route }) {
           </a>
         ))}
       </nav>
-      <a className="btn btn-primary nav-cta" href="#/contact">Book Your Assessment</a>
+      <a className="btn btn-primary nav-cta" href="#assessment">Book Your Assessment</a>
       <button className="menu-button" type="button" aria-expanded={open} aria-controls="mobile-menu" onClick={() => setOpen((value) => !value)}>
         <span />
         <span />
@@ -108,7 +109,7 @@ function Header({ route }) {
               {item.label}
             </a>
           ))}
-          <a href="#/contact">Book Your Assessment</a>
+          <a href="#assessment">Book Your Assessment</a>
         </nav>
       )}
     </header>
@@ -135,7 +136,7 @@ function Footer() {
           <a href="#/privacy">Privacy</a>
         </div>
       </div>
-      <div className="footer-bottom">© 2024 Social Following Studios. An imprint of M Architects.</div>
+      <div className="footer-bottom">© 2026 Social Following Studios. An imprint of {SITE_META.imprint}.</div>
     </footer>
   );
 }
@@ -258,65 +259,149 @@ function CtaBand({ title, copy, cta = "Book Your Assessment" }) {
 }
 
 function Home() {
+  const framework = [
+    ["database", "Unified Database Architecture", "Consolidation of disparate contact records, systematic deduplication, and suppression logic establish the clean data layer required for programmatic scaling."],
+    ["gear", "Rules Engine Calibration", "Segmentation logic, compliance suppression architecture, and behavioral triggers govern the delivery cadence to ensure precise narrative timing."],
+    ["network", "Channel Orchestration", "Deployment pathways synchronize across multiple communication vectors via a single operational team to maintain unified brand presence."],
+    ["trend", "Real-Time Deliverability Governance", "Continuous monitoring evaluates authentication status, sender reputation, delivery failures, and inbox placement. Active intervention protects the integrity of the sending environment throughout deployment."],
+  ];
+
   return (
     <>
-      <section className="page-shell hero">
+      <section className="page-shell hero home-institutional-hero">
         <HeroCopy
-          eyebrow="Data. Infrastructure. Results."
+          eyebrow="Social Following Studios"
           title={<>Your database,<br />reactivated.</>}
-          body="You have the database. You may have the platform. You are not getting the result. Social Following Studios is a full-service email program management firm that takes over the program entirely. Assessment, build, deployment, and deliverability. And produces the outcome."
+          body="Your database represents the single most underutilized asset within the enterprise portfolio. Social Following Studios operates as a total lifecycle email program management firm that assumes complete operational ownership of the messaging continuum. We govern the entire trajectory across initial assessment, architectural build, programmatic deployment, and systemic deliverability to realize definitive corporate outcomes."
         />
-        <Plane className="home-plane" />
-        <svg className="flight-path home-flight" viewBox="0 0 360 260" aria-hidden="true">
-          <path d="M30 210c95-14 11-112 96-154 60-30 129 5 200-42" />
-        </svg>
+        <AvatarStudioVisual className="home-twin-visual" compact />
+      </section>
+
+      <section className="page-shell section institutional-section">
+        <div className="institutional-intro">
+          <p className="section-label">Structural Optimization Framework</p>
+          <h2>Structural Optimization Framework</h2>
+          <p>Every program operates upon an integrated data layer to transform latent enterprise assets into active capital. We ingest existing contact records, analyze engagement history, and establish the technical parameters required for predictable execution before the initial transmission cycle begins. The organization maintains strategic oversight while our firm assumes total execution of the underlying infrastructure.</p>
+        </div>
+        <div className="cards-grid four framework-grid">
+          {framework.map(([icon, title, copy]) => (
+            <article className="card" key={title}>
+              <Icon name={icon} className="icon-large" />
+              <h3>{title}</h3>
+              <div className="small-rule" />
+              <p>{copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="page-shell section institutional-split database-capitalization">
+        <article className="copy-card institutional-copy-card">
+          <p className="section-label">Database Capitalization</p>
+          <h2>Database Capitalization</h2>
+          <p>Enterprise yield reaches optimization when sophisticated data repositories pair with precise narrative nuance. We analyze your customer database at the cohort level to isolate precisely where commercial demand remains active. This intelligence becomes the foundation for a targeted reactivation architecture built around verified sales opportunities.</p>
+        </article>
         <AssessmentSummary />
       </section>
 
-      <section id="about" className="page-shell section">
-        <article className="copy-card">
-          <p className="section-label">Why It Stops Working</p>
-          <h2>Most email programs fail for the same reason.</h2>
-          <p>The database is real. The platform is paid for. The team is busy with everything else. Nobody is running the program. Klaviyo doesn't run it. HubSpot doesn't run it. Salesforce Marketing Cloud doesn't run it. You do. Or nobody does. Social Following Studios runs it. We take over the full program from assessment to deployment and manage it as the program owner.</p>
+      <section className="page-shell section">
+        <article className="copy-card management-card">
+          <div>
+            <p className="section-label">Complete Program Management</p>
+            <h2>Complete Program Management</h2>
+          </div>
+          <p>Social Following Studios governs your email operation as a unified operating system. Our mandate extends from initial data ingestion through continuous programmatic deployment. We engineer controlled delivery environments that protect technical integrity and establish direct control over the underlying sending infrastructure. This active governance maintains a 95% inbox placement rate, ensuring communications withstand rigorous deliverability protocols before a single prospect decides whether to respond.</p>
+          <div className="placement-proof" aria-label="Published inbox placement metric">
+            <strong>95%</strong>
+            <span>Inbox placement maintained through active governance</span>
+          </div>
         </article>
+      </section>
+
+      <section className="page-shell section institutional-split avatar-capability">
+        <article className="copy-card institutional-copy-card">
+          <p className="section-label">Avatar Studio</p>
+          <h2>The Avatar Studio: Language Conversion Science</h2>
+          <p>Extracting maximum valuation from a mature institutional database requires an advanced comprehension of linguistic nuance. The Avatar Studio constructs sophisticated digital twins engineered to maintain absolute communicative precision across distinct target demographics. These models translate complex expertise into highly articulated communications while preserving institutional credibility and source authority. This structured approach permits the enterprise to scale personalized narrative pathways across video and direct response environments simultaneously.</p>
+          <a className="text-link institutional-link" href="#/avatar-studio">Explore Avatar Studio <Arrow /></a>
+        </article>
+        <AvatarStudioVisual className="avatar-section-visual" compact />
       </section>
 
       <section className="page-shell section">
-        <article className="copy-card wide-copy">
-          <p className="section-label">Who We Serve</p>
-          <h2>Organizations with dormant databases and active compliance obligations.</h2>
-          <p>We work with organizations that have built real contact databases from years of earned permission. Legal firms managing plaintiff communication across active case lifecycles. Government agencies with constituent outreach obligations tied to regulatory deadlines. Healthcare organizations governed by HIPAA-compliant communication requirements. Real estate operations with dormant investor and buyer databases. Manufacturing organizations with vendor and procurement networks that have stopped responding. Organizations whose program is paid for and not producing. Organizations whose outreach has gone quiet and whose team lacks the capacity or the expertise to fix it permanently.</p>
+        <article className="capitalization-card">
+          <div>
+            <p className="section-label">Capitalization Assessment</p>
+            <h2>Capitalization Assessment</h2>
+            <p>The Infrastructure Assessment reviews the operational health of your data environment and the technical frameworks surrounding it. We locate your dormant audience segments with the highest immediate revenue potential and map the delivery architecture required to activate them.</p>
+          </div>
+          <div className="capitalization-actions">
+            <Button />
+            <em>An Imprint of MARCHITECTS</em>
+          </div>
         </article>
       </section>
 
-      <CtaBand title="Let’s put your database to work." />
+      <section id="assessment" className="page-shell section assessment-section">
+        <div className="assessment-heading">
+          <p className="section-label">Capitalization Assessment</p>
+          <h2>Book your assessment.</h2>
+          <p>Every engagement begins with a Database Assessment. The assessment produces the underlying technical metrics, and those numbers drive the operational decision.</p>
+        </div>
+        <BookingForm />
+      </section>
+
+      <section className="page-shell section process-protocols">
+        <article className="copy-card">
+          <p className="section-label">Process Protocols</p>
+          <h2>Process Protocols</h2>
+          <p>An enterprise intake specialist will review your program context within one business day. The process begins with a 20-minute technical review focused on the condition of your current infrastructure and the operational path forward.</p>
+        </article>
+      </section>
     </>
   );
 }
 
-function AvatarStudioVisual() {
+function AvatarStudioVisual({ className = "", compact = false }) {
   return (
-    <article className="visual-panel twin-visual" aria-label="A person facing their digital twin">
+    <article className={`visual-panel twin-visual ${compact ? "twin-visual-compact" : ""} ${className}`} aria-label="A human subject facing a sculptural digital twin">
       <div className="twin-visual-labels" aria-hidden="true">
-        <span>Original</span>
+        <span>Human Source</span>
         <span>Digital Twin</span>
       </div>
       <svg viewBox="0 0 720 500" role="img" aria-labelledby="twin-visual-title twin-visual-description">
-        <title id="twin-visual-title">Your digital twin, ready to carry your presence</title>
-        <desc id="twin-visual-description">Two human profiles face one another, connected by a shared signal.</desc>
+        <title id="twin-visual-title">Human source and sculptural digital twin production system</title>
+        <desc id="twin-visual-description">A human profile and mannequin-like digital twin face one another across a controlled division.</desc>
         <defs>
           <linearGradient id="twinSignal" x1="0" x2="1">
             <stop offset="0" stopColor="#b8d7cc" stopOpacity="0" />
             <stop offset=".5" stopColor="#008b61" />
             <stop offset="1" stopColor="#b8d7cc" stopOpacity="0" />
           </linearGradient>
+          <linearGradient id="humanSculpture" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0" stopColor="#ffffff" />
+            <stop offset=".55" stopColor="#f3f0e9" />
+            <stop offset="1" stopColor="#d8d3ca" />
+          </linearGradient>
+          <linearGradient id="digitalSculpture" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0" stopColor="#f8fffc" />
+            <stop offset=".55" stopColor="#dcefe7" />
+            <stop offset="1" stopColor="#a9d1c1" />
+          </linearGradient>
           <filter id="twinGlow" x="-80%" y="-80%" width="260%" height="260%">
             <feGaussianBlur stdDeviation="10" />
           </filter>
+          <filter id="figureShadow" x="-20%" y="-20%" width="140%" height="150%">
+            <feDropShadow dx="0" dy="12" stdDeviation="10" floodColor="#14261f" floodOpacity=".12" />
+          </filter>
         </defs>
 
+        <g className="twin-division" aria-hidden="true">
+          <path d="M360 78v326" />
+        </g>
+
         <g className="twin-signal" aria-hidden="true">
-          <path d="M274 216H446" />
+          <path d="M286 216H434" />
           <circle cx="326" cy="216" r="4" />
           <circle cx="360" cy="216" r="7" />
           <circle cx="394" cy="216" r="4" />
@@ -324,12 +409,14 @@ function AvatarStudioVisual() {
         </g>
 
         <g className="twin-figure twin-figure-original">
+          <path className="twin-ponytail" d="M129 119c-28 11-46 35-40 62 5 24 25 39 50 36-14-12-21-29-21-50 0-20 4-36 11-48Z" />
           <path d="M244 138c-12-29-42-48-76-42-39 7-63 45-55 84 4 20 15 35 31 46l-8 55c-4 27-18 47-43 59l-28 14v50h248v-50l-29-14c-27-13-42-35-44-64l-3-40c19-13 31-34 31-58 0-10-2-19-6-28l-28-12Z" />
           <path className="twin-face-line" d="M237 151c13 7 20 17 20 29 0 11-7 19-20 25l-17 7" />
           <circle cx="216" cy="172" r="4" />
         </g>
 
         <g className="twin-figure twin-figure-digital">
+          <path className="twin-ponytail" d="M591 119c28 11 46 35 40 62-5 24-25 39-50 36 14-12 21-29 21-50 0-20-4-36-11-48Z" />
           <path d="M476 138c12-29 42-48 76-42 39 7 63 45 55 84-4 20-15 35-31 46l8 55c4 27 18 47 43 59l28 14v50H407v-50l29-14c27-13 42-35 44-64l3-40c-19-13-31-34-31-58 0-10 2-19 6-28l28-12Z" />
           <path className="twin-face-line" d="M483 151c-13 7-20 17-20 29 0 11 7 19 20 25l17 7" />
           <circle cx="504" cy="172" r="4" />
@@ -346,23 +433,23 @@ function AvatarStudio() {
       <section className="page-shell hero narrow avatar-hero">
         <div className="hero-copy">
           <p className="eyebrow">Avatar Studio</p>
-          <h1>Your Twin Everywhere.</h1>
+          <h1>Your Twin Everywhere</h1>
           <div className="green-rule" />
-          <p className="lead">We create a digital twin that carries your expertise across video, content, campaigns, and customer touchpoints.</p>
-          <p className="avatar-kicker">One source. More presence.</p>
+          <p className="lead avatar-commercial-copy">We create a high-fidelity digital twin of your likeness and voice, then turn your knowledge into finished video content built for continuous distribution.</p>
+          <Button href="#assessment">Build My Digital Twin</Button>
         </div>
         <AvatarStudioVisual />
       </section>
 
       <section className="page-shell section">
         <article className="copy-card avatar-statement">
-          <p className="section-label">Your Presence, Extended</p>
-          <h2>Your expertise should not depend on you being in the room.</h2>
-          <p>Avatar Studio creates a digital version of you built to carry your voice, knowledge, and presence wherever the work needs to happen.</p>
+          <p className="section-label">Production Mandate</p>
+          <h2>Finished video content engineered for continuous distribution.</h2>
+          <p>Avatar Studio records your likeness, voice, and subject-matter expertise, then produces finished video assets for campaign, sales, training, and customer communication systems.</p>
         </article>
       </section>
 
-      <CtaBand title="Your twin is ready to go further." cta="Create Your Twin" />
+      <CtaBand title="Convert your expertise into continuous video production." cta="Build My Digital Twin" />
     </>
   );
 }
@@ -507,7 +594,7 @@ function Infrastructure() {
     ["database", "1. Unified Database", "We consolidate your contact records, suppress duplicates, and establish the clean list architecture the program runs on."],
     ["gear", "2. Rules Engine", "Segmentation logic, compliance suppression rules, and behavioral triggers are built before deployment. The right message reaches the right contact under the right conditions."],
     ["network", "3. Channel Orchestration", "Deployment runs across email, conversational, and voice channels simultaneously from one team. One program. Every live channel your contacts use."],
-    ["trend", "4. Real-time Monitoring", "Deliverability is actively governed every send cycle. That rate holds because it is managed, not configured once and left. 95% inbox placement is an output of ongoing governance, not a platform feature. The industry average sits at 83.1% across major ESPs (EmailTooltester, 2026). Nearly one in six messages never reaches the inbox before a single person decides whether to respond."],
+    ["trend", "4. Real-time Monitoring", "Deliverability is actively governed every send cycle. That rate is sustained because it is managed, not configured once and left. 95% inbox placement is an output of ongoing governance, not a platform feature. The industry average sits at 83.1% across major ESPs (EmailTooltester, 2026). Nearly one in six messages never reaches the inbox before a single person decides whether to respond."],
   ];
 
   const steps = [
@@ -688,17 +775,17 @@ function BookingForm() {
       <input type="hidden" name="xnQsjsdp" value="b45ce04ddd76914bbfeade30ab0a6e86446ed07ddcd64b5425a1a4d9d5a467b8" readOnly />
       <input type="hidden" name="xmIwtLD" value="97ca543a3d1ea88492628d126d9ab329b04cea167679b0225170279c6fc6e4f3684dbc3fb82c598c93398f0f68dcd29b" readOnly />
       <input type="hidden" name="actionType" value="TGVhZHM=" readOnly />
-      <input type="hidden" name="returnURL" value="https://socialfollowingstudios.com/#/thank-you" readOnly />
-      <p className="card-label">Schedule your assessment call.</p>
+      <input type="hidden" name="Last Name" value="Assessment Request" readOnly />
+      <input type="hidden" name="returnURL" value="https://www.socialfollowing.shop/#/thank-you" readOnly />
+      <p className="card-label">Schedule Your Assessment Call</p>
       <div className="form-grid">
-        <Field label="Name" name="Last Name" required full />
-        <Field label="Organization" name="Company" required full />
-        <Field label="Email" name="Email" type="email" required full />
-        <Field label="Brief description of your program situation" name="Description" textarea required full />
+        <Field label="Organization Name" name="Company" required full />
+        <Field label="Corporate Email" name="Email" type="email" required full />
+        <Field label="Brief description of your program infrastructure" name="Description" textarea required full />
       </div>
       <div className="form-actions">
         <button className="btn btn-primary" type="submit">
-          Request Assessment
+          Request Your Assessment
           <Arrow />
         </button>
         <div className="privacy-note">
@@ -706,7 +793,7 @@ function BookingForm() {
             <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.7" />
             <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
           </svg>
-          <span>Your information is secure and will never be shared.</span>
+          <span>Your information is processed within governed systems under defined access controls.</span>
         </div>
       </div>
     </form>
@@ -799,6 +886,15 @@ function ThankYou() {
 
 function App() {
   const route = useHashRoute();
+
+  useEffect(() => {
+    if (route !== "/assessment") return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("assessment")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [route]);
+
   const page = useMemo(() => {
     switch (route) {
       case "/infrastructure":

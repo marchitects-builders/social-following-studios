@@ -301,7 +301,8 @@ h3 {
 }
 
 .twin-figure {
-  fill: rgba(255, 255, 255, .52);
+  fill: url(#humanSculpture);
+  filter: url(#figureShadow);
   stroke: var(--ink);
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -309,7 +310,7 @@ h3 {
 }
 
 .twin-figure-digital {
-  fill: rgba(184, 215, 204, .1);
+  fill: url(#digitalSculpture);
   stroke: var(--green);
 }
 
@@ -338,6 +339,220 @@ h3 {
 
 .avatar-statement h2 {
   max-width: 920px;
+}
+
+.home-institutional-hero {
+  grid-template-columns: minmax(0, .96fr) minmax(520px, 1.04fr);
+  padding-bottom: 92px;
+}
+
+.home-institutional-hero .hero-copy {
+  max-width: 660px;
+}
+
+.home-institutional-hero .lead {
+  max-width: 620px;
+}
+
+.home-twin-visual {
+  min-height: 500px;
+}
+
+.twin-visual-compact {
+  min-height: 430px;
+}
+
+.twin-division {
+  fill: none;
+  stroke: rgba(0, 139, 97, .24);
+  stroke-dasharray: 4 9;
+  stroke-width: 1;
+}
+
+.twin-ponytail {
+  stroke-width: 1.8;
+}
+
+.avatar-commercial-copy {
+  max-width: 570px;
+}
+
+.institutional-section,
+.process-protocols {
+  display: grid;
+  gap: 36px;
+}
+
+.institutional-intro {
+  max-width: 1040px;
+}
+
+.institutional-intro h2,
+.institutional-copy-card h2,
+.management-card h2,
+.capitalization-card h2,
+.assessment-heading h2,
+.process-protocols h2 {
+  margin-top: 12px;
+}
+
+.institutional-intro > p:not(.section-label),
+.institutional-copy-card > p:not(.section-label),
+.management-card > p,
+.capitalization-card p,
+.assessment-heading > p:not(.section-label),
+.process-protocols .copy-card > p:not(.section-label) {
+  color: #3f463f;
+  font-size: 17px;
+  line-height: 1.72;
+}
+
+.institutional-intro > p:not(.section-label) {
+  max-width: 980px;
+  margin: 24px 0 0;
+}
+
+.framework-grid .card {
+  min-height: 390px;
+}
+
+.framework-grid h3 {
+  font-size: 28px;
+}
+
+.institutional-split {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(520px, 1.1fr);
+  gap: clamp(32px, 5vw, 72px);
+  align-items: stretch;
+}
+
+.institutional-copy-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(38px, 5vw, 68px);
+}
+
+.institutional-copy-card > p:not(.section-label) {
+  margin: 24px 0 0;
+}
+
+.management-card {
+  display: grid;
+  grid-template-columns: .8fr 1.35fr .45fr;
+  gap: clamp(28px, 4vw, 58px);
+  align-items: center;
+  padding: clamp(38px, 5vw, 68px);
+}
+
+.management-card > p {
+  margin: 0;
+}
+
+.placement-proof {
+  display: grid;
+  gap: 10px;
+  align-content: center;
+  padding-left: 34px;
+  border-left: 1px solid var(--line);
+}
+
+.placement-proof strong {
+  color: var(--green);
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(64px, 7vw, 96px);
+  font-weight: 500;
+  line-height: .9;
+}
+
+.placement-proof span {
+  color: #4b514c;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.avatar-capability .institutional-copy-card {
+  order: 2;
+}
+
+.avatar-capability .avatar-section-visual {
+  order: 1;
+}
+
+.institutional-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 28px;
+  color: var(--green);
+  font-weight: 800;
+}
+
+.institutional-link svg {
+  width: 18px;
+  height: 18px;
+}
+
+.capitalization-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 50px;
+  align-items: center;
+  padding: clamp(40px, 6vw, 76px);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(184, 215, 204, .32), transparent 30%),
+    rgba(255, 255, 255, .68);
+}
+
+.capitalization-card p {
+  max-width: 850px;
+  margin: 24px 0 0;
+}
+
+.capitalization-actions {
+  display: grid;
+  gap: 18px;
+  justify-items: center;
+}
+
+.capitalization-actions em {
+  color: #606760;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 16px;
+}
+
+.assessment-section {
+  scroll-margin-top: 24px;
+  display: grid;
+  grid-template-columns: minmax(300px, .75fr) minmax(520px, 1.25fr);
+  gap: clamp(38px, 6vw, 86px);
+  align-items: start;
+}
+
+.assessment-heading {
+  position: sticky;
+  top: 32px;
+  padding-top: 24px;
+}
+
+.assessment-heading > p:not(.section-label) {
+  margin: 24px 0 0;
+}
+
+.assessment-section .form-card {
+  max-width: none;
+}
+
+.process-protocols .copy-card {
+  padding: clamp(38px, 5vw, 68px);
+}
+
+.process-protocols .copy-card > p:not(.section-label) {
+  max-width: 980px;
+  margin: 24px 0 0;
 }
 
 .panel-head {
@@ -1256,6 +1471,23 @@ h3 {
     width: 100%;
   }
 
+  .institutional-split,
+  .assessment-section,
+  .capitalization-card,
+  .management-card {
+    grid-template-columns: 1fr;
+  }
+
+  .assessment-heading {
+    position: static;
+  }
+
+  .placement-proof {
+    padding: 28px 0 0;
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
   .expect-card {
     min-height: auto;
   }
@@ -1334,6 +1566,14 @@ h3 {
     gap: 34px;
   }
 
+  .avatar-capability .institutional-copy-card {
+    order: 1;
+  }
+
+  .avatar-capability .avatar-section-visual {
+    order: 2;
+  }
+
   .twin-visual {
     min-height: 430px;
     padding: 22px 18px 4px;
@@ -1371,6 +1611,14 @@ h3 {
   .cta-band,
   .cta-band.with-copy {
     grid-template-columns: 1fr;
+  }
+
+  .capitalization-actions {
+    justify-items: stretch;
+  }
+
+  .capitalization-actions em {
+    text-align: center;
   }
 
   .process-step::after {
@@ -1432,6 +1680,10 @@ h3 {
     width: 100%;
   }
 
+  .hero {
+    padding-top: 28px;
+  }
+
   .twin-visual {
     min-height: 340px;
     padding: 18px 12px 0;
@@ -1440,5 +1692,35 @@ h3 {
   .twin-visual-labels {
     padding: 0 5px;
     font-size: 10px;
+  }
+
+  .institutional-copy-card,
+  .management-card,
+  .capitalization-card,
+  .process-protocols .copy-card {
+    padding: 30px 24px;
+  }
+
+  .home-institutional-hero .lead,
+  .avatar-commercial-copy {
+    font-size: 16px;
+  }
+
+  .home-institutional-hero h1 {
+    font-size: 48px;
+  }
+
+  .home-institutional-hero .eyebrow {
+    margin-bottom: 14px;
+  }
+
+  .home-institutional-hero .green-rule {
+    margin: 20px 0 16px;
+  }
+
+  .home-institutional-hero .lead {
+    margin-bottom: 24px;
+    font-size: 14px;
+    line-height: 1.5;
   }
 }
