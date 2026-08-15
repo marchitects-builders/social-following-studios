@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "generate:icons": "node scripts/generate-icons.mjs"
+    "generate:icons": "node scripts/generate-icons.mjs",
+    "analyze:tiktok": "node scripts/tiktok-analytics.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
