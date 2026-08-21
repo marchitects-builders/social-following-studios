@@ -589,7 +589,7 @@ function Contact() {
       <section className="page-shell section">
         <p className="section-label connect-title">Other Ways To Connect</p>
         <div className="cards-grid contact-two">
-          <ContactCard icon="mail" title="Email" body="hello@socialfollowingstudios.com" />
+          <ContactCard icon="mail" title="Email" body="hello@socialfollowing.shop" />
           <ContactCard icon="shield" title="Note" body="We do not accept unsolicited vendor or platform pitches through this form." />
         </div>
       </section>
@@ -614,7 +614,7 @@ function BookingForm() {
       <input type="hidden" name="xnQsjsdp" value="b45ce04ddd76914bbfeade30ab0a6e86446ed07ddcd64b5425a1a4d9d5a467b8" readOnly />
       <input type="hidden" name="xmIwtLD" value="97ca543a3d1ea88492628d126d9ab329b04cea167679b0225170279c6fc6e4f3684dbc3fb82c598c93398f0f68dcd29b" readOnly />
       <input type="hidden" name="actionType" value="TGVhZHM=" readOnly />
-      <input type="hidden" name="returnURL" value="https://socialfollowingstudios.com/#/thank-you" readOnly />
+      <input type="hidden" name="returnURL" value="https://www.socialfollowing.shop/#/thank-you" readOnly />
       <p className="card-label">Schedule your assessment call.</p>
       <div className="form-grid">
         <Field label="Name" name="Last Name" required full />
@@ -705,7 +705,7 @@ function PolicyPage({ title }) {
       <p className="eyebrow">Social Following Studios</p>
       <h1>{title}</h1>
       <div className="green-rule" />
-      <p className="lead">This page is being updated. Contact hello@socialfollowingstudios.com for the current policy details.</p>
+      <p className="lead">This page is being updated. Contact hello@socialfollowing.shop for the current policy details.</p>
       <Button>Contact Us</Button>
     </section>
   );
