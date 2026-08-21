@@ -28,12 +28,16 @@ Rank sources by:
 
 Reuse the framework, not copyrighted footage, exact scripts, brand identity, or another creator's likeness.
 
+Current evidence: `SOURCE-RESEARCH-2026-08-21.csv` contains six public TikTok candidates, two per vertical. Metrics are blank where TikTok search did not label them reliably. Three sources are selected for the first engine gate.
+
 ## Gate 2 — blueprint before script
 Each chosen post gets a blueprint describing:
 hook, topic, information order, hook type, visual style, scene changes, close, CTA, and run time.
 
 Then create 10 original ideas per vertical. Each final short should target 20–45 seconds and include:
 spoken script, on-screen hook, shot list, B-roll/graphic direction, scene/cut timing, captions, and CTA.
+
+Current evidence: `PILOT-PACK-01.md` contains one original, safety-screened pilot per vertical with blueprint, spoken script, on-screen text, shots, and a matched render prompt.
 
 ## Gate 3 — engine split test
 Render the first three approved scripts — one per vertical — in both Veo and Google Omni before rendering the remaining 27.
@@ -50,6 +54,8 @@ Primary decision factors from Rashida:
 
 Secondary factors:
 Voice Quality, Scene Flow, Text Accuracy, Visual Quality, Prompt Match, render time, and cost.
+
+Current blocker: no authorized Veo/comparison-engine account and no approved six-render cost ceiling are present in the record. The comparison label “Google Omni” must be resolved to an exact approved product before paid rendering. No render or performance result is claimed yet.
 
 ## Gate 4 — finish only after the winner is proven
 Do not render the remaining 27 until the three-script split test produces a defensible winner.
