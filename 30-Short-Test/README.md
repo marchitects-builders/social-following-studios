@@ -6,8 +6,8 @@ This directory implements Rashida's operational blueprint for validating the Ava
 - `01-SaaS-Founders`
 - `02-Course-Creators`
 - `03-Coaches`
-- `04-Veo-Tests`
-- `05-Omni-Tests`
+- `04-DZINE-Seedance-Tests`
+- `05-DZINE-MiniMax-Tests`
 - `06-Final-Scorecards`
 
 Each vertical uses:
@@ -40,9 +40,9 @@ spoken script, on-screen hook, shot list, B-roll/graphic direction, scene/cut ti
 Current evidence: `PILOT-PACK-01.md` contains one original, safety-screened pilot per vertical with blueprint, spoken script, on-screen text, shots, and a matched render prompt.
 
 ## Gate 3 — engine split test
-Render the first three approved scripts — one per vertical — in both Veo and Google Omni before rendering the remaining 27.
+Use DZINE for the first three approved scripts — one per vertical. Start with Seedance, record the exact model/version label shown in the live selector, and score the first output before spending more credits. Use the newest MiniMax model actually available in DZINE as the controlled comparison when the Seedance result creates a real reason to compare.
 
-Store Veo outputs under `04-Veo-Tests/` and Omni outputs under `05-Omni-Tests/`.
+Store Seedance outputs under `04-DZINE-Seedance-Tests/` and MiniMax outputs under `05-DZINE-MiniMax-Tests/`.
 
 Score each engine output using the scorecard in `06-Final-Scorecards/`.
 
@@ -55,7 +55,7 @@ Primary decision factors from Rashida:
 Secondary factors:
 Voice Quality, Scene Flow, Text Accuracy, Visual Quality, Prompt Match, render time, and cost.
 
-Current blocker: no authorized Veo/comparison-engine account and no approved six-render cost ceiling are present in the record. The comparison label “Google Omni” must be resolved to an exact approved product before paid rendering. No render or performance result is claimed yet.
+Current execution state: Kiminou authorized DZINE with Seedance and the newest MiniMax available in the product, using existing credits only. Do not purchase credits or an upgrade. The live selector label, credits consumed, render time, and correction burden must be recorded for every test. No render or performance result is claimed merely because this scaffold is complete.
 
 ## Gate 4 — finish only after the winner is proven
 Do not render the remaining 27 until the three-script split test produces a defensible winner.

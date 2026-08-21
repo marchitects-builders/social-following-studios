@@ -31,7 +31,7 @@ Checked against public TikTok search results on 2026-08-21. This pack reuses onl
 
 ### Render prompt shared across engines
 
-Create a 9:16, approximately 30-second vertical marketing short using a fictional adult founder and a clearly fictional SaaS interface. Use the supplied spoken script verbatim. Clean studio-office setting, natural delivery, restrained hand movement, five deliberate cuts matching the shot list, high-contrast burned-in captions, and no brand logos. Preserve exact on-screen wording. Do not invent customer metrics, testimonials, or product results. Keep the same fictional person, wardrobe, lighting, and voice throughout.
+Create a 9:16, approximately 30-second vertical marketing short using a fictional adult founder and a clearly fictional SaaS interface. Use the supplied spoken script verbatim. Clean studio-office setting, natural delivery, restrained hand movement, five deliberate cuts matching the shot list, and no brand logos or generated text. Add the approved captions and on-screen wording in post-production after the raw render passes QC. Do not invent customer metrics, testimonials, or product results. Keep the same fictional person, wardrobe, lighting, and voice throughout.
 
 ## Pilot B — course creator
 
@@ -62,7 +62,7 @@ Create a 9:16, approximately 30-second vertical marketing short using a fictiona
 
 ### Render prompt shared across engines
 
-Create a 9:16, approximately 28-second educational short using a fictional adult course creator. Use the supplied script verbatim. Warm home-studio setting, credible teaching delivery, whiteboard and worksheet inserts, five cuts matching the shot list, and accurate burned-in captions. No logos, testimonials, revenue claims, or real student data. Keep the same fictional person, voice, wardrobe, and lighting throughout; all worksheet content must be generic and readable.
+Create a 9:16, approximately 28-second educational short using a fictional adult course creator. Use the supplied script verbatim. Warm home-studio setting, credible teaching delivery, whiteboard and worksheet inserts, five cuts matching the shot list, and no generated text. Add accurate captions and approved worksheet text in post-production. No logos, testimonials, revenue claims, or real student data. Keep the same fictional person, voice, wardrobe, and lighting throughout.
 
 ## Pilot C — coach
 
@@ -94,12 +94,12 @@ Create a 9:16, approximately 28-second educational short using a fictional adult
 
 ### Render prompt shared across engines
 
-Create a 9:16, approximately 32-second vertical short using a fictional adult business coach. Use the supplied script verbatim. Premium but restrained office setting, direct and calm delivery, six cuts matching the shot list, readable documents using generic placeholder facts, and accurate burned-in captions. No real brand, client, likeness, testimonial, revenue number, or guaranteed outcome. Maintain one fictional person, voice, wardrobe, and lighting throughout.
+Create a 9:16, approximately 32-second vertical short using a fictional adult business coach. Use the supplied script verbatim. Premium but restrained office setting, direct delivery with natural short-form energy, six cuts matching the shot list, generic document inserts, and no generated text. Add accurate captions and document wording in post-production. No real brand, client, likeness, testimonial, revenue number, or guaranteed outcome. Maintain one fictional person, voice, wardrobe, and lighting throughout.
 
 ## Engine execution protocol
 
-Render each script once in Veo and once in the separately approved comparison engine. Use identical script, shot list, duration target, aspect ratio, fictional test identity, and caption wording.
+Run the controlled engine gate inside DZINE. Start with one Seedance render, score it, and use the newest MiniMax model shown in the live selector only when comparison is justified. For any paired comparison, use the identical script, shot list, duration target, aspect ratio, fictional test identity, and post-production caption wording.
 
-Record actual results in `06-Final-Scorecards/engine-scorecard.csv`. Primary gate: manual correction minutes. Also score script match, voice, lip sync, scene flow, text accuracy, visual quality, person match, prompt match, render time, and actual cost.
+Record actual results in `06-Final-Scorecards/engine-scorecard.csv`. Primary gate: manual correction minutes. Also score script match, voice, lip sync, scene flow, text accuracy, visual quality, person match, prompt match, render time, exact credits consumed, and attributable cost when the account exposes one.
 
-Do not render until both accounts are authorized and a six-render cost ceiling is approved. “Google Omni” remains an unresolved product label in the current record; record the exact comparison engine before the first paid render.
+Kiminou authorized DZINE, Seedance, and the newest MiniMax available in DZINE. Use existing credits only and do not purchase an upgrade. Record the exact live model/version label before each render. This 30-short engine gate remains separate from the immediate four-video DZINE assignment.
