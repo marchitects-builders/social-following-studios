@@ -1,0 +1,59 @@
+# Publishes the A Priority One Rent-A-Car proposal build to GitHub Pages.
+#
+# Manual dispatch only. This build shows a prospective client a proposal, so it
+# never publishes on a push. Run it from the Actions tab when a shareable link is
+# wanted, and the deploy step writes a robots file that keeps the proposal out of
+# search results.
+#
+# One time setup: Settings, then Pages, then set Source to GitHub Actions.
+
+name: Priority One preview
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clients/priority-one
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install
+
+      - name: Build for the Pages subpath
+        run: npx vite build --base=/social-following-studios/
+
+      - name: Keep the proposal out of search results
+        run: printf 'User-agent: *\nDisallow: /\n' > dist/robots.txt
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: clients/priority-one/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

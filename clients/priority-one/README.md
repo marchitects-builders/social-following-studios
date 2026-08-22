@@ -80,6 +80,28 @@ address or flight number, vehicle class, notes.
 
 ---
 
+## Shareable preview
+
+Two ways to put this in front of someone without standing up hosting.
+
+**Single file.** `preview/index.html` carries the entire site in one file: all six pages,
+the design system, and the working reservation form. It opens straight from disk with no
+server, travels by email or a chat message, and serves from any static host. Regenerate it
+after a copy or design change with `npm run build:preview`.
+
+The file is committed, so a clone of this branch carries it. Fleet frames fall back to
+their drawn class profiles exactly as the full build does, and the file carries a noindex
+directive.
+
+**Hosted link.** `.github/workflows/priority-one-preview.yml` deploys the build to GitHub
+Pages at `https://marchitects-builders.github.io/social-following-studios/`. It runs on
+manual dispatch only, never on a push, because this build shows a prospective client a
+proposal. One time setup: Settings, then Pages, then set Source to GitHub Actions. Then run
+the workflow from the Actions tab. The deploy writes a robots file that keeps the proposal
+out of search results.
+
+---
+
 ## Design system
 
 Defined as tokens at the top of `src/index.css`.
