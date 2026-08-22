@@ -93,6 +93,11 @@ The file is committed, so a clone of this branch carries it. Fleet frames fall b
 their drawn class profiles exactly as the full build does, and the file carries a noindex
 directive.
 
+**Hosted artifact.** `npm run build:artifact` writes `preview/artifact.html`, the same page
+as a body fragment for hosts that supply their own document shell. That target also turns
+the map embed off, since those hosts block third party frames, and the Contact page renders
+a directions card instead. Published to a Claude artifact URL for phone review.
+
 **Hosted link.** `.github/workflows/priority-one-preview.yml` deploys the build to GitHub
 Pages at `https://marchitects-builders.github.io/social-following-studios/`. It runs on
 manual dispatch only, never on a push, because this build shows a prospective client a

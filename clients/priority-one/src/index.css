@@ -1638,6 +1638,44 @@ p {
   border: 0;
 }
 
+/* Directions card for preview hosts that block third party frames */
+.map-card {
+  display: grid;
+  gap: var(--s-4);
+  justify-items: start;
+  padding: var(--s-6);
+  background:
+    repeating-linear-gradient(90deg, rgba(31, 74, 117, .07) 0 1px, transparent 1px 44px),
+    repeating-linear-gradient(0deg, rgba(31, 74, 117, .07) 0 1px, transparent 1px 44px),
+    var(--paper-2);
+}
+
+.map-card-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--navy-800);
+  color: var(--gold-400);
+  display: grid;
+  place-items: center;
+}
+
+.map-card-icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.map-card h3 {
+  font-size: var(--t-h3);
+  margin-bottom: 4px;
+}
+
+.map-card address {
+  font-style: normal;
+  font-size: var(--t-sm);
+  color: var(--muted);
+}
+
 @media (min-width: 900px) {
   .map-frame iframe {
     height: 420px;

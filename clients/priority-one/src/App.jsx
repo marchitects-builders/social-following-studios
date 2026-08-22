@@ -1497,6 +1497,12 @@ function Faq() {
 
 function Contact() {
   const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(BUSINESS.mapQuery)}&output=embed`;
+  const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    BUSINESS.mapQuery
+  )}`;
+  // Some preview hosts block third party frames. Build with VITE_MAP_EMBED=off and the
+  // section renders a directions card instead of the embed.
+  const embedMap = import.meta.env.VITE_MAP_EMBED !== "off";
 
   return (
     <>
@@ -1516,13 +1522,31 @@ function Contact() {
           <ContactCards />
 
           <div className="map-frame" style={{ marginTop: "var(--s-6)" }}>
-            <iframe
-              src={mapSrc}
-              title={`Map to ${BUSINESS.name} at ${BUSINESS.street}`}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              allowFullScreen
-            />
+            {embedMap ? (
+              <iframe
+                src={mapSrc}
+                title={`Map to ${BUSINESS.name} at ${BUSINESS.street}`}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
+            ) : (
+              <div className="map-card">
+                <span className="map-card-icon">
+                  <Icon name="pin" />
+                </span>
+                <div>
+                  <h3>{BUSINESS.name}</h3>
+                  <address>
+                    {BUSINESS.street}, {BUSINESS.city}, {BUSINESS.state} {BUSINESS.zip}
+                  </address>
+                </div>
+                <a className="btn btn-navy" href={mapLink} target="_blank" rel="noreferrer">
+                  Open in maps
+                  <Icon name="arrow" />
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </section>
