@@ -1,0 +1,63 @@
+{
+  "_comment": "Records where each installed component lives, how to start/stop it, and its ports/output dirs. Copy to config.json and adjust paths per machine — the paths below are this session's container paths and are NOT guaranteed to exist on a fresh container (see README.md's ephemeral-environment note).",
+
+  "crawlee": {
+    "status": "installed_and_verified",
+    "path": "../lead-crawler",
+    "version": { "crawlee": "3.18.1", "playwright": "1.62.1" },
+    "start": "node src/crawl.js <startUrl> --max=<N> --engine=playwright|cheerio",
+    "stop": "one-shot CLI process; exits on its own",
+    "port": null,
+    "outputDir": "../lead-crawler/output",
+    "outputFiles": ["leads.json", "leads.csv"]
+  },
+
+  "firecrawl": {
+    "status": "blocked",
+    "blockedReason": "Docker Hub and GHCR blob CDNs both return policy-denied 403s in this session; see STACK_STATUS.md",
+    "path": "/home/user/firecrawl/firecrawl",
+    "version": { "commit": "9bf1242b9562cfc710b85cd74127f2628561737a", "branch": "main", "tag": null },
+    "start": "docker compose up -d",
+    "stop": "docker compose down",
+    "port": 3002,
+    "outputDir": null,
+    "notes": "apps/api, apps/playwright-service-ts, apps/nuq-postgres build locally by default (not pre-built images); redis and rabbitmq are pulled pre-built. All require Docker Hub/GHCR access this session does not have."
+  },
+
+  "browserUse": {
+    "status": "installed_and_verified",
+    "sourcePath": "/home/user/browser-use/browser-use",
+    "envPath": "/home/user/browser-use-local/.venv",
+    "version": "0.13.8",
+    "start": "browser-use-local/.venv/bin/python <your_script>.py",
+    "stop": "script closes its own browser session (session.kill()) and exits; no resident process",
+    "port": null,
+    "chromiumExecutablePath": "/opt/pw-browsers/chromium",
+    "reusesCrawleeChromium": true,
+    "llmRequiredForAgentMode": true,
+    "llmConfigured": false,
+    "outputDir": null,
+    "notes": "Agent/autonomous mode needs an LLM (OpenAI/Anthropic/Google/Groq/Bedrock/Azure/Mistral/DeepSeek/Cerebras/OpenRouter/OCI/LiteLLM/Vercel/BrowserUse-hosted, or local Ollama). None configured; do not add a key or download a model without approval."
+  },
+
+  "openLeads": {
+    "status": "not_found",
+    "path": null,
+    "version": null,
+    "notes": "No installation located anywhere on this machine. Needs user input: source location (git repo / package / internal installer) before it can be installed or verified."
+  },
+
+  "routing": {
+    "normalCrawlableSite": "crawlee",
+    "needCleanPageExtraction": "firecrawl",
+    "needsBrowserInteraction": "browserUse",
+    "needsContactEnrichmentOrVerification": "openLeads"
+  },
+
+  "sharedOutputDir": "./outputs",
+
+  "swiftSend": {
+    "status": "out_of_scope",
+    "notes": "Delivery step; not connected or configured by this stack, per instructions."
+  }
+}
