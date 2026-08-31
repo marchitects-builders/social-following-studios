@@ -1,0 +1,21 @@
+{
+  "name": "lead-crawler",
+  "version": "1.0.0",
+  "description": "Local Crawlee-based lead-acquisition crawler. Extracts publicly displayed company/contact info from a starting URL and same-domain pages it links to.",
+  "type": "module",
+  "main": "src/crawl.js",
+  "scripts": {
+    "crawl": "node src/crawl.js"
+  },
+  "keywords": [
+    "crawlee",
+    "playwright",
+    "lead-generation"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "crawlee": "^3.18.1",
+    "playwright": "^1.62.1"
+  }
+}
