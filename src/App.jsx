@@ -122,7 +122,9 @@ function usePageMeta(route) {
     const productRoute = productByRoute(route);
     const key = productRoute && !isReachable(productRoute[0]) ? "/" : route;
     const meta = PAGE_META[key] || PAGE_META["/"];
-    const canonicalPath = key === "/" ? "/" : `/#${key}`;
+    // Clean path canonicals. The router resolves these paths directly (static
+    // entry point or SPA fallback), so no hash fragment belongs in canonical.
+    const canonicalPath = key === "/" ? "/" : `/${key.replace(/^\//, "")}/`;
 
     document.title = meta.title;
 
@@ -183,8 +185,13 @@ const CAMPAIGN_CONTENT = {
  * ------------------------------------------------------------------ */
 function useHashRoute() {
   const getRoute = () => {
-    const raw = (window.location.hash || "#/").replace(/^#/, "");
-    return raw.startsWith("/") ? raw : `/${raw}`;
+    // Hash wins for in-app navigation. When there is no hash (a direct hit on a
+    // static entry point such as /avatar-studio/), fall back to the pathname so
+    // the router renders the matching page without a hash in the URL.
+    const hash = window.location.hash.replace(/^#/, "");
+    if (hash) return hash.startsWith("/") ? hash : `/${hash}`;
+    const path = window.location.pathname.replace(/\/+$/, "");
+    return path || "/";
   };
   const [route, setRoute] = useState("/");
 
@@ -781,7 +788,7 @@ function Newsletter() {
 function BareHeader() {
   return (
     <header className="site-header bare-header page-shell">
-      <a className="brand" href="#/" aria-label="Social Following Studios home">
+      <a className="brand" href="/" aria-label="Social Following Studios home">
         <Logo />
       </a>
     </header>
@@ -861,9 +868,9 @@ function Footer({ variant = "full" }) {
       <div className="footer-bottom">
         <span>© 2026 Social Following Studios</span>
         <span className="footer-legal">
-          <a href="#/terms">Terms</a>
-          <a href="#/privacy">Privacy</a>
-          <a href="#/contact">Contact</a>
+          <a href="/#/terms">Terms</a>
+          <a href="/#/privacy">Privacy</a>
+          <a href="/#/contact">Contact</a>
         </span>
       </div>
     </footer>
