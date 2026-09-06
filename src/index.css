@@ -1217,6 +1217,82 @@ h3 {
   margin-bottom: 24px;
 }
 
+/* add-on activations on the post-submit page */
+.thank-you {
+  max-width: 720px;
+}
+
+.addon-activations {
+  margin-top: clamp(44px, 7vw, 72px);
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+
+.addon-activations .section-label {
+  margin-bottom: 12px;
+}
+
+.addon-intro {
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.addon-activations ul {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.addon-activations li {
+  display: grid;
+  gap: 4px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.addon-activations li a {
+  color: var(--green);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.addon-activations li span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ---------------------------------------------------------------- *
+ * AD FUNNEL (unlisted campaign pages)
+ * ---------------------------------------------------------------- */
+.bare-header {
+  grid-template-columns: 1fr;
+  justify-items: start;
+  min-height: 88px;
+}
+
+.funnel-hero {
+  padding-bottom: clamp(24px, 4vw, 40px);
+}
+
+.funnel-hero .hero-copy {
+  max-width: 680px;
+}
+
+.funnel-points {
+  padding-top: clamp(32px, 5vw, 56px);
+}
+
+.assessment-layout.single {
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+}
+
+.funnel-form-copy h2 {
+  margin-top: 12px;
+}
+
 /* ---------------------------------------------------------------- *
  * FOOTER
  * ---------------------------------------------------------------- */
@@ -1249,6 +1325,29 @@ h3 {
   color: var(--muted);
 }
 
+.footer-more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px 24px;
+  margin-top: 34px;
+}
+
+.footer-more .section-label {
+  margin: 0;
+  color: var(--muted);
+}
+
+.footer-more a {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1c2620;
+}
+
+.footer-more a:hover {
+  color: var(--green);
+}
+
 .footer-bottom {
   display: flex;
   flex-wrap: wrap;
@@ -1259,6 +1358,21 @@ h3 {
   border-top: 1px solid var(--line-soft);
   color: var(--muted);
   font-size: 13px;
+}
+
+.proof-related {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.proof-related a {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.proof-related a:hover {
+  text-decoration: underline;
 }
 
 .footer-legal {

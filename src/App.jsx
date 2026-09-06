@@ -3,22 +3,61 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 const BRAND_LOGO = "/brand/sfs-logo.png";
 const LOGOS_APPROVED = "/logos-approved.png";
 
+const PUBLIC_ORIGIN = "https://www.socialfollowing.shop";
+
 /* ------------------------------------------------------------------ *
  * VISIBILITY CONTROL
- * One place to govern hidden products and menu placement.
- *   status: "LIVE"   the product name and page are public
- *   status: "HIDDEN" the page is unreachable and the name never renders
- *   nav:    true      show a menu item (only takes effect when LIVE)
+ * One place to govern products, menu placement, and ad funnels.
+ *
+ *   status: "LIVE"     public. Page has the full site chrome, the name
+ *                      renders across the site, and a menu item shows
+ *                      when nav is true.
+ *   status: "UNLISTED" indexable but off the main menu. The page runs as
+ *                      an isolated ad funnel: no nav header, one action.
+ *                      Reached from footer links and case-study cross-links
+ *                      only. The name does not surface in homepage body copy.
+ *   status: "HIDDEN"   the page is unreachable and the name never renders.
+ *
+ *   nav: true          add a top-menu item (only takes effect when LIVE).
+ *
  * Flip a value here. Nothing else needs to change.
  * ------------------------------------------------------------------ */
 const PRODUCTS = {
-  audienceBuilder: { status: "LIVE", nav: true, label: "Audience Builder", route: "/audience-builder" },
-  avatarStudio: { status: "HIDDEN", nav: false, label: "Avatar Studio", route: "/avatar-studio" },
-  yochat: { status: "HIDDEN", nav: false, label: "YoChat", route: "/yochat" },
+  audienceBuilder: {
+    status: "LIVE",
+    nav: true,
+    label: "Audience Builder",
+    route: "/audience-builder",
+    blurb: "Turns a raw contact list into a segmented, deliverable audience.",
+  },
+  avatarStudio: {
+    status: "UNLISTED",
+    nav: false,
+    label: "Avatar Studio",
+    route: "/avatar-studio",
+    blurb: "A digital twin of your likeness and voice, turned into finished video.",
+  },
+  yochat: {
+    status: "UNLISTED",
+    nav: false,
+    label: "YoChat",
+    route: "/yochat",
+    blurb: "An always-on conversational layer across Messenger and Instagram.",
+  },
 };
 
-const isLive = (key) => PRODUCTS[key]?.status === "LIVE";
+const statusOf = (key) => PRODUCTS[key]?.status;
+const isLive = (key) => statusOf(key) === "LIVE";
+const isUnlisted = (key) => statusOf(key) === "UNLISTED";
+const isReachable = (key) => isLive(key) || isUnlisted(key);
 const showInNav = (key) => Boolean(PRODUCTS[key]?.nav) && isLive(key);
+
+const productByRoute = (route) => Object.entries(PRODUCTS).find(([, product]) => product.route === route);
+const reachableProducts = () => Object.keys(PRODUCTS).filter(isReachable).map((key) => PRODUCTS[key]);
+const crossLinkProducts = () =>
+  Object.keys(PRODUCTS)
+    .filter((key) => isReachable(key) && !showInNav(key))
+    .map((key) => PRODUCTS[key]);
 
 const BASE_NAV = [
   { label: "The System", href: "#system" },
@@ -35,6 +74,109 @@ function buildNav() {
 }
 
 const SECTION_IDS = ["system", "who-we-serve", "proof", "assessment", "newsletter"];
+
+/* ------------------------------------------------------------------ *
+ * PER-ROUTE HEAD META
+ * Keeps titles, descriptions, and canonical tags clean so unlisted
+ * pages stay indexable without sitting in the menu bar.
+ * ------------------------------------------------------------------ */
+const PAGE_META = {
+  "/": {
+    title: "Social Following Studios | Own Your Audience",
+    description:
+      "A full-service ESP and a strategic growth and communications agency. We build and run the audience infrastructure that turns existing customer data and new interest into direct relationships and measurable growth.",
+  },
+  "/audience-builder": {
+    title: "Audience Builder | Social Following Studios",
+    description:
+      "Audience Builder consolidates and cleans your customer data, segments it by real buying signal, and builds the reachable audience underneath every send.",
+  },
+  "/avatar-studio": {
+    title: "Avatar Studio | Social Following Studios",
+    description:
+      "Avatar Studio builds a high-fidelity digital twin of your likeness and voice, then turns your knowledge into finished video content for continuous distribution.",
+  },
+  "/yochat": {
+    title: "YoChat | Social Following Studios",
+    description:
+      "YoChat runs the conversational layer of your program across Messenger and Instagram, with a protected control room, CRM, transcripts, and human handoff.",
+  },
+  "/contact": {
+    title: "Book Your Assessment | Social Following Studios",
+    description:
+      "Every engagement begins with a database assessment. The assessment produces the numbers. The numbers drive the decision.",
+  },
+};
+
+function setHeadTag(selector, create) {
+  let node = document.head.querySelector(selector);
+  if (!node) {
+    node = create();
+    document.head.appendChild(node);
+  }
+  return node;
+}
+
+function usePageMeta(route) {
+  useEffect(() => {
+    const productRoute = productByRoute(route);
+    const key = productRoute && !isReachable(productRoute[0]) ? "/" : route;
+    const meta = PAGE_META[key] || PAGE_META["/"];
+    const canonicalPath = key === "/" ? "/" : `/#${key}`;
+
+    document.title = meta.title;
+
+    const description = setHeadTag('meta[name="description"]', () => {
+      const el = document.createElement("meta");
+      el.setAttribute("name", "description");
+      return el;
+    });
+    description.setAttribute("content", meta.description);
+
+    const canonical = setHeadTag('link[rel="canonical"]', () => {
+      const el = document.createElement("link");
+      el.setAttribute("rel", "canonical");
+      return el;
+    });
+    canonical.setAttribute("href", `${PUBLIC_ORIGIN}${canonicalPath}`);
+  }, [route]);
+}
+
+/* ------------------------------------------------------------------ *
+ * AD FUNNEL CONTENT (unlisted campaign landing pages)
+ * ------------------------------------------------------------------ */
+const CAMPAIGN_CONTENT = {
+  "/avatar-studio": {
+    eyebrow: "Avatar Studio",
+    title: "Your twin, everywhere.",
+    support:
+      "We build a high-fidelity digital twin of your likeness and voice, then turn your knowledge into finished video content built for continuous distribution.",
+    cta: "Build My Digital Twin",
+    points: [
+      ["Capture once", "One controlled session records your likeness, voice, and delivery."],
+      ["Produce continuously", "Your knowledge becomes finished video for campaign, sales, and training channels."],
+      ["Stay in your voice", "Every asset holds source authority and reads as you, at scale."],
+    ],
+    formLabel: "Start the build",
+    formTitle: "Build my digital twin.",
+    formLede: "Tell us where the video needs to run. We scope the capture session and the production pipeline from there.",
+  },
+  "/yochat": {
+    eyebrow: "YoChat",
+    title: "Always-on conversation.",
+    support:
+      "YoChat runs the conversational layer of your program across Messenger and Instagram, with a protected control room, CRM, transcripts, and human handoff.",
+    cta: "Book Your Assessment",
+    points: [
+      ["Every message answered", "Staffed and monitored coverage across Messenger and Instagram."],
+      ["One control room", "CRM, transcripts, and human handoff in a single protected view."],
+      ["Inside your program", "The conversation connects to the same audience and data the rest of the system runs on."],
+    ],
+    formLabel: "Start the conversation",
+    formTitle: "Put a staffed conversation on every channel.",
+    formLede: "Tell us which channels you run today. We assess coverage and the handoff model from there.",
+  },
+};
 
 /* ------------------------------------------------------------------ *
  * ROUTING + MOTION HOOKS
@@ -491,7 +633,25 @@ function Proof({ withHeader = true }) {
         <p className="section-label">Trusted by organizations that lead</p>
         <img src={LOGOS_APPROVED} alt="Trusted organizations" />
       </div>
+
+      <ProofCrossLinks />
     </section>
+  );
+}
+
+function ProofCrossLinks() {
+  const links = crossLinkProducts();
+  if (links.length === 0) return null;
+  return (
+    <p className="proof-related" data-reveal>
+      Related capability:{" "}
+      {links.map((product, i) => (
+        <React.Fragment key={product.route}>
+          {i > 0 && <span aria-hidden="true"> · </span>}
+          <a href={`#${product.route}`}>{product.label}</a>
+        </React.Fragment>
+      ))}
+    </p>
   );
 }
 
@@ -618,6 +778,16 @@ function Newsletter() {
 /* ------------------------------------------------------------------ *
  * HEADER + FOOTER
  * ------------------------------------------------------------------ */
+function BareHeader() {
+  return (
+    <header className="site-header bare-header page-shell">
+      <a className="brand" href="#/" aria-label="Social Following Studios home">
+        <Logo />
+      </a>
+    </header>
+  );
+}
+
 function Header({ route }) {
   const [open, setOpen] = useState(false);
   const nav = useMemo(() => buildNav(), []);
@@ -668,14 +838,26 @@ function Header({ route }) {
   );
 }
 
-function Footer() {
+function Footer({ variant = "full" }) {
+  const more = variant === "full" ? reachableProducts() : [];
+
   return (
-    <footer className="site-footer page-shell">
+    <footer className={`site-footer page-shell ${variant === "minimal" ? "footer-minimal" : ""}`}>
       <div className="footer-lede">
         <p className="footer-headline">Own your audience.</p>
         <p className="footer-name">Social Following Studios</p>
         <p className="footer-imprint">An imprint of Marchitects.</p>
       </div>
+      {more.length > 0 && (
+        <nav className="footer-more" aria-label="More from Social Following Studios">
+          <p className="section-label">Capabilities</p>
+          {more.map((product) => (
+            <a key={product.route} href={`#${product.route}`}>
+              {product.label}
+            </a>
+          ))}
+        </nav>
+      )}
       <div className="footer-bottom">
         <span>© 2026 Social Following Studios</span>
         <span className="footer-legal">
@@ -723,7 +905,7 @@ function AudienceBuilder() {
             Audience Builder is the function that turns a raw contact list into a segmented, deliverable audience. It is
             the foundation the rest of the program runs on.
           </p>
-          <Button href="#assessment">Book Your Assessment</Button>
+          <Button href="#/contact">Book Your Assessment</Button>
         </div>
       </section>
 
@@ -740,50 +922,64 @@ function AudienceBuilder() {
         </div>
       </section>
 
-      <CtaBand title="Your audience, built and maintained." />
+      <CtaBand title="Your audience, built and maintained." href="#/contact" />
     </>
   );
 }
 
-function AvatarStudio() {
+/* Unlisted ad-funnel landing page: no nav header, one action. */
+function ProductPage({ route }) {
+  const content = CAMPAIGN_CONTENT[route];
+  if (!content) return <Home />;
+
+  const scrollToLead = (event) => {
+    event.preventDefault();
+    document.getElementById("lead")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <>
-      <section className="hero page-shell subpage-hero">
+      <section className="hero page-shell subpage-hero funnel-hero">
         <div className="hero-copy" data-reveal>
-          <p className="eyebrow">Avatar Studio</p>
-          <h1 className="hero-title">Your twin, everywhere.</h1>
-          <p className="hero-support">
-            We build a high-fidelity digital twin of your likeness and voice, then turn your knowledge into finished
-            video content built for continuous distribution.
-          </p>
-          <Button href="#assessment">Build My Digital Twin</Button>
+          <p className="eyebrow">{content.eyebrow}</p>
+          <h1 className="hero-title">{content.title}</h1>
+          <p className="hero-support">{content.support}</p>
+          <a className="btn btn-primary" href="#lead" onClick={scrollToLead}>
+            <span>{content.cta}</span>
+            <Arrow />
+          </a>
         </div>
       </section>
-      <CtaBand title="Convert your expertise into continuous video production." cta="Build My Digital Twin" />
+
+      <section className="page-shell movement funnel-points">
+        <div className="serve-grid" data-reveal>
+          {content.points.map(([heading, body]) => (
+            <article className="serve-card" key={heading}>
+              <h3>{heading}</h3>
+              <div className="small-rule" />
+              <p>{body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="page-shell movement" id="lead">
+        <div className="assessment-layout single" data-reveal>
+          <div className="funnel-form-copy">
+            <div className="movement-kicker">
+              <span className="section-label">{content.formLabel}</span>
+            </div>
+            <h2>{content.formTitle}</h2>
+            <p className="movement-lede">{content.formLede}</p>
+          </div>
+          <BookingForm />
+        </div>
+      </section>
     </>
   );
 }
 
-function YoChat() {
-  return (
-    <>
-      <section className="hero page-shell subpage-hero">
-        <div className="hero-copy" data-reveal>
-          <p className="eyebrow">YoChat</p>
-          <h1 className="hero-title">Always-on conversation.</h1>
-          <p className="hero-support">
-            YoChat runs the conversational layer of the program across Messenger and Instagram, with a protected control
-            room, CRM, transcripts, and human handoff.
-          </p>
-          <Button href="#assessment">Book Your Assessment</Button>
-        </div>
-      </section>
-      <CtaBand title="Put a staffed conversation on every channel." />
-    </>
-  );
-}
-
-function CtaBand({ title, copy, cta = "Book Your Assessment" }) {
+function CtaBand({ title, copy, cta = "Book Your Assessment", href = "#assessment" }) {
   return (
     <section className="page-shell">
       <div className="cta-band" data-reveal>
@@ -791,7 +987,7 @@ function CtaBand({ title, copy, cta = "Book Your Assessment" }) {
           <h2>{title}</h2>
           {copy && <p>{copy}</p>}
         </div>
-        <Button>{cta}</Button>
+        <Button href={href}>{cta}</Button>
       </div>
     </section>
   );
@@ -846,8 +1042,10 @@ function PolicyPage({ title }) {
 }
 
 function ThankYou() {
+  const addons = crossLinkProducts();
+
   return (
-    <section className="page-shell policy-page">
+    <section className="page-shell policy-page thank-you">
       <p className="eyebrow">Request received</p>
       <h1 className="hero-title">Thanks. We have your request.</h1>
       <p className="hero-support">Our team will review and follow up shortly.</p>
@@ -855,6 +1053,21 @@ function ThankYou() {
         <span>Back home</span>
         <Arrow />
       </a>
+
+      {addons.length > 0 && (
+        <div className="addon-activations">
+          <p className="section-label">Add-on activations</p>
+          <p className="addon-intro">Once your program is running, these activate inside it.</p>
+          <ul>
+            {addons.map((product) => (
+              <li key={product.route}>
+                <a href={`#${product.route}`}>{product.label}</a>
+                <span>{product.blurb}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }
@@ -862,9 +1075,36 @@ function ThankYou() {
 /* ------------------------------------------------------------------ *
  * APP
  * ------------------------------------------------------------------ */
+function resolvePage(route) {
+  const productRoute = productByRoute(route);
+  if (productRoute) {
+    const [key] = productRoute;
+    if (isUnlisted(key)) return { node: <ProductPage route={route} />, layout: "bare" };
+    if (isLive(key)) {
+      if (key === "audienceBuilder") return { node: <AudienceBuilder />, layout: "full" };
+      return { node: <ProductPage route={route} />, layout: "full" };
+    }
+    return { node: <Home />, layout: "full" };
+  }
+
+  switch (route) {
+    case "/contact":
+      return { node: <Contact />, layout: "full" };
+    case "/terms":
+      return { node: <PolicyPage title="Terms" />, layout: "full" };
+    case "/privacy":
+      return { node: <PolicyPage title="Privacy" />, layout: "full" };
+    case "/thank-you":
+      return { node: <ThankYou />, layout: "full" };
+    default:
+      return { node: <Home />, layout: "full" };
+  }
+}
+
 function App() {
   const route = useHashRoute();
   useReveal(route);
+  usePageMeta(route);
 
   useEffect(() => {
     const target = route.replace(/^\//, "");
@@ -878,30 +1118,13 @@ function App() {
     return () => window.cancelAnimationFrame(frame);
   }, [route]);
 
-  const page = useMemo(() => {
-    if (isLive("audienceBuilder") && route === PRODUCTS.audienceBuilder.route) return <AudienceBuilder />;
-    if (isLive("avatarStudio") && route === PRODUCTS.avatarStudio.route) return <AvatarStudio />;
-    if (isLive("yochat") && route === PRODUCTS.yochat.route) return <YoChat />;
-
-    switch (route) {
-      case "/contact":
-        return <Contact />;
-      case "/terms":
-        return <PolicyPage title="Terms" />;
-      case "/privacy":
-        return <PolicyPage title="Privacy" />;
-      case "/thank-you":
-        return <ThankYou />;
-      default:
-        return <Home />;
-    }
-  }, [route]);
+  const { node, layout } = useMemo(() => resolvePage(route), [route]);
 
   return (
     <>
-      <Header route={route} />
-      <main>{page}</main>
-      <Footer />
+      {layout === "bare" ? <BareHeader /> : <Header route={route} />}
+      <main>{node}</main>
+      <Footer variant={layout === "bare" ? "minimal" : "full"} />
     </>
   );
 }
