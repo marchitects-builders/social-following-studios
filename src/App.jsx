@@ -750,7 +750,7 @@ function Contact() {
       <section className="page-shell section">
         <p className="section-label connect-title">Other Ways To Connect</p>
         <div className="cards-grid contact-two">
-          <ContactCard icon="mail" title="Email" body="hello@socialfollowingstudios.com" />
+          <ContactCard icon="mail" title="Email" body="hello@socialfollowing.shop" />
           <ContactCard icon="shield" title="Note" body="We do not accept unsolicited vendor or platform pitches through this form." />
         </div>
       </section>
@@ -866,7 +866,7 @@ function PolicyPage({ title }) {
       <p className="eyebrow">Social Following Studios</p>
       <h1>{title}</h1>
       <div className="green-rule" />
-      <p className="lead">This page is being updated. Contact hello@socialfollowingstudios.com for the current policy details.</p>
+      <p className="lead">This page is being updated. Contact hello@socialfollowing.shop for the current policy details.</p>
       <Button>Contact Us</Button>
     </section>
   );
