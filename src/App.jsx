@@ -279,11 +279,11 @@ function Home() {
       <section className="page-shell section">
         <div className="institutional-intro">
           <p className="section-label">The Gap</p>
-          <h2>Your relationships are real. Your data goes quiet.</h2>
+          <h2>You have a real audience. Most of it never hears from you again.</h2>
         </div>
         <div className="mirror-grid">
           <article className="mirror-card">
-            <h3>Already working</h3>
+            <h3>Working</h3>
             <ul>
               <li><span className="check-icon">✓</span>A verified audience who bought from you, met you, or opted in directly</li>
               <li><span className="check-icon">✓</span>A database that grows every time someone converts</li>
@@ -291,10 +291,10 @@ function Home() {
             </ul>
           </article>
           <article className="mirror-card muted">
-            <h3>Quietly leaking</h3>
+            <h3>Leaking</h3>
             <ul>
               <li><span className="check-icon close-icon">✕</span>Dormant contacts nobody re-engages</li>
-              <li><span className="check-icon close-icon">✕</span>Remarketing spend aimed at people who already know you</li>
+              <li><span className="check-icon close-icon">✕</span>Remarketing spend aimed at people who know you</li>
               <li><span className="check-icon close-icon">✕</span>Deliverability nobody watches until it breaks</li>
             </ul>
           </article>
