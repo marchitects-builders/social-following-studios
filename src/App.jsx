@@ -270,7 +270,7 @@ function Home() {
       <section className="page-shell hero">
         <HeroCopy
           eyebrow="Audience Infrastructure · Since 2017"
-          title={<>Your database,<br />reactivated.</>}
+          title={<>Own your<br />audience.</>}
           body="Every customer and prospect who ever reached you still sits inside your systems. We connect that data, wake the dormant contacts inside it, and route the ones ready to buy straight to your team."
         />
         <AssessmentSummary />
