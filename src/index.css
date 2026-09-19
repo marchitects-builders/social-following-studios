@@ -711,6 +711,18 @@ h3 {
   font-size: 26px;
 }
 
+.mirror-card .card-label {
+  margin: 0 0 6px;
+}
+
+.quote-line {
+  margin: 22px 0 0;
+  max-width: 640px;
+  font-size: 24px;
+  font-style: italic;
+  color: var(--green-dark);
+}
+
 .mirror-card ul {
   margin: 0;
   padding: 0;
