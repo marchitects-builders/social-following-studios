@@ -5,11 +5,10 @@ const LOGOS_APPROVED = "/logos-approved.png";
 const SITE_META = { imprint: "MARCHITECTS" };
 
 const NAV = [
-  { label: "Infrastructure", href: "#/infrastructure", route: "/infrastructure" },
+  { label: "Audience Builder", href: "#/infrastructure", route: "/infrastructure" },
   { label: "Avatar Studio", href: "#/avatar-studio", route: "/avatar-studio" },
   { label: "Case Studies", href: "#/case-studies", route: "/case-studies" },
   { label: "About", href: "#/", route: "/about" },
-  { label: "Contact", href: "#/contact", route: "/contact" },
 ];
 
 function useHashRoute() {
@@ -132,6 +131,7 @@ function Footer() {
           </div>
         </form>
         <div className="footer-legal">
+          <a href="mailto:hello@socialfollowingstudios.com">hello@socialfollowingstudios.com</a>
           <a href="#/terms">Terms</a>
           <a href="#/privacy">Privacy</a>
         </div>
