@@ -37,7 +37,7 @@ function Arrow() {
   );
 }
 
-function Button({ children = "Book Your Assessment", className = "", href = "#assessment" }) {
+function Button({ children = "Book Your Assessment", className = "", href = "#/contact" }) {
   return (
     <a className={`btn btn-primary ${className}`} href={href}>
       {children}
@@ -96,7 +96,7 @@ function Header({ route }) {
           </a>
         ))}
       </nav>
-      <a className="btn btn-primary nav-cta" href="#assessment">Book Your Assessment</a>
+      <a className="btn btn-primary nav-cta" href="#/contact">Book Your Assessment</a>
       <button className="menu-button" type="button" aria-expanded={open} aria-controls="mobile-menu" onClick={() => setOpen((value) => !value)}>
         <span />
         <span />
@@ -109,7 +109,7 @@ function Header({ route }) {
               {item.label}
             </a>
           ))}
-          <a href="#assessment">Book Your Assessment</a>
+          <a href="#/contact">Book Your Assessment</a>
         </nav>
       )}
     </header>
@@ -303,14 +303,11 @@ function Home() {
 
       <Process three steps={steps} />
 
-      <section id="assessment" className="page-shell section assessment-section dark">
-        <div className="assessment-heading">
-          <p className="section-label">See what's dormant</p>
-          <h2>Book your assessment.</h2>
-          <p>Social Following Studios has run audience infrastructure since 2017. The assessment shows you what's reachable before you commit to anything.</p>
-        </div>
-        <BookingForm />
-      </section>
+      <CtaBand
+        dark
+        title="See what's dormant in your database."
+        copy="Social Following Studios has run audience infrastructure since 2017. The assessment shows you what's reachable before you commit to anything."
+      />
     </>
   );
 }
@@ -389,7 +386,7 @@ function AvatarStudio() {
           <h1>Your Twin Everywhere</h1>
           <div className="green-rule" />
           <p className="lead avatar-commercial-copy">We create a high-fidelity digital twin of your likeness and voice, then turn your knowledge into finished video content built for continuous distribution.</p>
-          <Button href="#assessment">Build My Digital Twin</Button>
+          <Button href="#/contact">Build My Digital Twin</Button>
         </div>
         <AvatarStudioVisual />
       </section>
@@ -840,14 +837,6 @@ function ThankYou() {
 function App() {
   const route = useHashRoute();
 
-  useEffect(() => {
-    if (route !== "/assessment") return;
-    const frame = window.requestAnimationFrame(() => {
-      document.getElementById("assessment")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [route]);
-
   const page = useMemo(() => {
     switch (route) {
       case "/infrastructure":
@@ -857,6 +846,7 @@ function App() {
       case "/case-studies":
         return <CaseStudies />;
       case "/contact":
+      case "/assessment":
         return <Contact />;
       case "/terms":
         return <PolicyPage title="Terms" />;

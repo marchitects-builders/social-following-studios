@@ -546,21 +546,6 @@ h3 {
   max-width: none;
 }
 
-.assessment-section.dark {
-  padding: clamp(38px, 5vw, 68px);
-  background: var(--green-dark);
-  border-radius: 6px;
-}
-
-.assessment-section.dark .section-label {
-  color: var(--green-soft);
-}
-
-.assessment-section.dark .assessment-heading h2,
-.assessment-section.dark .assessment-heading > p:not(.section-label) {
-  color: #fff;
-}
-
 .process-protocols .copy-card {
   padding: clamp(38px, 5vw, 68px);
 }
@@ -1697,8 +1682,7 @@ h3 {
   .form-grid,
   .cta-band,
   .cta-band.with-copy,
-  .mirror-grid,
-  .assessment-section {
+  .mirror-grid {
     grid-template-columns: 1fr;
   }
 
