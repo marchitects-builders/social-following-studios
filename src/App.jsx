@@ -245,118 +245,71 @@ function BriefCard({ children, next = false }) {
   );
 }
 
-function CtaBand({ title, copy, cta = "Book Your Assessment" }) {
+function CtaBand({ title, copy, cta = "Book Your Assessment", dark = false }) {
   return (
     <section className="page-shell">
-      <div className={`cta-band ${copy ? "with-copy" : ""}`}>
+      <div className={`cta-band ${copy ? "with-copy" : ""} ${dark ? "dark" : ""}`}>
         <h2>{title}</h2>
         {copy && <p>{copy}</p>}
         <Plane className="cta-plane" />
-        <Button>{cta}</Button>
+        <Button className={dark ? "btn-invert" : ""}>{cta}</Button>
       </div>
     </section>
   );
 }
 
 function Home() {
-  const framework = [
-    ["database", "Unified Database Architecture", "Consolidation of disparate contact records, systematic deduplication, and suppression logic establish the clean data layer required for programmatic scaling."],
-    ["gear", "Rules Engine Calibration", "Segmentation logic, compliance suppression architecture, and behavioral triggers govern the delivery cadence to ensure precise narrative timing."],
-    ["network", "Channel Orchestration", "Deployment pathways synchronize across multiple communication vectors via a single operational team to maintain unified brand presence."],
-    ["trend", "Real-Time Deliverability Governance", "Continuous monitoring evaluates authentication status, sender reputation, delivery failures, and inbox placement. Active intervention protects the integrity of the sending environment throughout deployment."],
+  const steps = [
+    ["01", "Identify", "We unify your contact records, remove duplicates, and separate active contacts from dormant ones."],
+    ["02", "Activate", "Segmentation and behavioral triggers turn that database into a live channel, timed to what each contact does."],
+    ["03", "Govern", "We monitor deliverability and sender reputation continuously, and maintain a 95% inbox placement rate across every campaign."],
   ];
 
   return (
     <>
-      <section className="page-shell hero home-institutional-hero">
+      <section className="page-shell hero">
         <HeroCopy
-          eyebrow="Social Following Studios"
+          eyebrow="Audience Infrastructure · Since 2017"
           title={<>Your database,<br />reactivated.</>}
-          body="Your database represents the single most underutilized asset within the enterprise portfolio. Social Following Studios operates as a total lifecycle email program management firm that assumes complete operational ownership of the messaging continuum. We govern the entire trajectory across initial assessment, architectural build, programmatic deployment, and systemic deliverability to realize definitive corporate outcomes."
+          body="Every customer and prospect who ever reached you still sits inside your systems. We connect that data, wake the dormant contacts inside it, and route the ones ready to buy straight to your team."
         />
-        <AvatarStudioVisual className="home-twin-visual" compact />
-      </section>
-
-      <section className="page-shell section institutional-section">
-        <div className="institutional-intro">
-          <p className="section-label">Structural Optimization Framework</p>
-          <h2>Structural Optimization Framework</h2>
-          <p>Every program operates upon an integrated data layer to transform latent enterprise assets into active capital. We ingest existing contact records, analyze engagement history, and establish the technical parameters required for predictable execution before the initial transmission cycle begins. The organization maintains strategic oversight while our firm assumes total execution of the underlying infrastructure.</p>
-        </div>
-        <div className="cards-grid four framework-grid">
-          {framework.map(([icon, title, copy]) => (
-            <article className="card" key={title}>
-              <Icon name={icon} className="icon-large" />
-              <h3>{title}</h3>
-              <div className="small-rule" />
-              <p>{copy}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="page-shell section institutional-split database-capitalization">
-        <article className="copy-card institutional-copy-card">
-          <p className="section-label">Database Capitalization</p>
-          <h2>Database Capitalization</h2>
-          <p>Enterprise yield reaches optimization when sophisticated data repositories pair with precise narrative nuance. We analyze your customer database at the cohort level to isolate precisely where commercial demand remains active. This intelligence becomes the foundation for a targeted reactivation architecture built around verified sales opportunities.</p>
-        </article>
         <AssessmentSummary />
       </section>
 
       <section className="page-shell section">
-        <article className="copy-card management-card">
-          <div>
-            <p className="section-label">Complete Program Management</p>
-            <h2>Complete Program Management</h2>
-          </div>
-          <p>Social Following Studios governs your email operation as a unified operating system. Our mandate extends from initial data ingestion through continuous programmatic deployment. We engineer controlled delivery environments that protect technical integrity and establish direct control over the underlying sending infrastructure. This active governance maintains a 95% inbox placement rate, ensuring communications withstand rigorous deliverability protocols before a single prospect decides whether to respond.</p>
-          <div className="placement-proof" aria-label="Published inbox placement metric">
-            <strong>95%</strong>
-            <span>Inbox placement maintained through active governance</span>
-          </div>
-        </article>
+        <div className="institutional-intro">
+          <p className="section-label">The Gap</p>
+          <h2>Your relationships are real. Your data goes quiet.</h2>
+        </div>
+        <div className="mirror-grid">
+          <article className="mirror-card">
+            <h3>Already working</h3>
+            <ul>
+              <li><span className="check-icon">✓</span>A verified audience who bought from you, met you, or opted in directly</li>
+              <li><span className="check-icon">✓</span>A database that grows every time someone converts</li>
+              <li><span className="check-icon">✓</span>Direct channels you own outright: email, SMS, your own list</li>
+            </ul>
+          </article>
+          <article className="mirror-card muted">
+            <h3>Quietly leaking</h3>
+            <ul>
+              <li><span className="check-icon close-icon">✕</span>Dormant contacts nobody re-engages</li>
+              <li><span className="check-icon close-icon">✕</span>Remarketing spend aimed at people who already know you</li>
+              <li><span className="check-icon close-icon">✕</span>Deliverability nobody watches until it breaks</li>
+            </ul>
+          </article>
+        </div>
       </section>
 
-      <section className="page-shell section institutional-split avatar-capability">
-        <article className="copy-card institutional-copy-card">
-          <p className="section-label">Avatar Studio</p>
-          <h2>The Avatar Studio: Language Conversion Science</h2>
-          <p>Extracting maximum valuation from a mature institutional database requires an advanced comprehension of linguistic nuance. The Avatar Studio constructs sophisticated digital twins engineered to maintain absolute communicative precision across distinct target demographics. These models translate complex expertise into highly articulated communications while preserving institutional credibility and source authority. This structured approach permits the enterprise to scale personalized narrative pathways across video and direct response environments simultaneously.</p>
-          <a className="text-link institutional-link" href="#/avatar-studio">Explore Avatar Studio <Arrow /></a>
-        </article>
-        <AvatarStudioVisual className="avatar-section-visual" compact />
-      </section>
+      <Process three steps={steps} />
 
-      <section className="page-shell section">
-        <article className="capitalization-card">
-          <div>
-            <p className="section-label">Capitalization Assessment</p>
-            <h2>Capitalization Assessment</h2>
-            <p>The Infrastructure Assessment reviews the operational health of your data environment and the technical frameworks surrounding it. We locate your dormant audience segments with the highest immediate revenue potential and map the delivery architecture required to activate them.</p>
-          </div>
-          <div className="capitalization-actions">
-            <Button />
-            <em>An Imprint of MARCHITECTS</em>
-          </div>
-        </article>
-      </section>
-
-      <section id="assessment" className="page-shell section assessment-section">
+      <section id="assessment" className="page-shell section assessment-section dark">
         <div className="assessment-heading">
-          <p className="section-label">Capitalization Assessment</p>
+          <p className="section-label">See what's dormant</p>
           <h2>Book your assessment.</h2>
-          <p>Every engagement begins with a Database Assessment. The assessment produces the underlying technical metrics, and those numbers drive the operational decision.</p>
+          <p>Social Following Studios has run audience infrastructure since 2017. The assessment shows you what's reachable before you commit to anything.</p>
         </div>
         <BookingForm />
-      </section>
-
-      <section className="page-shell section process-protocols">
-        <article className="copy-card">
-          <p className="section-label">Process Protocols</p>
-          <h2>Process Protocols</h2>
-          <p>An enterprise intake specialist will review your program context within one business day. The process begins with a 20-minute technical review focused on the condition of your current infrastructure and the operational path forward.</p>
-        </article>
       </section>
     </>
   );
