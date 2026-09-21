@@ -1,117 +1,128 @@
 <div align="center">
 
-# Social Following Studios
+# YoChat
 
-### Own your audience.
+### Direct-message infrastructure for owned audiences.
 
-**Audience infrastructure for brands that want direct relationships with the people they attract.**
+**Meta messaging, campaign logic, CRM capture, follow-up, human handoff, and AI-assisted replies in one operating system.**
 
-[Website](https://www.socialfollowing.shop) · [Avatar Studio](./Avatar-Studio) · [YoChat](./yochat)
+[Product Repository](./yochat) · [AAFC Verified Implementation](https://github.com/marchitectsio/AAFC-BUILD) · [Social Following Studios](https://www.socialfollowing.shop)
 
-![React](https://img.shields.io/badge/React-18-20232A?logo=react)
-![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-Production-000000?logo=nextdotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Production-3178C6?logo=typescript&logoColor=white)
+![Meta](https://img.shields.io/badge/Meta-Messenger_%26_Instagram-0866FF?logo=meta&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Deployed_on-Vercel-000000?logo=vercel&logoColor=white)
 
 </div>
 
 ---
 
-## What Social Following Studios builds
+## What YoChat does
 
-Social Following Studios builds the systems between attention and an owned audience.
+YoChat is the messaging engine built inside Social Following Studios for organizations that need to turn social attention into direct, governed audience relationships.
 
-The work in this repository supports four operating layers:
+It manages the operating layer behind conversational campaigns:
 
-| System | What it does |
+- Facebook Messenger and Instagram webhook handling
+- Brand-specific routing, rules, and verified knowledge
+- Contacts, tags, custom fields, lead stages, and transcripts
+- CRM capture and campaign activity history
+- Human handoff and manual takeover
+- STOP/START consent handling
+- Scheduled follow-up processing
+- Persistent storage
+- Protected administrative controls
+- AI-assisted replies
+- Test and regression suites
+
+The goal is simple: a social interaction should become an owned relationship the organization can identify, manage, and continue.
+
+---
+
+## Verified implementation: AAFC
+
+**Artists And Athletes For Change (AAFC)** is the current verified implementation example.
+
+The AAFC mailing-list beta tested the full reply-to-subscription flow in production-safe mode:
+
+| Verification | Result |
 | --- | --- |
-| **Audience Builder** | Converts anonymous and paid attention into identifiable audience data and usable first-party relationships. |
-| **Lifecycle Activation** | Reactivates databases and runs email journeys that move known contacts toward action. |
-| **Avatar Studio** | Produces digital-twin video systems that keep founders, experts, and brands present in the feed without making content production another full-time job. |
-| **YoChat** | Operates direct-message automation, routing, CRM capture, follow-up, human handoff, and campaign logic across Meta messaging channels. |
+| Campaign message delivery | Passed |
+| Reply received and recorded | Passed |
+| Keyword recognition | Passed |
+| Case-insensitive matching | Passed |
+| Punctuation and spacing handling | Passed |
+| Mailing-list subscription | Passed |
+| Contact data preservation | Passed |
+| Confirmation message | Passed |
+| Duplicate protection | Passed |
+| Campaign safety controls | Passed |
 
-The operating principle is simple: platforms can distribute attention. The business should own the relationship.
+**AAFC campaign suite: 12/12 passed.**  
+**Existing YoChat regression suite: 11/11 passed.**  
+**Real AAFC contacts messaged during the beta: 0.**
+
+See the [AAFC verification report](./yochat/docs/AAFC-YoChat-Mailing-List-Beta-Report.md) and the public [AAFC build repository](https://github.com/marchitectsio/AAFC-BUILD).
+
+---
+
+## Representative deployment model
+
+YoChat is designed as a reusable messaging layer rather than a one-off bot.
+
+Each deployment can define its own:
+
+- organization and brand rules
+- reply keywords and campaign logic
+- verified knowledge
+- contact fields and tags
+- follow-up behavior
+- escalation and human-handoff rules
+- consent controls
+- campaign-specific reporting
+
+AAFC is the public proof implementation. Additional cohort and client demos can use the same underlying architecture without exposing internal operating repositories.
 
 ---
 
 ## Repository structure
 
-This repository contains the public Social Following Studios website plus production systems and campaign work.
+This repository contains the Social Following Studios public site and the YoChat production service.
 
 ```text
 social-following-studios/
-├── src/                 # Public website application
-├── public/              # Static production assets
-├── content/             # Site and campaign content
-├── Avatar-Studio/       # Avatar Studio assets and implementation
-├── yochat/              # Multi-brand messaging and automation engine
-├── 30-Short-Test/       # Short-form content testing work
-└── scripts/             # Build and asset utilities
+├── yochat/              # YoChat messaging and campaign engine
+├── src/                 # Social Following Studios public site
+├── public/              # Public assets
+└── ...
 ```
 
-### Public website
-
-The repository root contains the Social Following Studios site.
-
-**Stack:** React, Vite, Tailwind CSS, Three.js, Vercel.
-
-```bash
-npm install
-npm run dev
-```
-
-Production build:
-
-```bash
-npm run build
-```
+For YoChat setup, environment variables, deployment, and validation, see the dedicated [YoChat README](./yochat/README.md).
 
 ---
 
-## YoChat
+## YoChat stack
 
-[`yochat/`](./yochat) is the direct-message automation and campaign engine.
+YoChat runs as a self-contained Next.js service.
 
-It includes:
+Core infrastructure includes:
 
-- Facebook Messenger and Instagram webhook handling
-- Brand-specific routing and verified knowledge
-- Contacts, tags, custom fields, transcripts, analytics, and audit history
-- Human handoff and manual takeover
-- Consent handling
-- Persistent Redis storage
-- Scheduled follow-up processing
-- Protected administrative controls
-- Test and regression suites
+- Next.js
+- TypeScript
+- Meta Messenger and Instagram integrations
+- Upstash Redis
+- QStash scheduled processing
+- Vercel deployment
+- protected admin controls
+- production test suites
 
-See the dedicated [YoChat README](./yochat/README.md) for setup, deployment, environment variables, and validation.
-
----
-
-## Avatar Studio
-
-[`Avatar-Studio/`](./Avatar-Studio) contains the production layer for Social Following Studios' digital-twin video work.
-
-Avatar Studio is built for founders, subject-matter experts, hospitality brands, dealerships, and organizations that need a consistent human presence across short-form channels while reducing the production burden on the person behind the brand.
+The public Social Following Studios website and the YoChat service deploy independently.
 
 ---
 
-## Deployment model
+## Built by Social Following Studios
 
-The public Social Following Studios website and YoChat deploy independently.
-
-- **Website:** repository root
-- **YoChat:** separate Vercel project with `yochat` set as the Root Directory
-
-This keeps the public experience and server-based messaging infrastructure independently deployable.
-
----
-
-## About Social Following Studios
-
-Social Following Studios is the execution arm of Marchitects.
-
-We build audience systems that help businesses identify, grow, activate, and operate the audience around them.
+Social Following Studios builds systems that help organizations move from rented attention to direct audience relationships.
 
 **Own your audience.**
 
