@@ -123,6 +123,7 @@ function usePageMeta(route) {
     const productRoute = productByRoute(route);
     const key = productRoute && !isReachable(productRoute[0]) ? "/" : route;
     const meta = PAGE_META[key] || PAGE_META["/"];
+    const description = key === "/system" ? systemMetaDescription() : meta.description;
     const canonicalPath = key === "/" ? "/" : `/${key.replace(/^\//, "")}/`;
 
     document.title = meta.title;
@@ -131,7 +132,7 @@ function usePageMeta(route) {
       const el = document.createElement("meta");
       el.setAttribute("name", "description");
       return el;
-    }).setAttribute("content", meta.description);
+    }).setAttribute("content", description);
 
     setHeadTag('link[rel="canonical"]', () => {
       const el = document.createElement("link");
@@ -411,13 +412,21 @@ function OperationalProblem() {
   );
 }
 
-const SYSTEM_FUNCTIONS = ["Audience Capture", "Audience Builder", "Full-Service ESP", "24/7 Communications"];
+const systemFunctions = () => [
+  "Audience Capture",
+  isReachable("audienceBuilder") ? PRODUCTS.audienceBuilder.label : "Audience Development",
+  "Full-Service ESP",
+  "24/7 Communications",
+];
+
+const systemMetaDescription = () =>
+  `Audience Capture, ${isReachable("audienceBuilder") ? PRODUCTS.audienceBuilder.label : "Audience Development"}, Full-Service ESP, and 24/7 Communications. One operator runs all four.`;
 
 function SystemSummary() {
   return (
     <section className="section">
       <SectionHead label="The system" title="Four functions. One operator." />
-      <IndexList items={SYSTEM_FUNCTIONS} />
+      <IndexList items={systemFunctions()} />
       <a className="text-link" href="#/system">
         The system in full <Arrow />
       </a>
@@ -537,12 +546,13 @@ function Newsletter() {
 /* ------------------------------------------------------------------ *
  * FORM
  * ------------------------------------------------------------------ */
-function BookingForm() {
+function BookingForm({ source = "Website Assessment" }) {
   return (
     <form className="form" action="https://crm.zoho.com/crm/WebToLeadForm" method="POST" data-reveal>
       <input type="hidden" name="xnQsjsdp" value="b45ce04ddd76914bbfeade30ab0a6e86446ed07ddcd64b5425a1a4d9d5a467b8" readOnly />
       <input type="hidden" name="xmIwtLD" value="97ca543a3d1ea88492628d126d9ab329b04cea167679b0225170279c6fc6e4f3684dbc3fb82c598c93398f0f68dcd29b" readOnly />
       <input type="hidden" name="actionType" value="TGVhZHM=" readOnly />
+      <input type="hidden" name="Lead Source" value={source} readOnly />
       <input type="hidden" name="Last Name" value="Assessment Request" readOnly />
       <input type="hidden" name="returnURL" value="https://www.socialfollowing.shop/#/thank-you" readOnly />
       <Field label="Organization name" name="Company" required />
@@ -675,7 +685,7 @@ function SystemPage() {
     <div className="page-shell">
       <PageHead eyebrow="The system" title="Four functions. One operator." />
       <section className="section">
-        <IndexList items={SYSTEM_FUNCTIONS} />
+        <IndexList items={systemFunctions()} />
       </section>
       <section className="section">
         <SectionHead label="How it works" title="Ingest, process, evaluate, engage." />
@@ -737,7 +747,7 @@ function AssessmentPage() {
       <PageHead eyebrow="The assessment" title="Book your assessment." />
       <section className="section assessment-grid">
         <IndexList items={ASSESSMENT_OUTPUTS} />
-        <BookingForm />
+        <BookingForm source="Website Assessment" />
       </section>
     </div>
   );
@@ -769,6 +779,7 @@ function AudienceBuilder() {
 /* Unlisted ad-funnel page: no nav header, one action. */
 function ProductPage({ route }) {
   const content = CAMPAIGN_CONTENT[route];
+  const product = productByRoute(route)?.[1];
   if (!content) return <Home />;
   const toLead = (e) => {
     e.preventDefault();
@@ -788,7 +799,7 @@ function ProductPage({ route }) {
       </section>
       <section className="section" id="lead">
         <SectionHead label={content.formLabel} title={content.formTitle} />
-        <BookingForm />
+        <BookingForm source={`Website Funnel - ${product?.label || route}`} />
       </section>
     </div>
   );
@@ -816,7 +827,7 @@ function Contact() {
           <p className="contact-line">hello@socialfollowingstudios.com</p>
           <p className="contact-note">We do not accept unsolicited vendor or platform pitches through this form.</p>
         </div>
-        <BookingForm />
+        <BookingForm source="Website Contact" />
       </section>
     </div>
   );
