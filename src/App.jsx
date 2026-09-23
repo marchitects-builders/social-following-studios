@@ -1,34 +1,249 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 const BRAND_LOGO = "/brand/sfs-logo.png";
 const LOGOS_APPROVED = "/logos-approved.png";
-const SITE_META = { imprint: "MARCHITECTS" };
+const PUBLIC_ORIGIN = "https://www.socialfollowing.shop";
 
-const NAV = [
-  { label: "Infrastructure", href: "#/infrastructure", route: "/infrastructure" },
-  { label: "Avatar Studio", href: "#/avatar-studio", route: "/avatar-studio" },
-  { label: "Case Studies", href: "#/case-studies", route: "/case-studies" },
-  { label: "About", href: "#/", route: "/about" },
-  { label: "Contact", href: "#/contact", route: "/contact" },
+/* ------------------------------------------------------------------ *
+ * VISIBILITY CONTROL
+ *   status "LIVE"     public, full chrome, name renders, menu when nav
+ *   status "UNLISTED" indexable, off the menu, runs as an isolated ad
+ *                     funnel (no nav header, one action)
+ *   status "HIDDEN"   route dead, name never renders
+ *   nav true          menu item, only when LIVE
+ * ------------------------------------------------------------------ */
+const PRODUCTS = {
+  audienceBuilder: {
+    status: "LIVE",
+    nav: true,
+    label: "Audience Builder",
+    route: "/audience-builder",
+    blurb: "Turns a raw contact list into a segmented, deliverable audience.",
+  },
+  avatarStudio: {
+    status: "UNLISTED",
+    nav: false,
+    label: "Avatar Studio",
+    route: "/avatar-studio",
+    blurb: "A digital twin of your likeness and voice, turned into finished video.",
+  },
+  yochat: {
+    status: "UNLISTED",
+    nav: false,
+    label: "YoChat",
+    route: "/yochat",
+    blurb: "An always-on conversational layer across Messenger and Instagram.",
+  },
+};
+
+const statusOf = (key) => PRODUCTS[key]?.status;
+const isLive = (key) => statusOf(key) === "LIVE";
+const isUnlisted = (key) => statusOf(key) === "UNLISTED";
+const isReachable = (key) => isLive(key) || isUnlisted(key);
+const showInNav = (key) => Boolean(PRODUCTS[key]?.nav) && isLive(key);
+
+const productByRoute = (route) => Object.entries(PRODUCTS).find(([, product]) => product.route === route);
+const reachableProducts = () => Object.keys(PRODUCTS).filter(isReachable).map((key) => PRODUCTS[key]);
+const crossLinkProducts = () =>
+  Object.keys(PRODUCTS)
+    .filter((key) => isReachable(key) && !showInNav(key))
+    .map((key) => PRODUCTS[key]);
+
+const BASE_NAV = [
+  { label: "The System", href: "#/system" },
+  { label: "Case Studies", href: "#/case-studies" },
+  { label: "Assessment", href: "#/assessment" },
 ];
 
+function buildNav() {
+  const products = Object.entries(PRODUCTS)
+    .filter(([key]) => showInNav(key))
+    .map(([, product]) => ({ label: product.label, href: `#${product.route}` }));
+  return [...BASE_NAV.slice(0, 2), ...products, ...BASE_NAV.slice(2), { label: "Contact", href: "#/contact" }];
+}
+
+/* ------------------------------------------------------------------ *
+ * PER-ROUTE HEAD META
+ * ------------------------------------------------------------------ */
+const PAGE_META = {
+  "/": {
+    title: "Social Following Studios | Own Your Audience",
+    description:
+      "Social Following Studios is a full-service ESP and a strategic growth and communications agency. We build and run the audience infrastructure that turns existing customer data and new interest into direct relationships and measurable growth.",
+  },
+  "/system": {
+    title: "The System | Social Following Studios",
+    description:
+      "Audience Capture, Audience Builder, Full-Service ESP, and 24/7 Communications. One operator runs all four.",
+  },
+  "/case-studies": {
+    title: "Case Studies | Social Following Studios",
+    description: "Verified case studies from the actual work.",
+  },
+  "/audience-builder": {
+    title: "Audience Builder | Social Following Studios",
+    description: "Audience Builder turns a raw contact list into a segmented, deliverable audience.",
+  },
+  "/assessment": {
+    title: "Book Your Assessment | Social Following Studios",
+    description:
+      "Database health, reachable audience, deliverability, dormant revenue estimate, and deployment path.",
+  },
+  "/avatar-studio": {
+    title: "Avatar Studio | Social Following Studios",
+    description:
+      "Avatar Studio builds a high-fidelity digital twin of your likeness and voice, then turns your knowledge into finished video content for continuous distribution.",
+  },
+  "/yochat": {
+    title: "YoChat | Social Following Studios",
+    description:
+      "YoChat runs the conversational layer of your program across Messenger and Instagram, with a protected control room, CRM, transcripts, and human handoff.",
+  },
+  "/contact": {
+    title: "Contact | Social Following Studios",
+    description: "Every engagement begins with a database assessment.",
+  },
+  "/thank-you": {
+    title: "Request received | Social Following Studios",
+    description: "Thanks. We have your request.",
+  },
+};
+
+function setHeadTag(selector, create) {
+  let node = document.head.querySelector(selector);
+  if (!node) {
+    node = create();
+    document.head.appendChild(node);
+  }
+  return node;
+}
+
+function usePageMeta(route) {
+  useEffect(() => {
+    const productRoute = productByRoute(route);
+    const key = productRoute && !isReachable(productRoute[0]) ? "/" : route;
+    const meta = PAGE_META[key] || PAGE_META["/"];
+    const description = key === "/system" ? systemMetaDescription() : meta.description;
+    const canonicalPath = key === "/" ? "/" : `/${key.replace(/^\//, "")}/`;
+
+    document.title = meta.title;
+
+    setHeadTag('meta[name="description"]', () => {
+      const el = document.createElement("meta");
+      el.setAttribute("name", "description");
+      return el;
+    }).setAttribute("content", description);
+
+    setHeadTag('link[rel="canonical"]', () => {
+      const el = document.createElement("link");
+      el.setAttribute("rel", "canonical");
+      return el;
+    }).setAttribute("href", `${PUBLIC_ORIGIN}${canonicalPath}`);
+  }, [route]);
+}
+
+/* ------------------------------------------------------------------ *
+ * AD FUNNEL CONTENT (unlisted campaign landing pages)
+ * ------------------------------------------------------------------ */
+const CAMPAIGN_CONTENT = {
+  "/avatar-studio": {
+    eyebrow: "Avatar Studio",
+    title: "Your twin, everywhere.",
+    support:
+      "We build a high-fidelity digital twin of your likeness and voice, then turn your knowledge into finished video content built for continuous distribution.",
+    cta: "Build My Digital Twin",
+    points: [
+      "One session records your likeness, voice, and delivery.",
+      "Your knowledge becomes finished video for every channel.",
+      "Every asset reads as you, at scale.",
+    ],
+    formLabel: "Start the build",
+    formTitle: "Build my digital twin.",
+  },
+  "/yochat": {
+    eyebrow: "YoChat",
+    title: "Always-on conversation.",
+    support:
+      "YoChat runs the conversational layer of your program across Messenger and Instagram, with a protected control room, CRM, transcripts, and human handoff.",
+    cta: "Book Your Assessment",
+    points: [
+      "Every message answered, across Messenger and Instagram.",
+      "CRM, transcripts, and human handoff in one protected view.",
+      "Connected to the same audience the rest of the system runs on.",
+    ],
+    formLabel: "Start the conversation",
+    formTitle: "Put a staffed conversation on every channel.",
+  },
+};
+
+/* ------------------------------------------------------------------ *
+ * HOOKS
+ * ------------------------------------------------------------------ */
 function useHashRoute() {
   const getRoute = () => {
-    const raw = (window.location.hash || "#/").replace(/^#/, "");
-    return raw.startsWith("/") ? raw : `/${raw}`;
+    const hash = window.location.hash.replace(/^#/, "");
+    if (hash) return hash.startsWith("/") ? hash : `/${hash}`;
+    const path = window.location.pathname.replace(/\/+$/, "");
+    return path || "/";
   };
   const [route, setRoute] = useState("/");
-
   useEffect(() => {
-    const syncRoute = () => setRoute(getRoute());
-    syncRoute();
-    window.addEventListener("hashchange", syncRoute);
-    return () => window.removeEventListener("hashchange", syncRoute);
+    const sync = () => setRoute(getRoute());
+    sync();
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
   }, []);
-
   return route;
 }
 
+const reducedMotion = () =>
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function useReveal(route) {
+  useEffect(() => {
+    const nodes = Array.from(document.querySelectorAll("[data-reveal]"));
+    if (!("IntersectionObserver" in window) || reducedMotion()) {
+      nodes.forEach((n) => n.classList.add("is-visible"));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("is-visible");
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { rootMargin: "0px 0px -6% 0px", threshold: 0.1 }
+    );
+    nodes.forEach((n) => io.observe(n));
+    return () => io.disconnect();
+  }, [route]);
+}
+
+function useHeroMotion(ref) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || reducedMotion()) return;
+    let frame = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() =>
+        el.style.setProperty("--sy", String(Math.min(window.scrollY, 600)))
+      );
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(frame);
+    };
+  }, [ref]);
+}
+
+/* ------------------------------------------------------------------ *
+ * PRIMITIVES
+ * ------------------------------------------------------------------ */
 function Arrow() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -37,10 +252,10 @@ function Arrow() {
   );
 }
 
-function Button({ children = "Book Your Assessment", className = "", href = "#assessment" }) {
+function Button({ children = "Book Your Assessment", className = "", href = "#/assessment" }) {
   return (
-    <a className={`btn btn-primary ${className}`} href={href}>
-      {children}
+    <a className={`btn ${className}`} href={href}>
+      <span>{children}</span>
       <Arrow />
     </a>
   );
@@ -50,877 +265,653 @@ function Logo({ className = "" }) {
   return <img className={`logo ${className}`} src={BRAND_LOGO} alt="Social Following Studios" />;
 }
 
-function Plane({ className = "" }) {
+function PageHead({ eyebrow, title, lede }) {
   return (
-    <svg className={`paper-plane ${className}`} viewBox="0 0 300 180" aria-hidden="true">
+    <header className="page-head" data-reveal>
+      <p className="eyebrow">{eyebrow}</p>
+      <h1>{title}</h1>
+      {lede && <p className="lede">{lede}</p>}
+    </header>
+  );
+}
+
+function SectionHead({ label, title, lede }) {
+  return (
+    <header className="section-head" data-reveal>
+      <p className="section-label">{label}</p>
+      <h2>{title}</h2>
+      {lede && <p className="lede">{lede}</p>}
+    </header>
+  );
+}
+
+/* A name, a hairline, one line. Replaces the card grids. */
+function IndexList({ items }) {
+  return (
+    <ol className="index-list" data-reveal>
+      {items.map((item, i) => {
+        const [name, line] = Array.isArray(item) ? item : [item, null];
+        return (
+          <li key={name}>
+            <span className="index-num">{String(i + 1).padStart(2, "0")}</span>
+            <div>
+              <h3>{name}</h3>
+              {line && <p>{line}</p>}
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * HERO
+ * ------------------------------------------------------------------ */
+function Chart() {
+  return (
+    <svg viewBox="0 0 420 190" role="img" aria-label="Reachable audience recovering month over month">
       <defs>
-        <linearGradient id="planeWing" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0" stopColor="#fff" />
-          <stop offset="1" stopColor="#e7e2d9" />
+        <linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="#0a7d59" stopOpacity=".18" />
+          <stop offset="1" stopColor="#0a7d59" stopOpacity="0" />
         </linearGradient>
-        <linearGradient id="planeFold" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0" stopColor="#f9f8f4" />
-          <stop offset="1" stopColor="#d8d2c9" />
-        </linearGradient>
-        <filter id="planeShadow" x="-20%" y="-40%" width="140%" height="180%">
-          <feDropShadow dx="0" dy="18" stdDeviation="14" floodColor="#131313" floodOpacity=".12" />
-        </filter>
       </defs>
-      <g filter="url(#planeShadow)">
-        <path d="M19 111 272 20 211 150z" fill="url(#planeWing)" />
-        <path d="M19 111l143-15 49 54z" fill="#ded9d0" />
-        <path d="M162 96 272 20 201 112z" fill="#f7f5ef" />
-        <path d="m162 96 10 42 29-26z" fill="url(#planeFold)" />
-        <path d="m19 111 143-15L272 20" fill="none" stroke="#d8d2c9" strokeWidth="1.5" />
+      <g stroke="#e6e0d3" strokeWidth="1">
+        <path d="M0 45h420" />
+        <path d="M0 95h420" />
+        <path d="M0 145h420" />
       </g>
+      <path d="M0 160 52 148 104 152 156 124 208 128 260 98 312 78 364 44 420 30 420 185 0 185Z" fill="url(#chartFill)" />
+      <path d="M0 160 52 148 104 152 156 124 208 128 260 98 312 78 364 44 420 30" fill="none" stroke="#0a7d59" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="420" cy="30" r="5" fill="#0a7d59" stroke="#eef4f0" strokeWidth="4" />
     </svg>
+  );
+}
+
+function AssessmentPanel() {
+  return (
+    <aside className="panel" data-reveal aria-label="Assessment snapshot">
+      <div className="panel-head">
+        <p className="card-label">Assessment snapshot</p>
+        <span className="pill">
+          <span className="dot" />
+          Ready to deploy
+        </span>
+      </div>
+      <div className="panel-figure">
+        <div>
+          <p className="panel-figure-label">Dormant revenue estimate</p>
+          <p className="panel-figure-value">$3.8M</p>
+        </div>
+        <Chart />
+      </div>
+      <dl className="panel-metrics">
+        <div>
+          <dt>Reachable audience</dt>
+          <dd>246K</dd>
+        </div>
+        <div>
+          <dt>Database health</dt>
+          <dd>78%</dd>
+        </div>
+        <div>
+          <dt>Inbox placement</dt>
+          <dd>95%</dd>
+        </div>
+      </dl>
+    </aside>
+  );
+}
+
+function Hero() {
+  const ref = useRef(null);
+  useHeroMotion(ref);
+  return (
+    <section className="hero" ref={ref}>
+      <div className="hero-grid" aria-hidden="true">
+        <div className="hero-grid-plane" />
+      </div>
+      <div className="hero-inner">
+        <div className="hero-copy" data-reveal>
+          <p className="eyebrow">Social Following Studios</p>
+          <h1 className="hero-title">
+            Own your
+            <br />
+            audience.
+          </h1>
+          <p className="hero-descriptor">
+            Social Following Studios is a full-service ESP and a strategic growth and communications agency.
+          </p>
+          <p className="hero-support">
+            We build and run the audience infrastructure that turns existing customer data and new interest into direct
+            relationships and measurable growth.
+          </p>
+          <Button>Book Your Assessment</Button>
+        </div>
+        <AssessmentPanel />
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * SECTIONS
+ * ------------------------------------------------------------------ */
+function OperationalProblem() {
+  const machine = ["Program ownership", "Deployment", "Deliverability", "Reputation", "Targeting", "Execution"];
+  return (
+    <section className="section">
+      <SectionHead label="The operational problem" title="Your database is real, somebody has to run the machine." />
+      <ul className="tag-row" data-reveal>
+        {machine.map((part) => (
+          <li key={part}>{part}</li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+const systemFunctions = () => [
+  "Audience Capture",
+  isReachable("audienceBuilder") ? PRODUCTS.audienceBuilder.label : "Audience Development",
+  "Full-Service ESP",
+  "24/7 Communications",
+];
+
+const systemMetaDescription = () =>
+  `Audience Capture, ${isReachable("audienceBuilder") ? PRODUCTS.audienceBuilder.label : "Audience Development"}, Full-Service ESP, and 24/7 Communications. One operator runs all four.`;
+
+function SystemSummary() {
+  return (
+    <section className="section">
+      <SectionHead label="The system" title="Four functions. One operator." />
+      <IndexList items={systemFunctions()} />
+      <a className="text-link" href="#/system">
+        The system in full <Arrow />
+      </a>
+    </section>
+  );
+}
+
+const AUDIENCES = ["Founders", "Hospitality", "Compliance-Heavy Organizations"];
+
+function WhoWeServe() {
+  return (
+    <section className="section">
+      <SectionHead label="Who we serve" title="Who we serve." />
+      <IndexList items={AUDIENCES} />
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * CASE STUDIES
+ * ------------------------------------------------------------------ */
+const CASE_STUDIES = [
+  {
+    type: "Government",
+    title: "Federal housing agency",
+    narrative:
+      "A federal housing agency managing constituent communication across active waitlist programs engaged Social Following Studios to run the full outreach program. Coordinated communication reached applicants across every live channel inside the existing infrastructure. Constituent engagement returned to active status at program scale.",
+  },
+  {
+    type: "Manufacturing",
+    title: "Manufacturing organization",
+    narrative:
+      "A manufacturing organization had a vendor and procurement database that went quiet after a program transition. Relationships representing active buying history had stopped responding entirely. A reactivation sequence ran across the existing database. Procurement contacts returned to active engagement within the first program cycle, on the existing budget.",
+    quote: "We recovered relationships we assumed were gone permanently.",
+  },
+  {
+    type: "Real Estate",
+    title: "Regional broker",
+    narrative:
+      "A regional broker had a past-client database of buyers and sellers who had gone quiet while the business kept paying to acquire new leads. A unified reactivation sequence ran across email, conversational, and voice channels at once. The existing database and existing budget produced 11 signed listing agreements within 45 days.",
+    quote: "The buyers and sellers we thought were gone came back through the same list we had ignored for years.",
+  },
+];
+
+function FeaturedCase() {
+  return (
+    <article className="featured-case" data-reveal>
+      <p className="card-label">Legal / Mass tort</p>
+      <h3>A dormant plaintiff database reached a multi-million dollar resolution.</h3>
+      <p>
+        The plaintiff database had gone dormant while competing firms reached the same claimant pool. Inbox placement
+        decides whether a claimant sees the message. We held 95% inbox placement, sequenced the outreach, and built the
+        program around claimant trust. The matter resolved for millions.
+      </p>
+      <blockquote>
+        Our messaging reached our claimants. That was the difference.
+        <cite>Michael T., Esquire. Managing Attorney, mass tort firm.</cite>
+      </blockquote>
+    </article>
+  );
+}
+
+function CaseStudyList() {
+  return (
+    <div className="case-list" data-reveal>
+      {CASE_STUDIES.map((c) => (
+        <article className="case" key={c.title}>
+          <p className="card-label">{c.type}</p>
+          <h3>{c.title}</h3>
+          <p>{c.narrative}</p>
+          {c.quote && <p className="case-quote">{c.quote}</p>}
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function LogoBar() {
+  return (
+    <div className="logo-bar" data-reveal>
+      <p className="section-label">Trusted by organizations that lead</p>
+      <img src={LOGOS_APPROVED} alt="Client organizations" />
+    </div>
+  );
+}
+
+function CaseStudiesSummary() {
+  return (
+    <section className="section">
+      <SectionHead label="Case studies" title="Verified case studies from the actual work." />
+      <FeaturedCase />
+      <a className="text-link" href="#/case-studies">
+        All case studies <Arrow />
+      </a>
+    </section>
+  );
+}
+
+function Newsletter() {
+  return (
+    <section className="section">
+      <SectionHead label="Newsletter" title="Audience strategy and distribution." />
+      <form className="newsletter" data-reveal onSubmit={(e) => e.preventDefault()}>
+        <label htmlFor="nl-email">Email address</label>
+        <div className="newsletter-row">
+          <input id="nl-email" type="email" placeholder="you@company.com" aria-label="Email address" />
+          <button type="submit">
+            <span>Subscribe</span>
+            <Arrow />
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * FORM
+ * ------------------------------------------------------------------ */
+function BookingForm({ source = "Website Assessment" }) {
+  return (
+    <form className="form" action="https://crm.zoho.com/crm/WebToLeadForm" method="POST" data-reveal>
+      <input type="hidden" name="xnQsjsdp" value="b45ce04ddd76914bbfeade30ab0a6e86446ed07ddcd64b5425a1a4d9d5a467b8" readOnly />
+      <input type="hidden" name="xmIwtLD" value="97ca543a3d1ea88492628d126d9ab329b04cea167679b0225170279c6fc6e4f3684dbc3fb82c598c93398f0f68dcd29b" readOnly />
+      <input type="hidden" name="actionType" value="TGVhZHM=" readOnly />
+      <input type="hidden" name="Lead Source" value={source} readOnly />
+      <input type="hidden" name="Last Name" value="Assessment Request" readOnly />
+      <input type="hidden" name="returnURL" value="https://www.socialfollowing.shop/#/thank-you" readOnly />
+      <Field label="Organization name" name="Company" required />
+      <Field label="Corporate email" name="Email" type="email" required />
+      <Field label="Brief description of your program" name="Description" textarea required />
+      <button className="btn" type="submit">
+        <span>Request Your Assessment</span>
+        <Arrow />
+      </button>
+    </form>
+  );
+}
+
+function Field({ label, name, type = "text", textarea = false, required = false }) {
+  return (
+    <div className="field">
+      <label htmlFor={name}>{label}</label>
+      {textarea ? (
+        <textarea id={name} name={name} required={required} rows={3} />
+      ) : (
+        <input id={name} name={name} type={type} required={required} />
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * HEADER + FOOTER
+ * ------------------------------------------------------------------ */
+function BareHeader() {
+  return (
+    <header className="header bare">
+      <a className="brand" href="/" aria-label="Social Following Studios home">
+        <Logo />
+      </a>
+    </header>
   );
 }
 
 function Header({ route }) {
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    setOpen(false);
-  }, [route]);
+  const nav = useMemo(() => buildNav(), []);
+  useEffect(() => setOpen(false), [route]);
 
   return (
-    <header className="site-header">
+    <header className="header">
       <a className="brand" href="#/" aria-label="Social Following Studios home">
         <Logo />
       </a>
-      <nav className="nav-links" aria-label="Primary navigation">
-        {NAV.map((item) => (
-          <a key={item.href} className={route === item.route ? "active" : ""} href={item.href}>
+      <nav className="nav" aria-label="Primary">
+        {nav.map((item) => (
+          <a key={item.href} href={item.href} className={route === item.href.replace(/^#/, "") ? "current" : ""}>
             {item.label}
           </a>
         ))}
       </nav>
-      <a className="btn btn-primary nav-cta" href="#assessment">Book Your Assessment</a>
-      <button className="menu-button" type="button" aria-expanded={open} aria-controls="mobile-menu" onClick={() => setOpen((value) => !value)}>
-        <span />
+      <a className="btn nav-cta" href="#/assessment">
+        <span>Book Your Assessment</span>
+      </a>
+      <button
+        className="menu-toggle"
+        type="button"
+        aria-expanded={open}
+        aria-controls="mobile-nav"
+        aria-label="Toggle navigation"
+        onClick={() => setOpen((v) => !v)}
+      >
         <span />
         <span />
       </button>
       {open && (
-        <nav id="mobile-menu" className="mobile-menu" aria-label="Mobile navigation">
-          {NAV.map((item) => (
+        <nav id="mobile-nav" className="mobile-nav" aria-label="Mobile">
+          {nav.map((item) => (
             <a key={item.href} href={item.href}>
               {item.label}
             </a>
           ))}
-          <a href="#assessment">Book Your Assessment</a>
+          <a href="#/assessment">Book Your Assessment</a>
         </nav>
       )}
     </header>
   );
 }
 
-function Footer() {
+function Footer({ variant = "full" }) {
   return (
-    <footer className="site-footer">
-      <div className="footer-main">
-        <div className="footer-brand">
-          <Logo />
-          <p>We build and manage mission-critical communication infrastructure that drives real-world results.</p>
-        </div>
-        <form className="footer-signup" onSubmit={(event) => event.preventDefault()}>
-          <p>Join our mailing list for the latest insights.</p>
-          <div className="signup-row">
-            <input type="email" placeholder="Email address" aria-label="Email address" />
-            <button type="submit">Join</button>
-          </div>
-        </form>
-        <div className="footer-legal">
-          <a href="#/terms">Terms</a>
-          <a href="#/privacy">Privacy</a>
-        </div>
+    <footer className={`footer ${variant === "minimal" ? "minimal" : ""}`}>
+      <p className="footer-headline">Own your audience.</p>
+      <p className="footer-name">Social Following Studios</p>
+      <p className="footer-imprint">An imprint of Marchitects.</p>
+      <div className="footer-bottom">
+        <span>© 2026 Social Following Studios</span>
+        <span className="footer-legal">
+          <a href="/#/terms">Terms</a>
+          <a href="/#/privacy">Privacy</a>
+          <a href="/#/contact">Contact</a>
+        </span>
       </div>
-      <div className="footer-bottom">© 2026 Social Following Studios. An imprint of {SITE_META.imprint}.</div>
     </footer>
   );
 }
 
-function Chart() {
-  return (
-    <svg viewBox="0 0 420 210" role="img" aria-label="Audience reactivation potential increasing from January to June">
-      <defs>
-        <linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#008b61" stopOpacity=".2" />
-          <stop offset="1" stopColor="#008b61" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <g stroke="#e4ded6" strokeWidth="1">
-        <path d="M0 38h420" />
-        <path d="M0 78h420" />
-        <path d="M0 118h420" />
-        <path d="M0 158h420" />
-      </g>
-      <path d="M0 170 22 140 42 125 63 137 86 112 108 92 130 88 152 105 174 110 196 103 218 112 240 104 262 74 284 70 306 58 328 55 350 36 372 14 420 14 420 190 0 190Z" fill="url(#chartFill)" />
-      <path d="M0 170c18-26 25-38 42-45s23 13 44-13 32-28 54-16 28 16 50 10 22 6 44-14 18-20 40-21 23-13 44-17 20-14 36-27 11-13 30-13h36" fill="none" stroke="#008b61" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="420" cy="14" r="6" fill="#008b61" stroke="#dfece5" strokeWidth="5" />
-      <g fill="#6a706b" fontFamily="DM Sans, Arial, sans-serif" fontSize="11">
-        <text x="0" y="207">JAN</text>
-        <text x="78" y="207">FEB</text>
-        <text x="155" y="207">MAR</text>
-        <text x="235" y="207">APR</text>
-        <text x="312" y="207">MAY</text>
-        <text x="392" y="207">JUN</text>
-      </g>
-    </svg>
-  );
-}
-
-function AssessmentSummary() {
-  return (
-    <article className="visual-panel assessment-card" aria-label="Assessment summary">
-      <div className="panel-head">
-        <p className="card-label">Assessment Summary</p>
-        <span className="status-pill">
-          <span className="dot" />
-          Ready to Reactivate
-        </span>
-      </div>
-      <div className="summary-main">
-        <div className="summary-score">
-          <p className="serif small-serif">Audience Reactivation Potential</p>
-          <p className="big-percent">83%</p>
-          <p className="summary-copy">High potential to reach dormant connections across your channels.</p>
-        </div>
-        <div className="chart">
-          <Chart />
-        </div>
-      </div>
-      <div className="stats-row">
-        <Metric label="Reachable Contacts" value="246K" caption="+18% vs last 6 months" />
-        <Metric label="Dormant Revenue" value="$3.8M" caption="Estimated opportunity" />
-        <Metric label="Data Health" value="78%" caption="Above industry average" />
-      </div>
-      <div className="panel-foot">
-        <span className="check-icon">✓</span>
-        Infrastructure in place. Channels connected. Ready to deploy.
-      </div>
-    </article>
-  );
-}
-
-function Metric({ label, value, caption }) {
-  return (
-    <div className="stat">
-      <p className="metric-label">{label}</p>
-      <div className="stat-value">{value}</div>
-      <div className="stat-caption">{caption}</div>
-    </div>
-  );
-}
-
-function HeroCopy({ eyebrow, title, body, showButton = true }) {
-  return (
-    <div className="hero-copy">
-      <p className="eyebrow">{eyebrow}</p>
-      <h1>{title}</h1>
-      <div className="green-rule" />
-      <p className="lead">{body}</p>
-      {showButton && <Button />}
-    </div>
-  );
-}
-
-function BriefCard({ children, next = false }) {
-  return (
-    <div className={`brief-card ${next ? "next-steps" : ""}`}>
-      <div className="brief-icon" aria-hidden="true">
-        {next ? (
-          <span className="check-icon">✓</span>
-        ) : (
-          <svg width="58" height="58" viewBox="0 0 64 64" fill="none">
-            <path d="m32 6 14 8v16l-14 8-14-8V14zM18 30l14-8 14 8M32 22v16" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-            <path d="m16 42 10-6 10 6v12l-10 6-10-6zM38 42l10-6 10 6v12l-10 6-10-6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-          </svg>
-        )}
-      </div>
-      {!next && <div className="brief-divider" />}
-      {children}
-    </div>
-  );
-}
-
-function CtaBand({ title, copy, cta = "Book Your Assessment" }) {
-  return (
-    <section className="page-shell">
-      <div className={`cta-band ${copy ? "with-copy" : ""}`}>
-        <h2>{title}</h2>
-        {copy && <p>{copy}</p>}
-        <Plane className="cta-plane" />
-        <Button>{cta}</Button>
-      </div>
-    </section>
-  );
-}
-
+/* ------------------------------------------------------------------ *
+ * PAGES
+ * ------------------------------------------------------------------ */
 function Home() {
-  const framework = [
-    ["database", "Unified Database Architecture", "Consolidation of disparate contact records, systematic deduplication, and suppression logic establish the clean data layer required for programmatic scaling."],
-    ["gear", "Rules Engine Calibration", "Segmentation logic, compliance suppression architecture, and behavioral triggers govern the delivery cadence to ensure precise narrative timing."],
-    ["network", "Channel Orchestration", "Deployment pathways synchronize across multiple communication vectors via a single operational team to maintain unified brand presence."],
-    ["trend", "Real-Time Deliverability Governance", "Continuous monitoring evaluates authentication status, sender reputation, delivery failures, and inbox placement. Active intervention protects the integrity of the sending environment throughout deployment."],
-  ];
-
   return (
     <>
-      <section className="page-shell hero home-institutional-hero">
-        <HeroCopy
-          eyebrow="Social Following Studios"
-          title={<>Your database,<br />reactivated.</>}
-          body="Your database represents the single most underutilized asset within the enterprise portfolio. Social Following Studios operates as a total lifecycle email program management firm that assumes complete operational ownership of the messaging continuum. We govern the entire trajectory across initial assessment, architectural build, programmatic deployment, and systemic deliverability to realize definitive corporate outcomes."
-        />
-        <AvatarStudioVisual className="home-twin-visual" compact />
-      </section>
-
-      <section className="page-shell section institutional-section">
-        <div className="institutional-intro">
-          <p className="section-label">Structural Optimization Framework</p>
-          <h2>Structural Optimization Framework</h2>
-          <p>Every program operates upon an integrated data layer to transform latent enterprise assets into active capital. We ingest existing contact records, analyze engagement history, and establish the technical parameters required for predictable execution before the initial transmission cycle begins. The organization maintains strategic oversight while our firm assumes total execution of the underlying infrastructure.</p>
-        </div>
-        <div className="cards-grid four framework-grid">
-          {framework.map(([icon, title, copy]) => (
-            <article className="card" key={title}>
-              <Icon name={icon} className="icon-large" />
-              <h3>{title}</h3>
-              <div className="small-rule" />
-              <p>{copy}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="page-shell section institutional-split database-capitalization">
-        <article className="copy-card institutional-copy-card">
-          <p className="section-label">Database Capitalization</p>
-          <h2>Database Capitalization</h2>
-          <p>Enterprise yield reaches optimization when sophisticated data repositories pair with precise narrative nuance. We analyze your customer database at the cohort level to isolate precisely where commercial demand remains active. This intelligence becomes the foundation for a targeted reactivation architecture built around verified sales opportunities.</p>
-        </article>
-        <AssessmentSummary />
-      </section>
-
-      <section className="page-shell section">
-        <article className="copy-card management-card">
-          <div>
-            <p className="section-label">Complete Program Management</p>
-            <h2>Complete Program Management</h2>
-          </div>
-          <p>Social Following Studios governs your email operation as a unified operating system. Our mandate extends from initial data ingestion through continuous programmatic deployment. We engineer controlled delivery environments that protect technical integrity and establish direct control over the underlying sending infrastructure. This active governance maintains a 95% inbox placement rate, ensuring communications withstand rigorous deliverability protocols before a single prospect decides whether to respond.</p>
-          <div className="placement-proof" aria-label="Published inbox placement metric">
-            <strong>95%</strong>
-            <span>Inbox placement maintained through active governance</span>
-          </div>
-        </article>
-      </section>
-
-      <section className="page-shell section institutional-split avatar-capability">
-        <article className="copy-card institutional-copy-card">
-          <p className="section-label">Avatar Studio</p>
-          <h2>The Avatar Studio: Language Conversion Science</h2>
-          <p>Extracting maximum valuation from a mature institutional database requires an advanced comprehension of linguistic nuance. The Avatar Studio constructs sophisticated digital twins engineered to maintain absolute communicative precision across distinct target demographics. These models translate complex expertise into highly articulated communications while preserving institutional credibility and source authority. This structured approach permits the enterprise to scale personalized narrative pathways across video and direct response environments simultaneously.</p>
-          <a className="text-link institutional-link" href="#/avatar-studio">Explore Avatar Studio <Arrow /></a>
-        </article>
-        <AvatarStudioVisual className="avatar-section-visual" compact />
-      </section>
-
-      <section className="page-shell section">
-        <article className="capitalization-card">
-          <div>
-            <p className="section-label">Capitalization Assessment</p>
-            <h2>Capitalization Assessment</h2>
-            <p>The Infrastructure Assessment reviews the operational health of your data environment and the technical frameworks surrounding it. We locate your dormant audience segments with the highest immediate revenue potential and map the delivery architecture required to activate them.</p>
-          </div>
-          <div className="capitalization-actions">
-            <Button />
-            <em>An Imprint of MARCHITECTS</em>
-          </div>
-        </article>
-      </section>
-
-      <section id="assessment" className="page-shell section assessment-section">
-        <div className="assessment-heading">
-          <p className="section-label">Capitalization Assessment</p>
-          <h2>Book your assessment.</h2>
-          <p>Every engagement begins with a Database Assessment. The assessment produces the underlying technical metrics, and those numbers drive the operational decision.</p>
-        </div>
-        <BookingForm />
-      </section>
-
-      <section className="page-shell section process-protocols">
-        <article className="copy-card">
-          <p className="section-label">Process Protocols</p>
-          <h2>Process Protocols</h2>
-          <p>An enterprise intake specialist will review your program context within one business day. The process begins with a 20-minute technical review focused on the condition of your current infrastructure and the operational path forward.</p>
-        </article>
-      </section>
+      <Hero />
+      <div className="page-shell">
+        <OperationalProblem />
+        <SystemSummary />
+        <WhoWeServe />
+        <CaseStudiesSummary />
+        <Newsletter />
+      </div>
     </>
   );
 }
 
-function AvatarStudioVisual({ className = "", compact = false }) {
+const SYSTEM_STEPS = [
+  ["Ingest", "We pull the data your program already owns. List age, engagement history, delivery performance."],
+  ["Process", "We build sequences for each segment. Reactivation for dormant contacts, retention for engaged ones, compliance for the rest."],
+  ["Evaluate", "We audit deliverability, authentication, and sending history. Every gap between current inbox placement and 95% is closed before deployment."],
+  ["Engage", "We execute delivery with full authentication, reputation management, and real-time monitoring. Built for inbox placement, not volume."],
+];
+
+function SystemPage() {
   return (
-    <article className={`visual-panel twin-visual ${compact ? "twin-visual-compact" : ""} ${className}`} aria-label="A human subject facing a sculptural digital twin">
-      <div className="twin-visual-labels" aria-hidden="true">
-        <span>Human Source</span>
-        <span>Digital Twin</span>
-      </div>
-      <svg viewBox="0 0 720 500" role="img" aria-labelledby="twin-visual-title twin-visual-description">
-        <title id="twin-visual-title">Human source and sculptural digital twin production system</title>
-        <desc id="twin-visual-description">A human profile and mannequin-like digital twin face one another across a controlled division.</desc>
-        <defs>
-          <linearGradient id="twinSignal" x1="0" x2="1">
-            <stop offset="0" stopColor="#b8d7cc" stopOpacity="0" />
-            <stop offset=".5" stopColor="#008b61" />
-            <stop offset="1" stopColor="#b8d7cc" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="humanSculpture" x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0" stopColor="#ffffff" />
-            <stop offset=".55" stopColor="#f3f0e9" />
-            <stop offset="1" stopColor="#d8d3ca" />
-          </linearGradient>
-          <linearGradient id="digitalSculpture" x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0" stopColor="#f8fffc" />
-            <stop offset=".55" stopColor="#dcefe7" />
-            <stop offset="1" stopColor="#a9d1c1" />
-          </linearGradient>
-          <filter id="twinGlow" x="-80%" y="-80%" width="260%" height="260%">
-            <feGaussianBlur stdDeviation="10" />
-          </filter>
-          <filter id="figureShadow" x="-20%" y="-20%" width="140%" height="150%">
-            <feDropShadow dx="0" dy="12" stdDeviation="10" floodColor="#14261f" floodOpacity=".12" />
-          </filter>
-        </defs>
-
-        <g className="twin-division" aria-hidden="true">
-          <path d="M360 78v326" />
-        </g>
-
-        <g className="twin-signal" aria-hidden="true">
-          <path d="M286 216H434" />
-          <circle cx="326" cy="216" r="4" />
-          <circle cx="360" cy="216" r="7" />
-          <circle cx="394" cy="216" r="4" />
-          <circle className="twin-signal-glow" cx="360" cy="216" r="30" />
-        </g>
-
-        <g className="twin-figure twin-figure-original">
-          <path className="twin-ponytail" d="M129 119c-28 11-46 35-40 62 5 24 25 39 50 36-14-12-21-29-21-50 0-20 4-36 11-48Z" />
-          <path d="M244 138c-12-29-42-48-76-42-39 7-63 45-55 84 4 20 15 35 31 46l-8 55c-4 27-18 47-43 59l-28 14v50h248v-50l-29-14c-27-13-42-35-44-64l-3-40c19-13 31-34 31-58 0-10-2-19-6-28l-28-12Z" />
-          <path className="twin-face-line" d="M237 151c13 7 20 17 20 29 0 11-7 19-20 25l-17 7" />
-          <circle cx="216" cy="172" r="4" />
-        </g>
-
-        <g className="twin-figure twin-figure-digital">
-          <path className="twin-ponytail" d="M591 119c28 11 46 35 40 62-5 24-25 39-50 36 14-12 21-29 21-50 0-20-4-36-11-48Z" />
-          <path d="M476 138c12-29 42-48 76-42 39 7 63 45 55 84-4 20-15 35-31 46l8 55c4 27 18 47 43 59l28 14v50H407v-50l29-14c27-13 42-35 44-64l3-40c-19-13-31-34-31-58 0-10 2-19 6-28l28-12Z" />
-          <path className="twin-face-line" d="M483 151c-13 7-20 17-20 29 0 11 7 19 20 25l17 7" />
-          <circle cx="504" cy="172" r="4" />
-          <path className="twin-detail" d="M510 113v270M540 103v289M570 114v269M600 154v229M430 354h220M452 322h176M468 290h144" />
-        </g>
-      </svg>
-    </article>
-  );
-}
-
-function AvatarStudio() {
-  return (
-    <>
-      <section className="page-shell hero narrow avatar-hero">
-        <div className="hero-copy">
-          <p className="eyebrow">Avatar Studio</p>
-          <h1>Your Twin Everywhere</h1>
-          <div className="green-rule" />
-          <p className="lead avatar-commercial-copy">We create a high-fidelity digital twin of your likeness and voice, then turn your knowledge into finished video content built for continuous distribution.</p>
-          <Button href="#assessment">Build My Digital Twin</Button>
-        </div>
-        <AvatarStudioVisual />
+    <div className="page-shell">
+      <PageHead eyebrow="The system" title="Four functions. One operator." />
+      <section className="section">
+        <IndexList items={systemFunctions()} />
       </section>
-
-      <section className="page-shell section">
-        <article className="copy-card avatar-statement">
-          <p className="section-label">Production Mandate</p>
-          <h2>Finished video content engineered for continuous distribution.</h2>
-          <p>Avatar Studio records your likeness, voice, and subject-matter expertise, then produces finished video assets for campaign, sales, training, and customer communication systems.</p>
-        </article>
+      <section className="section">
+        <SectionHead label="How it works" title="Ingest, process, evaluate, engage." />
+        <IndexList items={SYSTEM_STEPS} />
       </section>
-
-      <CtaBand title="Convert your expertise into continuous video production." cta="Build My Digital Twin" />
-    </>
-  );
-}
-
-function SystemDiagram() {
-  const inputs = [
-    ["CRM", "user"],
-    ["Historical Engagement", "chart"],
-    ["Compliance Data", "shield"],
-    ["Audience Records", "users"],
-  ];
-  const outputs = [
-    ["Email", "mail"],
-    ["SMS", "chat"],
-    ["Voice", "phone"],
-    ["Direct Mail", "mail"],
-  ];
-
-  return (
-    <article className="visual-panel system-card" aria-label="Unified data system diagram">
-      <div className="system-diagram">
-        <DiagramSide label="Inputs" items={inputs} />
-        <div className="diagram-center">
-          <div className="diagram-core">
-            <Logo />
-            <span>Unified Data System</span>
-          </div>
-        </div>
-        <DiagramSide label="Outputs" items={outputs} />
-      </div>
-    </article>
-  );
-}
-
-function DiagramSide({ label, items }) {
-  return (
-    <div className="diagram-side">
-      <p className="diagram-label">{label}</p>
-      {items.map(([title, icon]) => (
-        <div className="diagram-tile" key={title}>
-          <Icon name={icon} />
-          <span>{title}</span>
-        </div>
-      ))}
+      <CtaBand title="Your program, under management." />
     </div>
   );
 }
 
-function Icon({ name, className = "" }) {
-  const props = { className: `line-icon ${className}`, viewBox: "0 0 72 72", fill: "none", "aria-hidden": true };
-  const paths = {
-    database: (
-      <>
-        <ellipse cx="36" cy="15" rx="22" ry="9" />
-        <path d="M14 15v37c0 5 10 9 22 9s22-4 22-9V15M14 34c0 5 10 9 22 9s22-4 22-9M14 49c0 5 10 9 22 9s22-4 22-9" />
-      </>
-    ),
-    gear: (
-      <>
-        <path d="M36 8v10M36 54v10M8 36h10M54 36h10M16 16l7 7M49 49l7 7M56 16l-7 7M23 49l-7 7" />
-        <circle cx="36" cy="36" r="18" />
-        <circle cx="36" cy="36" r="7" />
-      </>
-    ),
-    network: (
-      <>
-        <circle cx="36" cy="12" r="5" />
-        <circle cx="16" cy="48" r="5" />
-        <circle cx="56" cy="48" r="5" />
-        <circle cx="36" cy="58" r="5" />
-        <path d="M36 17v17M36 34 16 43M36 34l20 9M36 34v19" />
-      </>
-    ),
-    trend: (
-      <>
-        <path d="M14 58h44M14 58V10" />
-        <path d="m21 47 10-13 10 5 15-23" />
-        <circle cx="21" cy="47" r="3" fill="currentColor" />
-        <circle cx="31" cy="34" r="3" fill="currentColor" />
-        <circle cx="41" cy="39" r="3" fill="currentColor" />
-        <circle cx="56" cy="16" r="3" fill="currentColor" />
-      </>
-    ),
-    mail: (
-      <>
-        <path d="M12 20h48v34H12z" />
-        <path d="m14 22 22 19 22-19" />
-      </>
-    ),
-    phone: <path d="M24 12h10l4 15-7 5c5 9 10 14 19 19l5-7 15 4v10c0 3-2 5-5 5C35 63 9 37 9 17c0-3 2-5 5-5z" />,
-    calendar: (
-      <>
-        <rect x="14" y="18" width="44" height="40" rx="2" />
-        <path d="M24 10v14M48 10v14M14 30h44M24 39h6M34 39h6M44 39h6M24 49h6M34 49h6M44 49h6" />
-      </>
-    ),
-    user: (
-      <>
-        <circle cx="36" cy="21" r="9" />
-        <path d="M19 58c3-12 8.7-18 17-18s14 6 17 18" />
-      </>
-    ),
-    users: (
-      <>
-        <circle cx="26" cy="25" r="7" />
-        <circle cx="47" cy="27" r="6" />
-        <path d="M12 58c2.5-10 7-15 14-15s11.5 5 14 15M37 58c2-8 5.5-12 11-12s9 4 11 12" />
-      </>
-    ),
-    chart: (
-      <>
-        <path d="M14 58h44M20 52V34M34 52V20M48 52V12" />
-        <path d="m15 42 13-13 9 9 18-24" />
-      </>
-    ),
-    shield: (
-      <>
-        <path d="M36 8 56 16v17c0 15-8 24-20 31-12-7-20-16-20-31V16z" />
-        <path d="m26 35 7 7 14-17" />
-      </>
-    ),
-    chat: <path d="M14 32c0-12 9.6-20 22-20s22 8 22 20-9.6 20-22 20c-3 0-5.7-.4-8.2-1.3L16 56l4.4-9.3C16.4 43 14 37.8 14 32z" />,
-    search: (
-      <>
-        <circle cx="30" cy="30" r="17" />
-        <path d="m43 43 15 15" />
-      </>
-    ),
-    pen: (
-      <>
-        <path d="M20 58 30 28l23-18 9 9-18 23z" />
-        <path d="m30 28 14 14M48 14l10-10" />
-      </>
-    ),
+function CaseStudiesPage() {
+  return (
+    <div className="page-shell">
+      <PageHead
+        eyebrow="Case studies"
+        title="Verified case studies from the actual work."
+        lede="Documented customer acquisition, database reactivation, deliverability, hospitality, communications, and growth."
+      />
+      <section className="section">
+        <FeaturedCase />
+      </section>
+      <section className="section">
+        <CaseStudyList />
+      </section>
+      <LogoBar />
+      <ProofCrossLinks />
+      <CtaBand title="Your database has a case study in it." />
+    </div>
+  );
+}
+
+function ProofCrossLinks() {
+  const links = crossLinkProducts();
+  if (links.length === 0) return null;
+  return (
+    <p className="cross-links" data-reveal>
+      Related capability:{" "}
+      {links.map((product, i) => (
+        <React.Fragment key={product.route}>
+          {i > 0 && <span aria-hidden="true"> · </span>}
+          <a href={`#${product.route}`}>{product.label}</a>
+        </React.Fragment>
+      ))}
+    </p>
+  );
+}
+
+const ASSESSMENT_OUTPUTS = [
+  "Database health",
+  "Reachable audience",
+  "Deliverability",
+  "Dormant revenue estimate",
+  "Deployment path",
+];
+
+function AssessmentPage() {
+  return (
+    <div className="page-shell">
+      <PageHead eyebrow="The assessment" title="Book your assessment." />
+      <section className="section assessment-grid">
+        <IndexList items={ASSESSMENT_OUTPUTS} />
+        <BookingForm source="Website Assessment" />
+      </section>
+    </div>
+  );
+}
+
+function AudienceBuilder() {
+  return (
+    <div className="page-shell">
+      <PageHead
+        eyebrow="Audience Builder"
+        title="The reachable audience under every send."
+        lede="Audience Builder turns a raw contact list into a segmented, deliverable audience."
+      />
+      <section className="section">
+        <IndexList
+          items={[
+            ["Ingest", "We pull the data your program already owns."],
+            ["Resolve", "Records are deduplicated, corrected, and unified into one clean contact layer."],
+            ["Segment", "Contacts are grouped by buying signal, channel behavior, and compliance state."],
+            ["Activate", "Each segment gets a sequence."],
+          ]}
+        />
+      </section>
+      <CtaBand title="Your audience, built and maintained." />
+    </div>
+  );
+}
+
+/* Unlisted ad-funnel page: no nav header, one action. */
+function ProductPage({ route }) {
+  const content = CAMPAIGN_CONTENT[route];
+  const product = productByRoute(route)?.[1];
+  if (!content) return <Home />;
+  const toLead = (e) => {
+    e.preventDefault();
+    document.getElementById("lead")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-
-  return <svg {...props}>{paths[name]}</svg>;
-}
-
-function Infrastructure() {
-  const features = [
-    ["database", "1. Unified Database", "We consolidate your contact records, suppress duplicates, and establish the clean list architecture the program runs on."],
-    ["gear", "2. Rules Engine", "Segmentation logic, compliance suppression rules, and behavioral triggers are built before deployment. The right message reaches the right contact under the right conditions."],
-    ["network", "3. Channel Orchestration", "Deployment runs across email, conversational, and voice channels simultaneously from one team. One program. Every live channel your contacts use."],
-    ["trend", "4. Real-time Monitoring", "Deliverability is actively governed every send cycle. That rate is sustained because it is managed, not configured once and left. 95% inbox placement is an output of ongoing governance, not a platform feature. The industry average sits at 83.1% across major ESPs (EmailTooltester, 2026). Nearly one in six messages never reaches the inbox before a single person decides whether to respond."],
-  ];
-
-  const steps = [
-    ["01", "Ingest", "We pull the data your program already owns. List age, engagement history, delivery performance. And map the distance between current output and recoverable value."],
-    ["02", "Process", "We build sequences for each segment: reactivation flows for dormant contacts, compliance communications for active records, and retention programs for engaged audiences."],
-    ["03", "Evaluate", "We audit deliverability infrastructure, authentication records, and sending history. Every gap between your current inbox placement rate and 95% is identified and addressed before deployment."],
-    ["04", "Engage", "We execute delivery with full authentication, reputation management, and real-time monitoring. Every message routes through infrastructure built for inbox placement, not volume."],
-  ];
-
   return (
-    <>
-      <section className="page-shell hero narrow">
-        <HeroCopy eyebrow="Data. Infrastructure. Results." title={<>One system.<br />Every channel.</>} body="Social Following Studios manages the full program infrastructure. Database, sequences, deployment, and deliverability. From one team with one accountable outcome." />
-        <SystemDiagram />
-      </section>
-
-      <section className="page-shell section">
-        <BriefCard>
-          <div className="brief-content">
-            <h2>What we build for your program.</h2>
-            <p>Every program we manage runs on a unified database layer. We ingest your existing contacts, segment by engagement history and channel behavior, and map the reactivation path before the first send goes out. You do not manage the infrastructure. We do.</p>
-          </div>
-        </BriefCard>
-      </section>
-
-      <section className="page-shell section">
-        <div className="cards-grid four">
-          {features.map(([icon, title, copy]) => (
-            <article className="card" key={title}>
-              <Icon name={icon} className="icon-large" />
-              <h3>{title}</h3>
-              <div className="small-rule" />
-              <p>{copy}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <Process steps={steps} />
-      <CtaBand title="Your program, under management." />
-    </>
-  );
-}
-
-function Process({ steps, three = false }) {
-  return (
-    <section className="page-shell process">
-      <p className="section-label">How It Works</p>
-      <div className={`process-grid ${three ? "three" : ""}`}>
-        {steps.map(([number, title, copy]) => (
-          <article className="process-step" key={title}>
-            <div className="process-heading">
-              <span className="process-number">{number}</span>
-              <span className="process-title">{title}</span>
-            </div>
-            <div className="small-rule" />
-            <p>{copy}</p>
-          </article>
-        ))}
+    <div className="page-shell">
+      <PageHead eyebrow={content.eyebrow} title={content.title} lede={content.support} />
+      <div data-reveal>
+        <a className="btn" href="#lead" onClick={toLead}>
+          <span>{content.cta}</span>
+          <Arrow />
+        </a>
       </div>
-    </section>
+      <section className="section">
+        <IndexList items={content.points} />
+      </section>
+      <section className="section" id="lead">
+        <SectionHead label={content.formLabel} title={content.formTitle} />
+        <BookingForm source={`Website Funnel - ${product?.label || route}`} />
+      </section>
+    </div>
   );
 }
 
-function CaseStudies() {
-  const cases = [
-    {
-      type: "Government",
-      title: "Federal housing agency",
-      outcome: "A federal housing agency recovered constituent engagement at program scale without new budget or new infrastructure.",
-      narrative: "A federal housing agency managing constituent communication across active waitlist programs engaged Social Following Studios to run the full outreach program. Coordinated communication reached applicants across every live channel within the existing program infrastructure. Constituent engagement returned to active status at program scale.",
-    },
-    {
-      type: "Manufacturing",
-      title: "Manufacturing organization",
-      outcome: "A manufacturing organization recovered procurement relationships that had stopped responding after a program transition.",
-      narrative: "A manufacturing organization had a vendor and procurement contact database that had gone quiet after a program transition while relationships representing active buying history stopped responding entirely. A reactivation sequence ran across the existing database. Procurement contacts returned to active engagement within the first program cycle. Existing database. Existing budget.",
-      quote: "We recovered relationships we assumed were gone permanently.",
-    },
-    {
-      type: "Real Estate",
-      title: "Regional broker",
-      outcome: "A regional broker produced 11 signed listing agreements in 45 days from a database the business had stopped using.",
-      narrative: "A regional broker had a past-client database of buyers and sellers who had gone quiet while the business spent money acquiring new leads. A unified reactivation sequence ran across email, conversational, and voice channels simultaneously. The existing database and existing budget produced 11 signed listing agreements within 45 days.",
-      quote: "The buyers and sellers we thought were gone came back through the same list we had ignored for years.",
-    },
-  ];
-
+function CtaBand({ title, href = "#/assessment", cta = "Book Your Assessment" }) {
   return (
-    <>
-      <section className="page-shell hero case-hero">
-        <HeroCopy eyebrow="Case Studies" title={<>Results from<br />real engagements.</>} body="Every case below began with a database the organization already owned and a program that had stopped producing. Existing infrastructure. Existing budget." showButton={false} />
-        <article className="visual-panel featured-card" aria-label="Featured case study">
-          <div className="panel-head">
-            <p className="card-label">Featured Case Study</p>
-            <span className="status-pill"><span className="dot" />Legal / Mass Tort</span>
-          </div>
-          <div className="featured-proof">
-            <p className="card-label">Legal / Mass Tort</p>
-            <h2>A plaintiff database reached multi-million dollar resolution after competing firms reached the same claimant pool.</h2>
-            <p>A plaintiff database had gone dormant while competing firms reached the same claimant pool. Inbox placement determines whether the claimant sees the message. We ran the deliverability program at 95% inbox placement, sequenced the outreach, and built the communication program around claimant trust. The matter reached multi-million dollar resolution.</p>
-            <div className="quote-block compact">
-              <blockquote>“Our messaging reached our claimants. That was the difference.”</blockquote>
-              <cite>— Managing Attorney, mass tort firm. Quoted anonymously at client's request</cite>
-            </div>
-          </div>
-        </article>
-      </section>
-
-      <section className="page-shell">
-        <div className="logo-bar">
-          <p className="section-label">Trusted By Organizations That Lead</p>
-          <img src={LOGOS_APPROVED} alt="Trusted organizations" />
-        </div>
-      </section>
-
-      <section className="page-shell section">
-        <div className="case-section-title">
-          <h2>Case Study Grid</h2>
-          <div className="small-rule" />
-        </div>
-        <div className="case-grid proof-grid">
-          {cases.map(({ type, title, outcome, narrative, quote }) => (
-            <article className="card case-card" key={title}>
-              <p className="card-label">{type}</p>
-              <h3>{title}</h3>
-              <p className="case-outcome">{outcome}</p>
-              <p>{narrative}</p>
-              {quote && <p className="case-author">“{quote}”</p>}
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <CtaBand title="Your database has a case study in it." copy="Start with the Assessment and find out what it can produce." />
-    </>
+    <section className="cta-band" data-reveal>
+      <h2>{title}</h2>
+      <Button href={href}>{cta}</Button>
+    </section>
   );
 }
 
 function Contact() {
   return (
-    <>
-      <section className="page-shell hero contact-layout">
-        <HeroCopy eyebrow="Start the conversation." title={<>Book your<br />assessment.</>} body="Every engagement begins with a Database Assessment. The assessment produces the numbers. The numbers drive the decision." showButton={false} />
-        <Plane className="contact-plane" />
-        <svg className="flight-path contact-flight" viewBox="0 0 360 260" aria-hidden="true">
-          <path d="M15 212c92-20 20-96 92-120 50-17 84 8 73-45-10-48 71-58 151-28" />
-        </svg>
-        <BookingForm />
-        <ExpectCard />
-      </section>
-
-      <section className="page-shell section">
-        <p className="section-label connect-title">Other Ways To Connect</p>
-        <div className="cards-grid contact-two">
-          <ContactCard icon="mail" title="Email" body="hello@socialfollowingstudios.com" />
-          <ContactCard icon="shield" title="Note" body="We do not accept unsolicited vendor or platform pitches through this form." />
+    <div className="page-shell">
+      <PageHead
+        eyebrow="Contact"
+        title="Book your assessment."
+        lede="Every engagement begins with a database assessment."
+      />
+      <section className="section assessment-grid">
+        <div data-reveal>
+          <p className="contact-line">hello@socialfollowingstudios.com</p>
+          <p className="contact-note">We do not accept unsolicited vendor or platform pitches through this form.</p>
         </div>
+        <BookingForm source="Website Contact" />
       </section>
-
-      <section className="page-shell section">
-        <BriefCard next>
-          <div className="next-copy">
-            <p className="section-label">Next Steps</p>
-            <p>We accept assessment calls for organizations ready to understand what their existing database can produce. There is no sales call before the assessment. The assessment is the first step.</p>
-          </div>
-        </BriefCard>
-      </section>
-
-      <CtaBand title="Your database, reactivated." copy="The assessment produces the numbers. The numbers drive the decision." />
-    </>
-  );
-}
-
-function BookingForm() {
-  return (
-    <form className="form-card" action="https://crm.zoho.com/crm/WebToLeadForm" method="POST">
-      <input type="hidden" name="xnQsjsdp" value="b45ce04ddd76914bbfeade30ab0a6e86446ed07ddcd64b5425a1a4d9d5a467b8" readOnly />
-      <input type="hidden" name="xmIwtLD" value="97ca543a3d1ea88492628d126d9ab329b04cea167679b0225170279c6fc6e4f3684dbc3fb82c598c93398f0f68dcd29b" readOnly />
-      <input type="hidden" name="actionType" value="TGVhZHM=" readOnly />
-      <input type="hidden" name="Last Name" value="Assessment Request" readOnly />
-      <input type="hidden" name="returnURL" value="https://www.socialfollowing.shop/#/thank-you" readOnly />
-      <p className="card-label">Schedule Your Assessment Call</p>
-      <div className="form-grid">
-        <Field label="Organization Name" name="Company" required full />
-        <Field label="Corporate Email" name="Email" type="email" required full />
-        <Field label="Brief description of your program infrastructure" name="Description" textarea required full />
-      </div>
-      <div className="form-actions">
-        <button className="btn btn-primary" type="submit">
-          Request Your Assessment
-          <Arrow />
-        </button>
-        <div className="privacy-note">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.7" />
-            <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-          </svg>
-          <span>Your information is processed within governed systems under defined access controls.</span>
-        </div>
-      </div>
-    </form>
-  );
-}
-
-function Field({ label, name, type = "text", full = false, textarea = false, required = false, placeholder = "" }) {
-  return (
-    <div className={`field ${full ? "full" : ""}`}>
-      <label htmlFor={name}>{label}</label>
-      {textarea ? <textarea id={name} name={name} placeholder={placeholder} required={required} /> : <input id={name} name={name} type={type} required={required} />}
     </div>
-  );
-}
-
-function SelectField({ label, name, options, full = false }) {
-  return (
-    <div className={`field ${full ? "full" : ""}`}>
-      <label htmlFor={name}>{label}</label>
-      <select id={name} name={name}>
-        {options.map((option) => (
-          <option key={option}>{option}</option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-function ExpectCard() {
-  return (
-    <aside className="expect-card">
-      <p className="card-label">What happens after you submit.</p>
-      <div className="expect-list">
-        <Expect number="01" body="You will receive a confirmation within one business day." />
-        <Expect number="02" body="A brief intake call is scheduled. 20 minutes. To confirm program context." />
-        <Expect number="03" body="The assessment is conducted against your database and deliverability infrastructure." />
-        <Expect number="04" body="You receive a written report identifying database health, channel gaps, and your reactivation path." />
-        <Expect number="05" body="The program architecture follows from the assessment. The first send follows from the architecture." />
-      </div>
-    </aside>
-  );
-}
-
-function Expect({ number, title, body }) {
-  return (
-    <div className="expect-item">
-      <strong>{number}</strong>
-      <div className="small-rule" />
-      {title && <h3>{title}</h3>}
-      <p>{body}</p>
-    </div>
-  );
-}
-
-function ContactCard({ icon, title, body, link, href = "#/contact" }) {
-  return (
-    <article className="card contact-card">
-      <Icon name={icon} className="icon-large" />
-      <h3>{title}</h3>
-      <div className="small-rule" />
-      <p>{body}</p>
-      {link && <a className="text-link" href={href}>{link}</a>}
-    </article>
   );
 }
 
 function PolicyPage({ title }) {
   return (
-    <section className="page-shell policy-page">
-      <p className="eyebrow">Social Following Studios</p>
-      <h1>{title}</h1>
-      <div className="green-rule" />
-      <p className="lead">This page is being updated. Contact hello@socialfollowingstudios.com for the current policy details.</p>
-      <Button>Contact Us</Button>
-    </section>
+    <div className="page-shell">
+      <PageHead
+        eyebrow="Social Following Studios"
+        title={title}
+        lede="This page is being updated. Contact hello@socialfollowingstudios.com for the current policy details."
+      />
+      <Button href="#/contact">Contact</Button>
+    </div>
   );
 }
 
 function ThankYou() {
+  const addons = crossLinkProducts();
   return (
-    <section className="page-shell policy-page">
-      <p className="eyebrow">Request Received</p>
-      <h1>Thanks. We got your request.</h1>
-      <div className="green-rule" />
-      <p className="lead">Our team will review and follow up shortly.</p>
-      <a className="btn btn-primary" href="#/">Back Home</a>
-    </section>
+    <div className="page-shell">
+      <PageHead eyebrow="Request received" title="Thanks. We have your request." lede="Our team will follow up shortly." />
+      <Button href="#/">Back home</Button>
+      {addons.length > 0 && (
+        <section className="section">
+          <SectionHead label="Add-on activations" title="Once your program is running, these activate inside it." />
+          <IndexList items={addons.map((p) => [p.label, p.blurb])} />
+        </section>
+      )}
+    </div>
   );
+}
+
+/* ------------------------------------------------------------------ *
+ * APP
+ * ------------------------------------------------------------------ */
+function resolvePage(route) {
+  const productRoute = productByRoute(route);
+  if (productRoute) {
+    const [key] = productRoute;
+    if (isUnlisted(key)) return { node: <ProductPage route={route} />, layout: "bare" };
+    if (isLive(key)) {
+      if (key === "audienceBuilder") return { node: <AudienceBuilder />, layout: "full" };
+      return { node: <ProductPage route={route} />, layout: "full" };
+    }
+    return { node: <Home />, layout: "full" };
+  }
+  switch (route) {
+    case "/system":
+      return { node: <SystemPage />, layout: "full" };
+    case "/case-studies":
+      return { node: <CaseStudiesPage />, layout: "full" };
+    case "/assessment":
+      return { node: <AssessmentPage />, layout: "full" };
+    case "/contact":
+      return { node: <Contact />, layout: "full" };
+    case "/terms":
+      return { node: <PolicyPage title="Terms" />, layout: "full" };
+    case "/privacy":
+      return { node: <PolicyPage title="Privacy" />, layout: "full" };
+    case "/thank-you":
+      return { node: <ThankYou />, layout: "full" };
+    default:
+      return { node: <Home />, layout: "full" };
+  }
 }
 
 function App() {
   const route = useHashRoute();
+  useReveal(route);
+  usePageMeta(route);
 
   useEffect(() => {
-    if (route !== "/assessment") return;
-    const frame = window.requestAnimationFrame(() => {
-      document.getElementById("assessment")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-    return () => window.cancelAnimationFrame(frame);
+    window.scrollTo({ top: 0 });
   }, [route]);
 
-  const page = useMemo(() => {
-    switch (route) {
-      case "/infrastructure":
-        return <Infrastructure />;
-      case "/avatar-studio":
-        return <AvatarStudio />;
-      case "/case-studies":
-        return <CaseStudies />;
-      case "/contact":
-        return <Contact />;
-      case "/terms":
-        return <PolicyPage title="Terms" />;
-      case "/privacy":
-        return <PolicyPage title="Privacy" />;
-      case "/thank-you":
-        return <ThankYou />;
-      default:
-        return <Home />;
-    }
-  }, [route]);
+  const { node, layout } = useMemo(() => resolvePage(route), [route]);
 
   return (
     <>
-      <Header route={route} />
-      <main>{page}</main>
-      <Footer />
+      {layout === "bare" ? <BareHeader /> : <Header route={route} />}
+      <main>{node}</main>
+      <Footer variant={layout === "bare" ? "minimal" : "full"} />
     </>
   );
 }
