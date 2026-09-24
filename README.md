@@ -127,3 +127,5 @@ Social Following Studios builds systems that help organizations move from rented
 **Own your audience.**
 
 [www.socialfollowing.shop](https://www.socialfollowing.shop)
+
+<!-- production redeploy trigger: 2026-09-24 -->
