@@ -271,7 +271,7 @@ function Home() {
       <section className="page-shell hero home-institutional-hero">
         <HeroCopy
           eyebrow="Social Following Studios"
-          title={<>Your database,<br />reactivated.</>}
+          title={<>Own your<br />audience.</>}
           body="Your database represents the single most underutilized asset within the enterprise portfolio. Social Following Studios operates as a total lifecycle email program management firm that assumes complete operational ownership of the messaging continuum. We govern the entire trajectory across initial assessment, architectural build, programmatic deployment, and systemic deliverability to realize definitive corporate outcomes."
         />
         <AvatarStudioVisual className="home-twin-visual" compact />
