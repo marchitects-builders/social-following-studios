@@ -375,7 +375,7 @@ function Hero() {
       <div className="hero-inner">
         <div className="hero-copy" data-reveal>
           <p className="eyebrow">Social Following Studios</p>
-          <h1 className="hero-title">
+          <h1 className="hero-title" aria-label="Own your audience.">
             Own your
             <br />
             audience.
