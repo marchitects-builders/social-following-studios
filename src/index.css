@@ -347,6 +347,15 @@ p {
   line-height: 1.6;
 }
 
+.hero-category {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .hero .btn {
   margin-top: 32px;
 }
@@ -476,6 +485,127 @@ p {
   line-height: 1;
 }
 
+.panel-caption {
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ---------------------------------------------------------------- *
+ * OWNED RELATIONSHIP
+ * ---------------------------------------------------------------- */
+.owned-relationship {
+  max-width: 640px;
+  display: grid;
+  gap: 20px;
+}
+
+.owned-relationship p {
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.owned-relationship p:last-child {
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: clamp(19px, 2vw, 23px);
+  line-height: 1.4;
+}
+
+/* ---------------------------------------------------------------- *
+ * MECHANISM FLOW — connected steps, not a plain list
+ * ---------------------------------------------------------------- */
+.mechanism-flow {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.mechanism-step {
+  position: relative;
+  padding: 28px 22px;
+  background: #fff;
+}
+
+.mechanism-step:not(:last-child) {
+  border-right: 1px solid var(--line);
+}
+
+.mechanism-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -7px;
+  width: 12px;
+  height: 12px;
+  transform: translateY(-50%) rotate(45deg);
+  background: #fff;
+  border-top: 1px solid var(--line-strong);
+  border-right: 1px solid var(--line-strong);
+  z-index: 1;
+}
+
+.mechanism-num {
+  display: block;
+  color: var(--green);
+  font-family: var(--serif);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.mechanism-step h3 {
+  margin-top: 12px;
+}
+
+.mechanism-step p {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* ---------------------------------------------------------------- *
+ * STAT ROW — hard numbers pulled out of case-study prose
+ * ---------------------------------------------------------------- */
+.stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.stat-tile {
+  padding: 12px 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.stat-value {
+  color: var(--green);
+  font-family: var(--serif);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.stat-label {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 /* ---------------------------------------------------------------- *
  * INDEX LIST — replaces every card grid
  * ---------------------------------------------------------------- */
@@ -511,26 +641,6 @@ p {
   color: var(--muted);
   font-size: 15px;
   line-height: 1.6;
-}
-
-/* ---------------------------------------------------------------- *
- * TAG ROW
- * ---------------------------------------------------------------- */
-.tag-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.tag-row li {
-  padding: 7px 14px;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  font-size: 13px;
-  color: #2b312a;
 }
 
 /* ---------------------------------------------------------------- *
@@ -825,6 +935,13 @@ p {
   color: var(--muted);
 }
 
+.footer-proof {
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
 .footer-bottom {
   display: flex;
   flex-wrap: wrap;
@@ -909,6 +1026,22 @@ p {
 
   .panel-metrics {
     grid-template-columns: 1fr;
+  }
+
+  .mechanism-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .mechanism-step:not(:last-child) {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .mechanism-step:not(:last-child)::after {
+    top: auto;
+    right: 50%;
+    bottom: -7px;
+    transform: translateX(50%) rotate(45deg);
   }
 
   .panel-metrics div {

@@ -74,7 +74,7 @@ const PAGE_META = {
   "/system": {
     title: "The System | Social Following Studios",
     description:
-      "Audience Capture, Audience Builder, Full-Service ESP, and 24/7 Communications. One operator runs all four.",
+      "Capture, identify, activate, stay present: YoChat, Audience Builder, full-service lifecycle email, and Avatar Studio, run as one operator.",
   },
   "/case-studies": {
     title: "Case Studies | Social Following Studios",
@@ -360,6 +360,7 @@ function AssessmentPanel() {
           <dd>95%</dd>
         </div>
       </dl>
+      <p className="panel-caption">Single client, master ESP relationship across a multi-mailer network.</p>
     </aside>
   );
 }
@@ -384,9 +385,9 @@ function Hero() {
             Social Following Studios is a full-service ESP and a strategic growth and communications agency.
           </p>
           <p className="hero-support">
-            We build and run the audience infrastructure that turns existing customer data and new interest into direct
-            relationships and measurable growth.
+            We connect the relationship from first interaction through conversion, retention, and reactivation.
           </p>
+          <p className="hero-category">Audience Infrastructure · Since 2017</p>
           <Button>Book Your Assessment</Button>
         </div>
         <AssessmentPanel />
@@ -398,35 +399,53 @@ function Hero() {
 /* ------------------------------------------------------------------ *
  * SECTIONS
  * ------------------------------------------------------------------ */
-function OperationalProblem() {
-  const machine = ["Program ownership", "Deployment", "Deliverability", "Reputation", "Targeting", "Execution"];
+function OwnedRelationship() {
   return (
     <section className="section">
-      <SectionHead label="The operational problem" title="Your database is real, somebody has to run the machine." />
-      <ul className="tag-row" data-reveal>
-        {machine.map((part) => (
-          <li key={part}>{part}</li>
-        ))}
-      </ul>
+      <SectionHead label="Owned relationship" title="You know who raised their hand." />
+      <div className="owned-relationship" data-reveal>
+        <p>
+          Interest enters a database your business controls. Signals become useful audience segments. Every response
+          sharpens the next move.
+        </p>
+        <p>
+          The system turns audience movement into direct relationships that support conversion, retention, and
+          reactivation.
+        </p>
+      </div>
     </section>
   );
 }
 
-const systemFunctions = () => [
-  "Audience Capture",
-  isReachable("audienceBuilder") ? PRODUCTS.audienceBuilder.label : "Audience Development",
-  "Full-Service ESP",
-  "24/7 Communications",
+const MECHANISM_STEPS = [
+  ["01", "Capture", "YoChat turns comments, messages, and keyword responses into direct conversations."],
+  ["02", "Identify", "Audience Builder organizes intent, behavior, and location signals into usable segments."],
+  ["03", "Activate", "Full-service lifecycle email moves each segment through timely follow-up and reactivation."],
+  ["04", "Stay Present", "Avatar Studio gives the brand a consistent face and voice with a sustainable filming rhythm."],
 ];
 
 const systemMetaDescription = () =>
-  `Audience Capture, ${isReachable("audienceBuilder") ? PRODUCTS.audienceBuilder.label : "Audience Development"}, Full-Service ESP, and 24/7 Communications. One operator runs all four.`;
+  "Capture, identify, activate, stay present: YoChat, Audience Builder, full-service lifecycle email, and Avatar Studio, run as one operator.";
+
+function MechanismFlow() {
+  return (
+    <ol className="mechanism-flow" data-reveal>
+      {MECHANISM_STEPS.map(([num, name, line]) => (
+        <li className="mechanism-step" key={name}>
+          <span className="mechanism-num">{num}</span>
+          <h3>{name}</h3>
+          <p>{line}</p>
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 function SystemSummary() {
   return (
     <section className="section">
       <SectionHead label="The system" title="Four functions. One operator." />
-      <IndexList items={systemFunctions()} />
+      <MechanismFlow />
       <a className="text-link" href="#/system">
         The system in full <Arrow />
       </a>
@@ -467,9 +486,23 @@ const CASE_STUDIES = [
     title: "Regional broker",
     narrative:
       "A regional broker had a past-client database of buyers and sellers who had gone quiet while the business kept paying to acquire new leads. A unified reactivation sequence ran across email, conversational, and voice channels at once. The existing database and existing budget produced 11 signed listing agreements within 45 days.",
+    stat: ["11", "Signed listings in 45 days"],
     quote: "The buyers and sellers we thought were gone came back through the same list we had ignored for years.",
   },
 ];
+
+function StatRow({ stats }) {
+  return (
+    <div className="stat-row" data-reveal>
+      {stats.map(([value, label]) => (
+        <div className="stat-tile" key={label}>
+          <p className="stat-value">{value}</p>
+          <p className="stat-label">{label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function FeaturedCase() {
   return (
@@ -481,6 +514,12 @@ function FeaturedCase() {
         decides whether a claimant sees the message. We held 95% inbox placement, sequenced the outreach, and built the
         program around claimant trust. The matter resolved for millions.
       </p>
+      <StatRow
+        stats={[
+          ["95%", "Inbox placement held"],
+          ["Multi-Million $", "Case resolution"],
+        ]}
+      />
       <blockquote>
         Our messaging reached our claimants. That was the difference.
         <cite>Michael T., Esquire. Managing Attorney, mass tort firm.</cite>
@@ -497,6 +536,7 @@ function CaseStudyList() {
           <p className="card-label">{c.type}</p>
           <h3>{c.title}</h3>
           <p>{c.narrative}</p>
+          {c.stat && <StatRow stats={[c.stat]} />}
           {c.quote && <p className="case-quote">{c.quote}</p>}
         </article>
       ))}
@@ -643,6 +683,7 @@ function Footer({ variant = "full" }) {
       <p className="footer-headline">Own your audience.</p>
       <p className="footer-name">Social Following Studios</p>
       <p className="footer-imprint">An imprint of Marchitects.</p>
+      <p className="footer-proof">20M+ daily communications supported · 400+ engagements · Building systems since 2017.</p>
       <div className="footer-bottom">
         <span>© 2026 Social Following Studios</span>
         <span className="footer-legal">
@@ -663,7 +704,7 @@ function Home() {
     <>
       <Hero />
       <div className="page-shell">
-        <OperationalProblem />
+        <OwnedRelationship />
         <SystemSummary />
         <WhoWeServe />
         <CaseStudiesSummary />
@@ -673,23 +714,12 @@ function Home() {
   );
 }
 
-const SYSTEM_STEPS = [
-  ["Ingest", "We pull the data your program already owns. List age, engagement history, delivery performance."],
-  ["Process", "We build sequences for each segment. Reactivation for dormant contacts, retention for engaged ones, compliance for the rest."],
-  ["Evaluate", "We audit deliverability, authentication, and sending history. Every gap between current inbox placement and 95% is closed before deployment."],
-  ["Engage", "We execute delivery with full authentication, reputation management, and real-time monitoring. Built for inbox placement, not volume."],
-];
-
 function SystemPage() {
   return (
     <div className="page-shell">
       <PageHead eyebrow="The system" title="Four functions. One operator." />
       <section className="section">
-        <IndexList items={systemFunctions()} />
-      </section>
-      <section className="section">
-        <SectionHead label="How it works" title="Ingest, process, evaluate, engage." />
-        <IndexList items={SYSTEM_STEPS} />
+        <MechanismFlow />
       </section>
       <CtaBand title="Your program, under management." />
     </div>
