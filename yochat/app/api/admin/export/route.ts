@@ -11,7 +11,7 @@ function csvCell(value: unknown): string {
 }
 
 export async function GET(request: Request) {
-  if (!isAdminRequest(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminRequest(request))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const url = new URL(request.url);
   const format = url.searchParams.get("format") === "json" ? "json" : "csv";
   const brandValue = url.searchParams.get("brand");

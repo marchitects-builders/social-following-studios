@@ -1,12 +1,23 @@
 import { randomUUID } from "node:crypto";
+import { seedKnowledgeDocs } from "@/lib/ai-knowledge";
 import { getDefaultBrand, getDefaultBrands } from "@/lib/brands";
+import { mirrorKeyedState } from "@/lib/store-keys";
+import {
+  keyedGetContactRaw,
+  keyedGetTranscriptRaw,
+  keyedSetContactRaw,
+  keyedSyncTranscriptRaw,
+} from "@/lib/store-keys";
+import { redisCommand, redisConfigured, stateRedisCredentials } from "@/lib/redis";
 import type {
+  AiKnowledgeDoc,
   AnalyticsEvent,
   AuditRecord,
   BrandConfig,
   BrandKey,
   CampaignDefinition,
   Contact,
+  MessageRecord,
   SequenceDefinition,
   YochatState,
 } from "@/lib/types";
@@ -89,10 +100,18 @@ export function emptyState(): YochatState {
     campaignActivity: [],
     mailingListSubscriptions: {},
     brandOverrides: {},
+    brandSecrets: {},
     processedEventIds: {},
+    flows: {},
+    knowledgeDocs: {},
+    ai: { dailyTokenBudgets: {}, writeLevels: {} },
     settings: {
       globalAutomationPaused: false,
       retentionDays: 90,
+    },
+    security: {
+      adminPasswordHash: null,
+      passwordChangedAt: null,
     },
   };
 }
@@ -107,36 +126,39 @@ function memoryGlobal(): MemoryGlobal {
 }
 
 function redisCredentials(): { url?: string; token?: string } {
-  return {
-    url: process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN,
-  };
+  // Wave 9 (item 8): the state blob uses the STATE credential scope.
+  return stateRedisCredentials();
 }
 
-function redisConfigured(): boolean {
-  const { url, token } = redisCredentials();
-  return Boolean(url && token);
+function redisIsConfigured(): boolean {
+  return redisConfigured("state");
 }
 
-async function redisCommand<T>(command: Array<string | number>): Promise<T> {
-  const { url, token } = redisCredentials();
-  if (!url || !token) throw new Error("Redis is not configured");
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify(command),
-    cache: "no-store",
-  });
-  if (!response.ok) throw new Error(`Redis REST returned HTTP ${response.status}`);
-  const payload = (await response.json()) as { result?: T; error?: string };
-  if (payload.error) throw new Error(payload.error);
-  return payload.result as T;
+async function redisStateCommand<T>(command: Array<string | number>): Promise<T> {
+  return redisCommand<T>(command, "state");
 }
 
 function normalizeState(value: Partial<YochatState> | null): YochatState {
   const base = emptyState();
   if (!value) return base;
+  const contacts = value.contacts ?? {};
+  // Wave 3 migration: contacts created before notes existed get an empty list.
+  for (const contact of Object.values(contacts)) {
+    if (!Array.isArray((contact as { notes?: unknown }).notes)) {
+      (contact as { notes: unknown[] }).notes = [];
+    }
+  }
+  const knowledgeDocs: Record<string, AiKnowledgeDoc> = { ...(value.knowledgeDocs ?? {}) };
+  // Wave 5 migration: seed versioned knowledge docs once per brand from the
+  // effective brand knowledge (operator override ?? defaults). Idempotent.
+  const now = new Date().toISOString();
+  for (const brand of getDefaultBrands()) {
+    const hasDocs = Object.values(knowledgeDocs).some((doc) => doc.brand === brand.key);
+    if (!hasDocs) {
+      const effective = (value.brandOverrides?.[brand.key]?.knowledge ?? brand.knowledge) as BrandConfig["knowledge"];
+      seedKnowledgeDocs(knowledgeDocs, brand.key, effective, now);
+    }
+  }
   return {
     ...base,
     ...value,
@@ -154,32 +176,57 @@ function normalizeState(value: Partial<YochatState> | null): YochatState {
     campaignActivity: value.campaignActivity ?? [],
     mailingListSubscriptions: value.mailingListSubscriptions ?? {},
     brandOverrides: value.brandOverrides ?? {},
+    brandSecrets: value.brandSecrets ?? {},
     processedEventIds: value.processedEventIds ?? {},
+    flows: value.flows ?? {},
+    knowledgeDocs,
+    ai: {
+      dailyTokenBudgets: value.ai?.dailyTokenBudgets ?? {},
+      writeLevels: value.ai?.writeLevels ?? {},
+    },
     settings: {
       ...base.settings,
       ...(value.settings ?? {}),
+    },
+    security: {
+      adminPasswordHash: value.security?.adminPasswordHash ?? null,
+      passwordChangedAt: value.security?.passwordChangedAt ?? null,
     },
   };
 }
 
 export async function loadState(): Promise<YochatState> {
-  if (redisConfigured()) {
+  if (redisIsConfigured()) {
     const encoded = await redisCommand<string | null>(["GET", STATE_KEY]);
     return normalizeState(encoded ? (JSON.parse(encoded) as Partial<YochatState>) : null);
   }
 
   const global = memoryGlobal();
   global.__yochatMemoryState ??= emptyState();
+  // Normalize on every memory-mode load too: runs the Wave 3/5 migrations
+  // (contact notes, knowledge-doc seeding) idempotently.
+  global.__yochatMemoryState = normalizeState(global.__yochatMemoryState);
   return structuredClone(global.__yochatMemoryState);
 }
 
 async function saveState(state: YochatState): Promise<void> {
   pruneState(state);
-  if (redisConfigured()) {
-    await redisCommand(["SET", STATE_KEY, JSON.stringify(state)]);
-    return;
+  if (redisIsConfigured()) {
+    await redisStateCommand(["SET", STATE_KEY, JSON.stringify(state)]);
+  } else {
+    memoryGlobal().__yochatMemoryState = structuredClone(state);
   }
-  memoryGlobal().__yochatMemoryState = structuredClone(state);
+  // Wave 9 (item 1) — migration write-through: mirror contacts and
+  // transcripts into the keyed structures on every blob save. The blob is
+  // still the source of truth; the mirror must never fail the primary write.
+  try {
+    await mirrorKeyedState(state);
+  } catch (error) {
+    const { logOps } = await import("@/lib/ops");
+    await logOps("warning", "migration", "keyed mirror write-through failed", {
+      error: error instanceof Error ? error.message : "Unknown error",
+    }).catch(() => undefined);
+  }
 }
 
 function pruneState(state: YochatState): void {
@@ -251,7 +298,7 @@ async function withMemoryLock<T>(callback: () => Promise<T>): Promise<T> {
 }
 
 export async function mutateState<T>(mutator: (state: YochatState) => T | Promise<T>): Promise<T> {
-  if (!redisConfigured()) {
+  if (!redisIsConfigured()) {
     return withMemoryLock(async () => {
       const state = await loadState();
       const result = await mutator(state);
@@ -267,7 +314,7 @@ export async function mutateState<T>(mutator: (state: YochatState) => T | Promis
     await saveState(state);
     return result;
   } finally {
-    await redisCommand([
+    await redisStateCommand([
       "EVAL",
       'if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end',
       1,
@@ -278,7 +325,7 @@ export async function mutateState<T>(mutator: (state: YochatState) => T | Promis
 }
 
 export function storageMode(): "redis" | "memory" {
-  return redisConfigured() ? "redis" : "memory";
+  return redisIsConfigured() ? "redis" : "memory";
 }
 
 export async function getBrandConfig(key: BrandKey): Promise<BrandConfig> {
@@ -342,6 +389,30 @@ export async function deleteContactData(contactId: string, actor = "admin"): Pro
 
 export async function dashboardSnapshot() {
   const [state, brands] = await Promise.all([loadState(), getAllBrandConfigs()]);
+  // Wave 6: brand health at a glance — 24h analytics rollup per brand.
+  // Lazy import: lib/analytics reads state from this module; a static
+  // import would create a module cycle.
+  const { getBrandAnalytics } = await import("@/lib/analytics");
+  const brandHealth = await Promise.all(
+    brands.map(async (brand) => {
+      const analytics = await getBrandAnalytics(brand.key, "24h");
+      return {
+        brand: brand.key,
+        conversations24h: analytics.conversations.inbound,
+        messagesIn24h: analytics.messages.inbound,
+        messagesOut24h: analytics.messages.outbound,
+        aiReplies24h: analytics.messages.aiReplies,
+        aiCostUsd24h: analytics.ai.costUsd,
+        costPerConversationUsd: analytics.costPerConversationUsd,
+        costPerLeadUsd: analytics.costPerLeadUsd,
+        flowCompletionRate24h: analytics.flows.completionRate,
+        openHandoffs: analytics.handoffs.open,
+        deliveryFailures24h: analytics.deliveryFailures.total,
+        optOuts24h: analytics.optOuts,
+        leadsCaptured24h: analytics.leads.captured,
+      };
+    }),
+  );
   const totalsByBrand = brands.map((brand) => {
     const contacts = Object.values(state.contacts).filter((contact) => contact.brand === brand.key);
     const conversations = Object.values(state.conversations).filter((conversation) => conversation.brand === brand.key);
@@ -362,12 +433,13 @@ export async function dashboardSnapshot() {
         meta: Boolean(process.env.META_VERIFY_TOKEN && process.env.META_APP_SECRET),
         instagram: Boolean(process.env.META_INSTAGRAM_APP_SECRET && process.env.META_INSTAGRAM_ACCESS_TOKENS_JSON),
         ai: Boolean(process.env.NVIDIA_API_KEY),
-        persistentStorage: redisConfigured(),
+        persistentStorage: redisIsConfigured(),
         scheduler: Boolean(process.env.QSTASH_TOKEN && process.env.CRON_SECRET),
       },
     },
     brands,
     totalsByBrand,
+    brandHealth,
     contacts: Object.values(state.contacts).sort((a, b) => b.lastSeenAt.localeCompare(a.lastSeenAt)).slice(0, 250),
     conversations: Object.values(state.conversations).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 250),
     messages: state.messages.slice(-500).reverse(),
@@ -381,6 +453,16 @@ export async function dashboardSnapshot() {
     campaignEnrollments: Object.values(state.campaignEnrollments),
     campaignActivity: state.campaignActivity.slice(-500).reverse(),
     mailingListSubscriptions: Object.values(state.mailingListSubscriptions),
+    flows: Object.values(state.flows).map((flow) => ({
+      id: flow.id,
+      brand: flow.brand,
+      name: flow.name,
+      status: flow.status,
+      version: flow.version,
+      nodeCount: Object.keys(flow.nodes).length,
+      updatedAt: flow.updatedAt,
+      publishedAt: flow.publishedAt,
+    })),
   };
 }
 
@@ -403,6 +485,202 @@ export async function resetTestData(): Promise<void> {
     }
     state.campaignActivity = state.campaignActivity.filter((activity) => !testContacts.includes(activity.contactId));
     state.analytics = state.analytics.filter((event) => event.channel !== "test");
+    // Wave 6: sweep test-fixture delivery jobs (simulate_stuck_job /
+    // simulate_failed_job mark their synthesized jobs with metadata.probe).
+    for (const [id, job] of Object.entries(state.jobs)) {
+      if (job.metadata?.probe === true) delete state.jobs[id];
+    }
+    // Wave 7: sweep integration probe data (secrets + allowlist overrides).
+    state.brandSecrets = {};
+    for (const key of Object.keys(state.brandOverrides)) {
+      const override = state.brandOverrides[key as keyof typeof state.brandOverrides];
+      if (override && "httpAllowlist" in override) delete override.httpAllowlist;
+    }
     addAudit(state, { action: "test.reset", actor: "admin" });
   });
+}
+
+/**
+ * Wave 9 (item 1) — dual-read / dual-write keyed accessors for the blob
+ * extraction migration.
+ *
+ * - Reads (getKeyedContact, getKeyedTranscript): new keyed structures first,
+ *   fall back to the blob with lazy backfill when a key is missing.
+ * - Writes (writeContactKeyed, appendTranscriptMessageKeyed): write the new
+ *   keyed structures AND the legacy blob (write-through during transition),
+ *   so data written via the new path is readable via the old path and vice
+ *   versa (the blob save mirrors everything back into the keyed store).
+ */
+
+export async function getKeyedContact(brand: BrandKey, contactId: string): Promise<Contact | undefined> {
+  const keyed = await keyedGetContactRaw(brand, contactId);
+  if (keyed) return keyed;
+  // Dual-read fallback: the blob is still the source of truth. Backfill the
+  // keyed copy so the next read hits the new structure.
+  const state = await loadState();
+  const contact = state.contacts[contactId];
+  if (!contact || contact.brand !== brand) return undefined;
+  await keyedSetContactRaw(contact);
+  return contact;
+}
+
+export async function getKeyedTranscript(
+  brand: BrandKey,
+  contactId: string,
+  limit = 500,
+): Promise<MessageRecord[]> {
+  const keyed = await keyedGetTranscriptRaw(brand, contactId, limit);
+  if (keyed.length > 0) return keyed;
+  // Dual-read fallback: rebuild the contact's transcript from the blob's
+  // conversations + messages, backfill, and return it.
+  const state = await loadState();
+  const conversationIds = new Set(
+    Object.values(state.conversations)
+      .filter((conversation) => conversation.contactId === contactId && conversation.brand === brand)
+      .map((conversation) => conversation.id),
+  );
+  const messages = state.messages
+    .filter((message) => conversationIds.has(message.conversationId))
+    .sort((a, b) =>
+      a.createdAt === b.createdAt ? a.id.localeCompare(b.id) : a.createdAt.localeCompare(b.createdAt),
+    );
+  if (messages.length > 0) await keyedSyncTranscriptRaw(brand, contactId, messages);
+  return messages.slice(-Math.min(2000, Math.max(1, limit)));
+}
+
+export async function writeContactKeyed(contact: Contact): Promise<void> {
+  await keyedSetContactRaw(contact);
+  await mutateState((state) => {
+    state.contacts[contact.id] = contact;
+  });
+}
+
+export async function appendTranscriptMessageKeyed(
+  brand: BrandKey,
+  contactId: string,
+  message: MessageRecord,
+): Promise<void> {
+  const existing = await keyedGetTranscriptRaw(brand, contactId, 2000);
+  await keyedSyncTranscriptRaw(brand, contactId, [...existing, message]);
+  await mutateState((state) => {
+    if (!state.messages.some((existingMessage) => existingMessage.id === message.id)) {
+      state.messages.push(message);
+    }
+  });
+}
+
+export type KeyedProbeStep = { name: string; ok: boolean; detail?: string };
+
+/**
+ * Migration fixture proof (run by the admin ops keyed_probe action and the
+ * Wave 9 smoke checks): writes via the NEW path and reads via the OLD path,
+ * then writes via the OLD path and reads via the NEW path — for both
+ * contacts and transcripts. Cleans up after itself.
+ */
+export async function keyedProbeRoundTrip(): Promise<{ ok: boolean; steps: KeyedProbeStep[] }> {
+  const steps: KeyedProbeStep[] = [];
+  const contactId = `w9-migration-probe:${randomUUID()}`;
+  const conversationId = `w9-migration-conv:${randomUUID()}`;
+  const messageId = `w9-migration-msg:${randomUUID()}`;
+  const now = new Date().toISOString();
+
+  const probeContact: Contact = {
+    id: contactId,
+    brand: "aafc",
+    channel: "test",
+    externalId: "w9-migration-external",
+    tags: [],
+    fields: {},
+    leadStage: "new",
+    optedOut: false,
+    automationPaused: false,
+    notes: [],
+    firstSeenAt: now,
+    lastSeenAt: now,
+    source: "wave9-migration-probe",
+  };
+  const probeMessage: MessageRecord = {
+    id: messageId,
+    conversationId,
+    direction: "inbound",
+    text: "Wave 9 migration probe message",
+    trigger: "test",
+    status: "received",
+    createdAt: now,
+  };
+
+  try {
+    // 1. Write contact via the NEW keyed path → read via the OLD blob path.
+    await writeContactKeyed(probeContact);
+    const oldPathContact = (await loadState()).contacts[contactId];
+    steps.push({
+      name: "contact: write-new → read-old",
+      ok: oldPathContact?.id === contactId && oldPathContact.source === "wave9-migration-probe",
+      detail: oldPathContact ? "visible in blob" : "missing from blob",
+    });
+
+    // 2. Write contact via the OLD blob path → read via the NEW keyed path.
+    const blobOnlyId = `w9-migration-blob:${randomUUID()}`;
+    await mutateState((state) => {
+      state.contacts[blobOnlyId] = { ...probeContact, id: blobOnlyId, externalId: "w9-blob-only" };
+    });
+    const newPathContact = await getKeyedContact("aafc", blobOnlyId);
+    steps.push({
+      name: "contact: write-old → read-new",
+      ok: newPathContact?.id === blobOnlyId,
+      detail: newPathContact ? "visible via keyed read" : "missing via keyed read",
+    });
+
+    // 3. Transcript: write via the NEW keyed path → read via the OLD blob path.
+    await mutateState((state) => {
+      state.conversations[conversationId] = {
+        id: conversationId,
+        brand: "aafc",
+        channel: "test",
+        accountId: "test",
+        contactId,
+        status: "open",
+        lastIntent: "unknown",
+        summary: "",
+        createdAt: now,
+        updatedAt: now,
+      };
+    });
+    await appendTranscriptMessageKeyed("aafc", contactId, probeMessage);
+    const oldPathMessage = (await loadState()).messages.find((message) => message.id === messageId);
+    steps.push({
+      name: "transcript: write-new → read-old",
+      ok: oldPathMessage?.text === "Wave 9 migration probe message",
+      detail: oldPathMessage ? "visible in blob messages" : "missing from blob messages",
+    });
+
+    // 4. Transcript: write via the OLD blob path → read via the NEW keyed path.
+    const blobOnlyMessageId = `w9-migration-blobmsg:${randomUUID()}`;
+    await mutateState((state) => {
+      state.messages.push({ ...probeMessage, id: blobOnlyMessageId, text: "Wave 9 blob-only probe message" });
+    });
+    const newPathTranscript = await getKeyedTranscript("aafc", contactId, 500);
+    steps.push({
+      name: "transcript: write-old → read-new",
+      ok: newPathTranscript.some((message) => message.id === blobOnlyMessageId),
+      detail: `keyed transcript holds ${newPathTranscript.length} message(s)`,
+    });
+  } finally {
+    // Cleanup: nothing probe-related stays live (mirror drops the keyed copies).
+    await mutateState((state) => {
+      for (const id of Object.keys(state.contacts)) {
+        if (id.includes("w9-migration")) delete state.contacts[id];
+      }
+      delete state.conversations[conversationId];
+      state.messages = state.messages.filter((message) => !message.id.includes("w9-migration"));
+    });
+  }
+
+  const postCleanup = await keyedGetContactRaw("aafc", contactId);
+  steps.push({
+    name: "cleanup: keyed copies dropped with the blob",
+    ok: postCleanup === undefined,
+    detail: postCleanup ? "keyed contact still present" : "keyed contact gone",
+  });
+  return { ok: steps.every((step) => step.ok), steps };
 }

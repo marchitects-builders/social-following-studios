@@ -1,6 +1,8 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { processIncomingEvent } from "@/lib/engine";
+import { recordWebhookEvent, updateWebhookEvent } from "@/lib/events";
 import { processDueJobs } from "@/lib/jobs";
+import { heartbeat, logOps } from "@/lib/ops";
 import type { DeliveryJob, EngineResult, IncomingEvent, TriggerType } from "@/lib/types";
 
 type MessagingEvent = {
@@ -233,18 +235,44 @@ async function sendInstagramJob(job: DeliveryJob): Promise<void> {
 }
 
 export async function deliverMetaJob(job: DeliveryJob): Promise<void> {
-  if (job.channel === "instagram") return sendInstagramJob(job);
-  if (job.channel === "messenger") return sendMessengerJob(job);
-  throw new Error(`Cannot deliver a ${job.channel} job through Meta`);
+  // Gemini R3: LLM/control-character injection guard — sanitize every
+  // outbound payload before it touches the Graph API.
+  const sanitized: DeliveryJob = { ...job, text: sanitizeOutboundText(job.text) };
+  if (sanitized.channel === "instagram") return sendInstagramJob(sanitized);
+  if (sanitized.channel === "messenger") return sendMessengerJob(sanitized);
+  throw new Error(`Cannot deliver a ${sanitized.channel} job through Meta`);
+}
+
+/**
+ * Strip control characters that can corrupt the Graph API JSON payload
+ * (or smuggle LLM output artifacts into a send), preserving \n and \t.
+ */
+export function sanitizeOutboundText(text: string): string {
+  // eslint-disable-next-line no-control-regex
+  return text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
 }
 
 export async function processMetaWebhook(payload: MetaWebhookPayload): Promise<EngineResult[]> {
   const results: EngineResult[] = [];
+  await heartbeat("ingest");
   for (const event of extractIncomingEvents(payload)) {
+    const record = await recordWebhookEvent(event);
     try {
-      results.push(await processIncomingEvent(event));
+      await updateWebhookEvent(record.eventId, { status: "processing" });
+      const result = await processIncomingEvent(event);
+      results.push(result);
+      await updateWebhookEvent(record.eventId, {
+        status: "processed",
+        outcome: result.ignored ? "ignored" : result.intent,
+      });
     } catch (error) {
-      console.error("Yochat event failed", event.id, error instanceof Error ? error.message : "Unknown error");
+      const message = error instanceof Error ? error.message : "Unknown error";
+      await updateWebhookEvent(record.eventId, { status: "failed", outcome: message.slice(0, 300) });
+      await logOps("error", "ingest", "Yochat event failed", {
+        eventId: event.id,
+        channel: event.channel,
+        error: message.slice(0, 300),
+      });
     }
   }
   await processDueJobs(deliverMetaJob);

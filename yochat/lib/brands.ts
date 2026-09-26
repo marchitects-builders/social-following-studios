@@ -57,6 +57,7 @@ const defaults: Record<BrandKey, BrandConfig> = {
     website: "https://www.marchitects.builders/",
     bookingUrl: "https://www.marchitects.builders/",
     handoffEmail: "webmaster@marchitects.builders",
+    httpAllowlist: [], // Wave 7: deny-by-default; operator adds hosts via /api/admin/integrations
     knowledge: [
       { id: "services", title: "Services", enabled: true, content: "Marchitects designs growth systems, websites, funnels, CRM and marketing automation, AI assistants, and business integrations." },
       { id: "approach", title: "Approach", enabled: true, content: "Start with the business bottleneck, map the customer journey, then build the smallest reliable system that produces a measurable outcome." },
@@ -79,6 +80,7 @@ const defaults: Record<BrandKey, BrandConfig> = {
     pageId: "554581997738729",
     instagramId: "17841460118425871",
     handoffEmail: "webmaster@marchitects.builders",
+    httpAllowlist: [], // Wave 7: deny-by-default; operator adds hosts via /api/admin/integrations
     knowledge: [
       { id: "growth", title: "Growth method", enabled: true, content: "Social Following connects posts, reels, comments, DMs, lead magnets, follow-up, and offers into one measurable growth loop." },
       { id: "audit", title: "Social audit", enabled: true, content: "A social audit reviews positioning, content, calls to action, profile conversion, engagement paths, and follow-up." },
@@ -103,6 +105,7 @@ const defaults: Record<BrandKey, BrandConfig> = {
     instagramId: "17841480544451772",
     website: "https://www.aafcbuilders.org/",
     handoffEmail: "webmaster@marchitects.builders",
+    httpAllowlist: [], // Wave 7: deny-by-default; operator adds hosts via /api/admin/integrations
     knowledge: [
       { id: "mission", title: "Mission", enabled: true, content: "AAFC connects artists, athletes, programs, partners, and communities to create practical opportunities and positive change." },
       { id: "participation", title: "Ways to participate", enabled: true, content: "People can ask about programs, events, volunteering, partnerships, sponsorships, donations, and opportunities for artists or athletes." },

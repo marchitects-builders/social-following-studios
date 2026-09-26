@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { isAdminRequest } from "@/lib/admin-auth";
+import { isAdminRequest, hashAdminPassword, isTestActionsEnabled, verifyAdminPassword } from "@/lib/admin-auth";
 import { addAudit, deleteContactData, mutateState, resetTestData, updateBrandConfig } from "@/lib/store";
-import type { AutomationRule, BrandKey, Intent, KnowledgeEntry, SequenceDefinition, TriggerType } from "@/lib/types";
+import { addContactNote, deleteContactNote, mergeContacts, setLeadStage } from "@/lib/handoffs";
+import { verifyCsrfToken } from "@/lib/csrf";
+import type { AutomationRule, BrandKey, DeliveryJob, Intent, KnowledgeEntry, SequenceDefinition, TriggerType } from "@/lib/types";
 
 const allowedBrands = new Set<BrandKey>(["marchitects", "social-following", "aafc"]);
 const allowedTriggers = new Set<TriggerType>(["message", "comment", "story_reply", "mention", "postback", "referral", "follow", "test"]);
@@ -53,7 +55,11 @@ function safeUrl(value: unknown): string | undefined {
 }
 
 export async function POST(request: Request) {
-  if (!isAdminRequest(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminRequest(request))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Wave 9 (item 5): CSRF synchronizer token required on admin mutations.
+  if (!verifyCsrfToken(request)) {
+    return NextResponse.json({ error: "CSRF token missing or invalid" }, { status: 403 });
+  }
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const action = body.action;
 
@@ -160,6 +166,191 @@ export async function POST(request: Request) {
       addAudit(state, { action: "sequence.saved", actor: "admin", target: sanitized.id });
     });
     return NextResponse.json({ ok: true });
+  }
+
+  // Wave 3: inbox CRM primitives. Business-rule violations surface as 400, never 500.
+  if (action === "set_handoff_resume" && typeof body.handoffId === "string" && typeof body.minutes === "number") {
+    const handoff = await mutateState((state) => {
+      const record = state.handoffs[body.handoffId as string];
+      if (!record || record.status === "resolved") return undefined;
+      record.resumeAt = new Date(Date.now() + Math.max(0, body.minutes as number) * 60_000).toISOString();
+      addAudit(state, { action: "handoff.resume_armed", actor: "admin", target: record.id, detail: { resumeAt: record.resumeAt } });
+      return structuredClone(record);
+    });
+    if (!handoff) return NextResponse.json({ error: "handoff not found" }, { status: 404 });
+    return NextResponse.json({ ok: true, handoff });
+  }
+  if (action === "add_contact_note" && typeof body.contactId === "string" && typeof body.text === "string") {
+    try {
+      const contact = await addContactNote(body.contactId, body.text);
+      return NextResponse.json({ ok: true, contact });
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : "note failed" }, { status: 400 });
+    }
+  }
+  if (action === "delete_contact_note" && typeof body.contactId === "string" && typeof body.noteId === "string") {
+    try {
+      const contact = await deleteContactNote(body.contactId, body.noteId);
+      return NextResponse.json({ ok: true, contact });
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : "delete failed" }, { status: 400 });
+    }
+  }
+  if (action === "set_lead_stage" && typeof body.contactId === "string" && typeof body.stage === "string") {
+    try {
+      const contact = await setLeadStage(body.contactId, body.stage);
+      return NextResponse.json({ ok: true, contact });
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : "stage update failed" }, { status: 400 });
+    }
+  }
+  if (action === "merge_contacts" && typeof body.primaryId === "string" && typeof body.secondaryId === "string") {
+    try {
+      const contact = await mergeContacts(body.primaryId, body.secondaryId);
+      return NextResponse.json({ ok: true, contact });
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : "merge failed" }, { status: 400 });
+    }
+  }
+
+  // Wave 5: per-brand AI controls. Legitimate production admin actions — NOT test-gated.
+  if (action === "set_ai_budget" && typeof body.brand === "string" && allowedBrands.has(body.brand as BrandKey)) {
+    // Wave 5: per-brand daily AI token budget (active cost control).
+    const { setDailyTokenBudget, getDailyTokenBudget } = await import("@/lib/ai-budget");
+    if (typeof body.tokens !== "number") return NextResponse.json({ error: "tokens must be a number" }, { status: 400 });
+    try {
+      const tokens = await setDailyTokenBudget(body.brand as BrandKey, body.tokens);
+      return NextResponse.json({ ok: true, brand: body.brand, tokens, budget: await getDailyTokenBudget(body.brand as BrandKey) });
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : "budget update failed" }, { status: 400 });
+    }
+  }
+  if (action === "set_ai_write_level" && typeof body.brand === "string" && allowedBrands.has(body.brand as BrandKey)) {
+    // Wave 5: per-brand AI write level L0–L3. L2/L3 = explicit operator opt-in.
+    const { setAiWriteLevel, getAiWriteLevel } = await import("@/lib/ai-intents");
+    const level = Number(body.level);
+    if (![0, 1, 2, 3].includes(level)) return NextResponse.json({ error: "level must be 0–3" }, { status: 400 });
+    await setAiWriteLevel(body.brand as BrandKey, level as 0 | 1 | 2 | 3);
+    return NextResponse.json({ ok: true, brand: body.brand, level: await getAiWriteLevel(body.brand as BrandKey) });
+  }
+
+  // Wave 9 (item 6): runtime admin password change. Stores the new password's
+  // hash in state.security; every session cookie issued against the OLD hash
+  // is revoked instantly on the next request (ph substring mismatch). The
+  // caller's own cookie is revoked too — log in again after this call.
+  if (action === "change_admin_password" && typeof body.current === "string" && typeof body.new === "string") {
+    const next = body.new as string;
+    if (next.length < 8 || next.length > 200) {
+      return NextResponse.json({ error: "new password must be 8–200 characters" }, { status: 400 });
+    }
+    const changed = await mutateState((state) => {
+      if (!verifyAdminPassword(body.current as string, state.security.adminPasswordHash)) return false;
+      state.security.adminPasswordHash = hashAdminPassword(next);
+      state.security.passwordChangedAt = new Date().toISOString();
+      addAudit(state, { action: "admin.password_changed", actor: "admin", detail: { sessionsRevoked: true } });
+      return true;
+    });
+    if (!changed) return NextResponse.json({ error: "current password is incorrect" }, { status: 403 });
+    return NextResponse.json({ ok: true, sessionsRevoked: true });
+  }
+
+  // Wave 4 test-only actions: simulate delivery-claim failure modes.
+  // NEVER available in production — they corrupt real delivery state.
+  // Wave 9 (item 9a): the gate is explicit about intent — non-production
+  // ONLY. isTestActionsEnabled() checks NODE_ENV !== "production"; the
+  // smoke harness separately sets YOCHAT_TEST_MODE=1 for the stubbed AI
+  // provider, which is a different concern. Exactly these three actions
+  // are test-only; every legitimate action above stays reachable in
+  // production.
+  if (!isTestActionsEnabled()) {
+    return NextResponse.json({ error: "Unsupported action" }, { status: 400 });
+  }
+  if (action === "simulate_stuck_job" && (typeof body.jobId === "string" || typeof body.contactId === "string")) {
+    // Marks a job "processing" with an 11-minute-old lock so the next cron
+    // run treats it as a worker that died mid-claim. When no pending job
+    // exists for the contact, synthesizes one (test fixture, swept by reset_test).
+    const job = await mutateState((state) => {
+      let target =
+        typeof body.jobId === "string"
+          ? state.jobs[body.jobId as string]
+          : Object.values(state.jobs).find(
+              (candidate) => candidate.status === "pending" && candidate.metadata?.contactId === body.contactId,
+            );
+      if (!target) {
+        const contact = typeof body.contactId === "string" ? state.contacts[body.contactId as string] : undefined;
+        if (!contact) return undefined;
+        const id = randomUUID();
+        target = {
+          id,
+          eventId: `test-fixture-${id}`,
+          brand: contact.brand,
+          channel: contact.channel,
+          accountId: "test",
+          recipientId: contact.externalId,
+          text: "Wave 4 stuck-job fixture",
+          kind: "automated",
+          status: "pending",
+          attempts: 0,
+          dueAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          metadata: { probe: true, contactId: contact.id },
+        } satisfies DeliveryJob;
+        state.jobs[id] = target;
+      }
+      target.status = "processing";
+      target.lockedAt = new Date(Date.now() - 11 * 60_000).toISOString();
+      addAudit(state, { action: "job.stuck_simulated", actor: "admin", target: target.id });
+      return structuredClone(target);
+    });
+    if (!job) return NextResponse.json({ error: "no job found to simulate" }, { status: 404 });
+    return NextResponse.json({ ok: true, job });
+  }
+  if (action === "simulate_failed_job" && typeof body.brand === "string" && allowedBrands.has(body.brand as BrandKey)) {
+    // Synthesizes a failed delivery job with a caller-supplied error string
+    // (test fixture for send-error classification + analytics seeding).
+    const brand = body.brand as BrandKey;
+    const error = typeof body.error === "string" ? body.error.slice(0, 500) : "simulated failure";
+    const job = await mutateState((state) => {
+      const id = randomUUID();
+      const record: DeliveryJob = {
+        id,
+        eventId: `test-fixture-${id}`,
+        brand,
+        channel: "messenger",
+        accountId: "test",
+        recipientId: "test",
+        text: "Wave 4 failed-job fixture",
+        kind: "automated",
+        status: "failed",
+        attempts: 1,
+        dueAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        lastError: error,
+        metadata: { probe: true },
+      };
+      state.jobs[id] = record;
+      addAudit(state, { action: "job.failed_simulated", actor: "admin", target: id, detail: { error } });
+      return structuredClone(record);
+    });
+    return NextResponse.json({ ok: true, job });
+  }
+  if (action === "force_wait_timeout" && typeof body.contactId === "string") {
+    // Pushes an armed flow wait's timeout into the past so the next cron
+    // run fires the timeout branch immediately.
+    // Wave 9: optional lastSeenHoursAgo ages the contact's lastSeenAt so the
+    // 23h Meta-window guard (item 9b) can be exercised deterministically.
+    const ageHours = typeof body.lastSeenHoursAgo === "number" ? Math.max(0, body.lastSeenHoursAgo) : 0;
+    const wait = await mutateState((state) => {
+      const contact = state.contacts[body.contactId as string];
+      if (!contact?.activeFlow) return undefined;
+      contact.activeFlow.timeoutAt = new Date(Date.now() - 60_000).toISOString();
+      if (ageHours > 0) {
+        contact.lastSeenAt = new Date(Date.now() - ageHours * 60 * 60_000).toISOString();
+      }
+      return structuredClone(contact.activeFlow);
+    });
+    if (!wait) return NextResponse.json({ error: "no armed wait on contact" }, { status: 404 });
+    return NextResponse.json({ ok: true, wait });
   }
   return NextResponse.json({ error: "Unsupported action" }, { status: 400 });
 }

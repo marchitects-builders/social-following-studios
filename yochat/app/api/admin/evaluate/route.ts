@@ -4,11 +4,17 @@ import { isAdminRequest } from "@/lib/admin-auth";
 import { getDefaultBrand } from "@/lib/brands";
 import { processIncomingEvent } from "@/lib/engine";
 import type { BrandKey, EngineResult, Intent, TriggerType } from "@/lib/types";
+import { verifyCsrfToken } from "@/lib/csrf";
 
 type Evaluation = { name: string; brand: BrandKey; passed: boolean; detail: string };
 
 export async function POST(request: Request) {
-  if (!isAdminRequest(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminRequest(request))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Wave 9 (item 5): CSRF synchronizer token required on admin mutations.
+  if (!verifyCsrfToken(request)) {
+    return NextResponse.json({ error: "CSRF token missing or invalid" }, { status: 403 });
+  }
   const suite = randomUUID().slice(0, 8);
 
   async function run(

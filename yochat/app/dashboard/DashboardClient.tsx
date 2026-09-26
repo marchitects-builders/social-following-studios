@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { adminFetch } from "./admin-fetch";
 import type {
   AnalyticsEvent,
   AutomationRule,
@@ -190,7 +191,7 @@ export default function DashboardClient() {
   async function action(payload: Record<string, unknown>, success = "Saved") {
     setBusy(true);
     setNotice("");
-    const response = await fetch("/api/admin/action", {
+    const response = await adminFetch("/api/admin/action", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -241,7 +242,7 @@ export default function DashboardClient() {
   async function runTest() {
     setBusy(true);
     setTestResult(null);
-    const response = await fetch("/api/admin/test", {
+    const response = await adminFetch("/api/admin/test", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ brand: testBrand, trigger: testTrigger, text: testText, persona: "rashida-test-account" }),
@@ -256,7 +257,7 @@ export default function DashboardClient() {
   async function runEvaluation() {
     setBusy(true);
     setEvaluation(null);
-    const response = await fetch("/api/admin/evaluate", { method: "POST" });
+    const response = await adminFetch("/api/admin/evaluate", { method: "POST" });
     const result = await response.json();
     setBusy(false);
     if (!response.ok) {
@@ -275,7 +276,7 @@ export default function DashboardClient() {
     setBusy(true);
     setNotice("");
     if (actionName === "run_full") setCampaignVerification(null);
-    const response = await fetch("/api/admin/campaigns", {
+    const response = await adminFetch("/api/admin/campaigns", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: actionName, text }),
@@ -308,7 +309,7 @@ export default function DashboardClient() {
     const text = manualReply.trim();
     if (!text || !confirm("Send this reply to the real Meta contact and pause automation for this conversation?")) return;
     setBusy(true);
-    const response = await fetch("/api/admin/reply", {
+    const response = await adminFetch("/api/admin/reply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ conversationId, text }),
@@ -322,7 +323,7 @@ export default function DashboardClient() {
 
   async function activateScheduler() {
     setBusy(true);
-    const response = await fetch("/api/admin/scheduler", { method: "POST" });
+    const response = await adminFetch("/api/admin/scheduler", { method: "POST" });
     const result = await response.json();
     setBusy(false);
     setNotice(result.ok ? "Five-minute follow-up scheduler activated." : result.error ?? "Scheduler could not be activated.");
@@ -330,7 +331,7 @@ export default function DashboardClient() {
   }
 
   async function logout() {
-    await fetch("/api/admin/logout", { method: "POST" });
+    await adminFetch("/api/admin/logout", { method: "POST" });
     location.href = "/login";
   }
 

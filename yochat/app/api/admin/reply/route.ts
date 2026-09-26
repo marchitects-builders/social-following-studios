@@ -5,9 +5,15 @@ import { processDueJobs } from "@/lib/jobs";
 import { deliverMetaJob } from "@/lib/meta";
 import { addAnalytics, addAudit, loadState, mutateState } from "@/lib/store";
 import type { DeliveryJob, MessageRecord } from "@/lib/types";
+import { verifyCsrfToken } from "@/lib/csrf";
 
 export async function POST(request: Request) {
-  if (!isAdminRequest(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminRequest(request))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Wave 9 (item 5): CSRF synchronizer token required on admin mutations.
+  if (!verifyCsrfToken(request)) {
+    return NextResponse.json({ error: "CSRF token missing or invalid" }, { status: 403 });
+  }
   const body = (await request.json().catch(() => ({}))) as { conversationId?: string; text?: string };
   const text = body.text?.trim().slice(0, 1000);
   if (!body.conversationId || !text) return NextResponse.json({ error: "Conversation and reply are required" }, { status: 400 });

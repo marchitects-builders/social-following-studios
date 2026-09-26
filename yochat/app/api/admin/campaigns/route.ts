@@ -9,6 +9,7 @@ import {
 } from "@/lib/campaigns";
 import { getDefaultBrand } from "@/lib/brands";
 import { processIncomingEvent } from "@/lib/engine";
+import { verifyCsrfToken } from "@/lib/csrf";
 
 async function sendTestReply(text: string) {
   const brand = getDefaultBrand("aafc");
@@ -31,12 +32,17 @@ async function sendTestReply(text: string) {
 }
 
 export async function GET(request: Request) {
-  if (!isAdminRequest(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminRequest(request))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   return NextResponse.json(await getAafcMailingListBetaReport());
 }
 
 export async function POST(request: Request) {
-  if (!isAdminRequest(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminRequest(request))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Wave 9 (item 5): CSRF synchronizer token required on admin mutations.
+  if (!verifyCsrfToken(request)) {
+    return NextResponse.json({ error: "CSRF token missing or invalid" }, { status: 403 });
+  }
   const body = (await request.json().catch(() => ({}))) as {
     action?: "start" | "reply" | "run_full" | "reset";
     text?: string;

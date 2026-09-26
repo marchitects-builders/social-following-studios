@@ -4,12 +4,18 @@ import { isAdminRequest } from "@/lib/admin-auth";
 import { getDefaultBrand } from "@/lib/brands";
 import { processIncomingEvent } from "@/lib/engine";
 import type { BrandKey, TriggerType } from "@/lib/types";
+import { verifyCsrfToken } from "@/lib/csrf";
 
 const allowedBrands = new Set<BrandKey>(["marchitects", "social-following", "aafc"]);
 const allowedTriggers = new Set<TriggerType>(["message", "comment", "story_reply", "mention", "postback", "referral", "follow", "test"]);
 
 export async function POST(request: Request) {
-  if (!isAdminRequest(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminRequest(request))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Wave 9 (item 5): CSRF synchronizer token required on admin mutations.
+  if (!verifyCsrfToken(request)) {
+    return NextResponse.json({ error: "CSRF token missing or invalid" }, { status: 403 });
+  }
   const body = (await request.json().catch(() => ({}))) as {
     brand?: BrandKey;
     trigger?: TriggerType;

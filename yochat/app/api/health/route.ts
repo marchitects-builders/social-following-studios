@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
+import { getHeartbeats } from "@/lib/ops";
 import { storageMode } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
-export function GET() {
+export async function GET() {
   const persistent = storageMode() === "redis";
   const metaConfigured = Boolean(
     process.env.META_VERIFY_TOKEN &&
@@ -22,6 +23,11 @@ export function GET() {
         ai: Boolean(process.env.NVIDIA_API_KEY),
         persistentStorage: persistent,
         admin: Boolean(process.env.ADMIN_PASSWORD && process.env.ADMIN_SESSION_SECRET),
+      },
+      // Wave 1: operational surface (additive; existing fields untouched).
+      operational: {
+        heartbeats: await getHeartbeats(),
+        durableIngest: Boolean(process.env.QSTASH_TOKEN),
       },
     },
     { headers: { "Cache-Control": "no-store" } },

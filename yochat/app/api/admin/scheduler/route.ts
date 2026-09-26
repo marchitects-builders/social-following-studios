@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
+import { verifyCsrfToken } from "@/lib/csrf";
 
 const SCHEDULE_ID = "yochat-followups-v1";
 
@@ -12,7 +13,7 @@ function configuration() {
 }
 
 export async function GET(request: Request) {
-  if (!isAdminRequest(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminRequest(request))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { token, api } = configuration();
   if (!token) return NextResponse.json({ configured: false, active: false });
   const response = await fetch(`${api}/v2/schedules`, {
@@ -27,7 +28,12 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!isAdminRequest(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminRequest(request))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Wave 9 (item 5): CSRF synchronizer token required on admin mutations.
+  if (!verifyCsrfToken(request)) {
+    return NextResponse.json({ error: "CSRF token missing or invalid" }, { status: 403 });
+  }
   const { token, cronSecret, api } = configuration();
   if (!token || !cronSecret) {
     return NextResponse.json({ error: "Connect QStash and the scheduler secret first" }, { status: 400 });

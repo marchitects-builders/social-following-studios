@@ -1,9 +1,12 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { isTestActionsEnabled } from "@/lib/test-gate";
 
 export const ADMIN_COOKIE = "yochat_admin";
 const SESSION_SECONDS = 60 * 60 * 12;
 const LOGIN_WINDOW_SECONDS = 15 * 60;
 const LOGIN_ATTEMPT_LIMIT = 5;
+/** Wave 9 (item 6): substring length of the password hash embedded in the session cookie. */
+const PASSWORD_HASH_SUBSTRING_LENGTH = 10;
 
 type LoginAttempt = { count: number; resetAt: number };
 type AuthGlobal = typeof globalThis & { __yochatLoginAttempts?: Map<string, LoginAttempt> };
@@ -18,20 +21,63 @@ function safeEqual(left: string, right: string): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-export function verifyAdminPassword(password: string): boolean {
-  const expected = process.env.ADMIN_PASSWORD;
-  return Boolean(expected && password && safeEqual(password, expected));
+export function hashAdminPassword(password: string): string {
+  return createHash("sha256").update(password).digest("hex");
 }
 
-export function createAdminToken(): string {
+export function passwordHashSubstring(hashHex: string): string {
+  return hashHex.slice(-PASSWORD_HASH_SUBSTRING_LENGTH);
+}
+
+/**
+ * The CURRENT admin password hash: the runtime override stored in state
+ * (set by change_admin_password) wins; otherwise the ADMIN_PASSWORD env var
+ * is canonical. Passed in by callers that already hold state so this module
+ * stays free of the store import cycle.
+ */
+export function currentPasswordHash(stateHash: string | null | undefined): string {
+  if (stateHash) return stateHash;
+  return hashAdminPassword(process.env.ADMIN_PASSWORD ?? "");
+}
+
+export function verifyAdminPassword(password: string, stateHash?: string | null): boolean {
+  if (!password) return false;
+  // Runtime override path: state stores hashAdminPassword(password).
+  if (stateHash) return safeEqual(hashAdminPassword(password), stateHash);
+  // Env path: ADMIN_PASSWORD holds the plaintext secret.
+  const expected = process.env.ADMIN_PASSWORD;
+  return Boolean(expected && safeEqual(password, expected));
+}
+
+/**
+ * Wave 9 (item 6) — Gemini's revocation mechanism (adopted over ChatGPT's
+ * version counter: it is cryptographically tied to the actual secret, so it
+ * works even if a version env var is forgotten).
+ *
+ * The signed session payload embeds a substring of the admin's hashed
+ * password. On every request, after the HMAC and expiry checks, the
+ * cookie's substring is compared against the CURRENT password hash. A
+ * password change updates the stored hash, so every previously issued
+ * cookie fails the substring check and is revoked instantly — with zero
+ * dedicated session keys in Redis.
+ */
+export function createAdminToken(password: string): string {
   const signingSecret = secret();
   if (!signingSecret) throw new Error("ADMIN_SESSION_SECRET or ADMIN_PASSWORD is required");
-  const payload = Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + SESSION_SECONDS })).toString("base64url");
+  const payload = Buffer.from(
+    JSON.stringify({
+      exp: Math.floor(Date.now() / 1000) + SESSION_SECONDS,
+      ph: passwordHashSubstring(hashAdminPassword(password)),
+    }),
+  ).toString("base64url");
   const signature = createHmac("sha256", signingSecret).update(payload).digest("base64url");
   return `${payload}.${signature}`;
 }
 
-export function verifyAdminToken(token: string | undefined): boolean {
+export async function verifyAdminToken(
+  token: string | undefined,
+  resolveHash: () => Promise<string | null | undefined>,
+): Promise<boolean> {
   const signingSecret = secret();
   if (!token || !signingSecret) return false;
   const [payload, signature] = token.split(".");
@@ -39,8 +85,12 @@ export function verifyAdminToken(token: string | undefined): boolean {
   const expected = createHmac("sha256", signingSecret).update(payload).digest("base64url");
   if (!safeEqual(signature, expected)) return false;
   try {
-    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { exp?: number };
-    return typeof decoded.exp === "number" && decoded.exp > Date.now() / 1000;
+    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { exp?: number; ph?: string };
+    if (typeof decoded.exp !== "number" || decoded.exp <= Date.now() / 1000) return false;
+    // Revocation check: the cookie's password-hash substring must match the
+    // CURRENT hash. A password change invalidates every old cookie instantly.
+    const current = passwordHashSubstring(currentPasswordHash(await resolveHash()));
+    return typeof decoded.ph === "string" && safeEqual(decoded.ph, current);
   } catch {
     return false;
   }
@@ -55,9 +105,17 @@ export function tokenFromRequest(request: Request): string | undefined {
     ?.slice(ADMIN_COOKIE.length + 1);
 }
 
-export function isAdminRequest(request: Request): boolean {
-  return verifyAdminToken(tokenFromRequest(request));
+/** Resolves the current admin password hash from the state blob. */
+async function resolveStateHash(): Promise<string | null | undefined> {
+  const { loadState } = await import("@/lib/store");
+  return (await loadState()).security.adminPasswordHash;
 }
+
+export async function isAdminRequest(request: Request): Promise<boolean> {
+  return verifyAdminToken(tokenFromRequest(request), resolveStateHash);
+}
+
+export { isTestActionsEnabled };
 
 function clientKey(request: Request): string {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
