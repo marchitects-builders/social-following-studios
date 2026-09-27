@@ -399,19 +399,40 @@ function Hero() {
 /* ------------------------------------------------------------------ *
  * SECTIONS
  * ------------------------------------------------------------------ */
+const RELATION_DOTS = [
+  [30, 30, -60, -40], [80, 30, 40, -70], [130, 30, -30, 60], [180, 30, 70, 20],
+  [30, 80, 50, 50], [80, 80, -70, 10], [130, 80, 20, -50], [180, 80, -40, -20],
+  [30, 130, -20, -60], [80, 130, 60, 30], [130, 130, -50, -30], [180, 130, 30, 60],
+];
+
+function RelationVisual() {
+  return (
+    <div className="relation-visual" data-reveal aria-hidden="true">
+      <svg viewBox="0 0 210 160">
+        {RELATION_DOTS.map(([x, y, dx, dy], i) => (
+          <circle key={i} cx={x} cy={y} r="5" style={{ "--dx": `${dx}px`, "--dy": `${dy}px`, "--i": i }} />
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 function OwnedRelationship() {
   return (
     <section className="section">
       <SectionHead label="Owned relationship" title="You know who raised their hand." />
-      <div className="owned-relationship" data-reveal>
-        <p>
-          Interest enters a database your business controls. Signals become useful audience segments. Every response
-          sharpens the next move.
-        </p>
-        <p>
-          The system turns audience movement into direct relationships that support conversion, retention, and
-          reactivation.
-        </p>
+      <div className="owned-relationship-grid">
+        <div className="owned-relationship" data-reveal>
+          <p>
+            Interest enters a database your business controls. Signals become useful audience segments. Every response
+            sharpens the next move.
+          </p>
+          <p>
+            The system turns audience movement into direct relationships that support conversion, retention, and
+            reactivation.
+          </p>
+        </div>
+        <RelationVisual />
       </div>
     </section>
   );
@@ -449,17 +470,6 @@ function SystemSummary() {
       <a className="text-link" href="#/system">
         The system in full <Arrow />
       </a>
-    </section>
-  );
-}
-
-const AUDIENCES = ["Founders", "Hospitality", "Compliance-Heavy Organizations"];
-
-function WhoWeServe() {
-  return (
-    <section className="section">
-      <SectionHead label="Who we serve" title="Who we serve." />
-      <IndexList items={AUDIENCES} />
     </section>
   );
 }
@@ -553,32 +563,29 @@ function LogoBar() {
   );
 }
 
+function CaseTeaser() {
+  return (
+    <article className="case-teaser" data-reveal>
+      <p className="card-label">Legal / Mass tort</p>
+      <h3>A dormant plaintiff database reached a multi-million dollar resolution.</h3>
+      <StatRow
+        stats={[
+          ["95%", "Inbox placement held"],
+          ["Multi-Million $", "Case resolution"],
+        ]}
+      />
+      <a className="text-link" href="#/case-studies">
+        Read the case study <Arrow />
+      </a>
+    </article>
+  );
+}
+
 function CaseStudiesSummary() {
   return (
     <section className="section">
       <SectionHead label="Case studies" title="Verified case studies from the actual work." />
-      <FeaturedCase />
-      <a className="text-link" href="#/case-studies">
-        All case studies <Arrow />
-      </a>
-    </section>
-  );
-}
-
-function Newsletter() {
-  return (
-    <section className="section">
-      <SectionHead label="Newsletter" title="Audience strategy and distribution." />
-      <form className="newsletter" data-reveal onSubmit={(e) => e.preventDefault()}>
-        <label htmlFor="nl-email">Email address</label>
-        <div className="newsletter-row">
-          <input id="nl-email" type="email" placeholder="you@company.com" aria-label="Email address" />
-          <button type="submit">
-            <span>Subscribe</span>
-            <Arrow />
-          </button>
-        </div>
-      </form>
+      <CaseTeaser />
     </section>
   );
 }
@@ -706,9 +713,7 @@ function Home() {
       <div className="page-shell">
         <OwnedRelationship />
         <SystemSummary />
-        <WhoWeServe />
         <CaseStudiesSummary />
-        <Newsletter />
       </div>
     </>
   );
