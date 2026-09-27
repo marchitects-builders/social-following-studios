@@ -8,7 +8,7 @@ import {
   keyedSetContactRaw,
   keyedSyncTranscriptRaw,
 } from "@/lib/store-keys";
-import { redisCommand, redisConfigured, stateRedisCredentials } from "@/lib/redis";
+import { redisCommand, redisCircuitOpen, redisConfigured, redisCredentialsConfigured, stateRedisCredentials } from "@/lib/redis";
 import type {
   AiKnowledgeDoc,
   AnalyticsEvent,
@@ -119,6 +119,13 @@ export function emptyState(): YochatState {
 type MemoryGlobal = typeof globalThis & {
   __yochatMemoryState?: YochatState;
   __yochatMutationChain?: Promise<void>;
+  /**
+   * War-room (g): set when state was persisted to memory while Redis
+   * credentials exist (i.e. the circuit was open). Those outage-era writes
+   * must be reconciled back into Redis on recovery — see
+   * reconcileDegradedWrites().
+   */
+  __yochatDegradedWrite?: boolean;
 };
 
 function memoryGlobal(): MemoryGlobal {
@@ -197,8 +204,18 @@ function normalizeState(value: Partial<YochatState> | null): YochatState {
 
 export async function loadState(): Promise<YochatState> {
   if (redisIsConfigured()) {
-    const encoded = await redisCommand<string | null>(["GET", STATE_KEY]);
-    return normalizeState(encoded ? (JSON.parse(encoded) as Partial<YochatState>) : null);
+    try {
+      const encoded = await redisCommand<string | null>(["GET", STATE_KEY]);
+      const state = normalizeState(encoded ? (JSON.parse(encoded) as Partial<YochatState>) : null);
+      // War-room (g): fold any outage-era degraded writes back in (additive).
+      return reconcileDegradedWrites(state);
+    } catch (error) {
+      // War-room (g): Redis failed on the read (the circuit is now open).
+      // Degrade to memory instead of 500ing — the write is journaled for
+      // reconciliation. Non-Redis errors (corrupt JSON, app bugs) stay loud.
+      if (!isRedisError(error) || !redisCircuitOpen()) throw error;
+      return degradedMemoryState();
+    }
   }
 
   const global = memoryGlobal();
@@ -209,12 +226,137 @@ export async function loadState(): Promise<YochatState> {
   return structuredClone(global.__yochatMemoryState);
 }
 
+/**
+ * War-room (g): in-memory state used when Redis is unreachable. Journals the
+ * degraded write so post-recovery reconciliation can merge it back.
+ */
+function degradedMemoryState(): YochatState {
+  const global = memoryGlobal();
+  global.__yochatMemoryState ??= emptyState();
+  global.__yochatMemoryState = normalizeState(global.__yochatMemoryState);
+  if (redisCredentialsConfigured("state")) {
+    global.__yochatDegradedWrite = true;
+  }
+  return structuredClone(global.__yochatMemoryState);
+}
+
+/** Latest-write timestamp for conflict resolution during outage reconciliation. */
+function recordTimestamp(record: unknown): number {
+  const fields = record as Record<string, unknown>;
+  for (const key of ["updatedAt", "lastSeenAt", "lockedAt", "createdAt"]) {
+    const value = fields[key];
+    if (typeof value === "string") {
+      const time = new Date(value).getTime();
+      if (Number.isFinite(time)) return time;
+    }
+  }
+  return 0;
+}
+
+/**
+ * War-room (g): additive merge of outage-era memory writes into the
+ * recovered Redis state. New IDs union freely; on key conflicts the newer
+ * record wins (tie → the degraded/outage copy, since Redis could not have
+ * been written while the circuit was open). Append-only logs concatenate.
+ * Singleton config (settings, security, ai) is NOT merged — the Redis
+ * version wins and the limitation is logged.
+ *
+ * Single-process scope: only reconciles THIS process's degraded writes.
+ */
+function mergeOutageState(redisState: YochatState, memoryState: YochatState): YochatState {
+  const merged: YochatState = { ...redisState };
+  const dictCollections = [
+    "contacts",
+    "conversations",
+    "handoffs",
+    "jobs",
+    "sequences",
+    "enrollments",
+    "campaigns",
+    "campaignEnrollments",
+    "mailingListSubscriptions",
+    "brandOverrides",
+    "brandSecrets",
+    "flows",
+    "knowledgeDocs",
+  ] as const;
+  let mergedRecords = 0;
+  for (const name of dictCollections) {
+    const fromRedis = redisState[name] as Record<string, unknown>;
+    const fromMemory = memoryState[name] as Record<string, unknown>;
+    const out: Record<string, unknown> = { ...fromRedis };
+    for (const [id, memRecord] of Object.entries(fromMemory)) {
+      const redisRecord = fromRedis[id];
+      if (redisRecord === undefined) {
+        out[id] = memRecord;
+        mergedRecords += 1;
+      } else if (recordTimestamp(memRecord) >= recordTimestamp(redisRecord)) {
+        out[id] = memRecord;
+        mergedRecords += 1;
+      }
+    }
+    (merged as unknown as Record<string, unknown>)[name] = out;
+  }
+  // Messages: union by id (append-only).
+  const messageIds = new Set(redisState.messages.map((m) => m.id));
+  const newMessages = memoryState.messages.filter((m) => !messageIds.has(m.id));
+  merged.messages = [...redisState.messages, ...newMessages];
+  mergedRecords += newMessages.length;
+  // Append-only logs: concatenate, de-duplicating exact entries.
+  const concatUnique = <T,>(a: T[], b: T[]): T[] => {
+    const seen = new Set(a.map((item) => JSON.stringify(item)));
+    const out = [...a];
+    for (const item of b) {
+      const key = JSON.stringify(item);
+      if (!seen.has(key)) {
+        seen.add(key);
+        out.push(item);
+      }
+    }
+    return out;
+  };
+  merged.analytics = concatUnique(redisState.analytics, memoryState.analytics);
+  merged.audits = concatUnique(redisState.audits, memoryState.audits);
+  merged.campaignActivity = concatUnique(redisState.campaignActivity, memoryState.campaignActivity);
+  // Processed-event index: union, keeping the latest timestamp per event.
+  const processed: Record<string, string> = { ...redisState.processedEventIds };
+  for (const [id, ts] of Object.entries(memoryState.processedEventIds)) {
+    if (!processed[id] || new Date(ts).getTime() > new Date(processed[id]).getTime()) processed[id] = ts;
+  }
+  merged.processedEventIds = processed;
+  // Singleton config (settings, security, ai): Redis wins by policy.
+  merged.settings = redisState.settings;
+  merged.security = redisState.security;
+  merged.ai = redisState.ai;
+  return merged;
+}
+
+async function reconcileDegradedWrites(redisState: YochatState): Promise<YochatState> {
+  const global = memoryGlobal();
+  if (!global.__yochatDegradedWrite) return redisState;
+  const memoryState = global.__yochatMemoryState;
+  global.__yochatDegradedWrite = false;
+  if (!memoryState) return redisState;
+  const merged = mergeOutageState(redisState, memoryState);
+  await redisStateCommand(["SET", STATE_KEY, JSON.stringify(merged)]);
+  const { logOps } = await import("@/lib/ops");
+  await logOps("info", "redis", "Reconciled degraded-mode writes back to Redis after outage", {
+    note: "additive merge; conflicts resolved last-write-wins; singleton config kept from Redis",
+  }).catch(() => undefined);
+  return merged;
+}
+
 async function saveState(state: YochatState): Promise<void> {
   pruneState(state);
   if (redisIsConfigured()) {
     await redisStateCommand(["SET", STATE_KEY, JSON.stringify(state)]);
   } else {
     memoryGlobal().__yochatMemoryState = structuredClone(state);
+    // War-room (g): credentials exist but we wrote to memory → the circuit
+    // is open; journal this so recovery reconciles the outage-era writes.
+    if (redisCredentialsConfigured("state")) {
+      memoryGlobal().__yochatDegradedWrite = true;
+    }
   }
   // Wave 9 (item 1) — migration write-through: mirror contacts and
   // transcripts into the keyed structures on every blob save. The blob is
@@ -307,21 +449,41 @@ export async function mutateState<T>(mutator: (state: YochatState) => T | Promis
     });
   }
 
-  const lockToken = await acquireRedisLock();
+  // War-room (g): the Redis path degrades to memory on Redis failure
+  // (circuit now open) instead of 500ing the request. Only Redis errors
+  // degrade — a mutator (app-logic) error must never re-run the mutator.
+  // Non-circuit errors stay loud.
   try {
-    const state = await loadState();
-    const result = await mutator(state);
-    await saveState(state);
-    return result;
-  } finally {
-    await redisStateCommand([
-      "EVAL",
-      'if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end',
-      1,
-      LOCK_KEY,
-      lockToken,
-    ]).catch(() => undefined);
+    const lockToken = await acquireRedisLock();
+    try {
+      const state = await loadState();
+      const result = await mutator(state);
+      await saveState(state);
+      return result;
+    } finally {
+      await redisStateCommand([
+        "EVAL",
+        'if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end',
+        1,
+        LOCK_KEY,
+        lockToken,
+      ]).catch(() => undefined);
+    }
+  } catch (error) {
+    if (!isRedisError(error) || !redisCircuitOpen()) throw error;
+    return withMemoryLock(async () => {
+      const state = await degradedMemoryState();
+      const result = await mutator(state);
+      await saveState(state);
+      return result;
+    });
   }
+}
+
+/** True for errors raised by the Redis transport (not app-logic errors). */
+function isRedisError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /Redis|fetch failed|circuit is open|UND_ERR|ECONNREFUSED|ETIMEDOUT/i.test(message);
 }
 
 export function storageMode(): "redis" | "memory" {

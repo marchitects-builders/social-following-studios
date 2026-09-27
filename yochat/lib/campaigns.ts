@@ -74,6 +74,15 @@ function subscriptionKey(listId: string, identityKey: string): string {
   return `${listId}:${identityKey}`;
 }
 
+// War-room (f) CR-01: consent keywords must never be swallowed by the campaign
+// fallback. STOP/START (and any traffic from an already opted-out contact)
+// yield to the normal engine consent handling so contact-level opt-out/opt-in
+// flags, queued-job cancellation, and the canonical consent replies apply.
+// Mirrors lib/engine.ts OPT_OUT/OPT_IN (this module cannot import engine —
+// engine imports this module).
+const CONSENT_OPT_OUT = new Set(["stop", "unsubscribe", "cancel", "end", "quit", "opt out", "remove me"]);
+const CONSENT_OPT_IN = new Set(["start", "subscribe", "resume", "opt in"]);
+
 export async function resetAafcMailingListBetaTest(): Promise<void> {
   await mutateState((state) => {
     const contactId = contactIdFor(AAFC_BETA_TEST_CONTACT.externalId);
@@ -146,6 +155,12 @@ export async function startAafcMailingListBetaTest(): Promise<{
     contact.lastSeenAt = now;
     contact.fields.campaignId = campaign.id;
     contact.fields.campaignStatus = "awaiting_reply";
+    // War-room (f) CR-02: an opted-out contact must never be (re)started into
+    // the beta. Refuse before mutating any state; the admin route surfaces
+    // this as a 500 (same as the existing misconfiguration guards above).
+    if (contact.optedOut) {
+      throw new Error("AAFC mailing-list beta test contact has opted out — reset the beta before restarting");
+    }
     state.contacts[contactId] = contact;
 
     const conversation: Conversation = state.conversations[conversationId] ?? {
@@ -244,6 +259,15 @@ export async function processAafcMailingListCampaignReply(
     const contact = state.contacts[contactId];
     const conversation = state.conversations[conversationIdFor(contactId)];
     if (!enrollment || !contact || !conversation || enrollment.campaignId !== campaign.id) return undefined;
+
+    // War-room (f) CR-01: yield consent traffic to the normal engine handling.
+    // Returning undefined lets processIncomingEvent run its standard opt-out /
+    // opt-in path (contact flags, job cancellation, canonical replies) instead
+    // of recording a campaign fallback reply that leaves consent untouched.
+    const consentText = event.text.trim().toLowerCase();
+    if (CONSENT_OPT_OUT.has(consentText) || CONSENT_OPT_IN.has(consentText) || contact.optedOut) {
+      return undefined;
+    }
 
     if (state.processedEventIds[event.id]) {
       return {

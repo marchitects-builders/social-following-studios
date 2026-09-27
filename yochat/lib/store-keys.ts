@@ -151,6 +151,11 @@ async function rawLrange(key: string, start: number, stop: number): Promise<stri
   return redisCommand<string[]>(["LRANGE", key, start, stop], "state");
 }
 
+/** List all {brand}:{contactId} members of the contact index (keyed layer). */
+export async function listKeyedContactMembers(): Promise<Array<{ brand: string; contactId: string }>> {
+  return (await rawSmembers(CONTACT_INDEX)).map(splitMember);
+}
+
 /** Write one contact's keyed JSON + index entry. Idempotent. */
 export async function keyedSetContactRaw(contact: Contact): Promise<void> {
   const key = contactKey(contact.brand, contact.id);

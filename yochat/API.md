@@ -46,7 +46,10 @@ construction).
   `/api/ingest/process` and the webhook returns 200 (`EVENT_RECEIVED`)
   immediately. Otherwise inline `after()` processing. Publish failures fall
   back to inline rather than dropping events.
-- 200 `EVENT_RECEIVED` on success.
+- 200 `EVENT_RECEIVED` on success. **500 strictly means "not ingested"**: the
+  `after()` background processing is registered only after the ledger record
+  succeeds — a 500 (`{"error":"Failed to record webhook event"}`) tells Meta
+  to retry, and the retry becomes the single processing.
 
 ### `GET /api/health` — service health
 - Auth: none.
@@ -60,7 +63,10 @@ construction).
 
 ### `POST /api/ingest/process` — durable ingest worker
 - Auth: QStash signature gate (when keys configured) + `Authorization: Bearer
-  <CRON_SECRET>`. Without `CRON_SECRET` → 503.
+  <CRON_SECRET>`. Without `CRON_SECRET` → 503. With only
+  `QSTASH_CURRENT_SIGNING_KEY` set, the next key falls back to the current key
+  (legitimately signed requests are accepted); a distinct
+  `QSTASH_NEXT_SIGNING_KEY` enables zero-downtime rotation.
 - Body: `{ eventId }`. Processes exactly one ledger event per invocation:
   unknown/expired events → `{ ok: true, skipped: "unknown-event" }`;
   already-processed → `{ ok: true, skipped: "already-processed" }`; processing
@@ -109,7 +115,9 @@ Body: `{ action, ...params }`. Actions:
 - `resolve_handoff` / `assign_handoff` — `{ handoffId }`.
 - `toggle_contact` — `{ contactId }` (pause/resume contact).
 - `retry_job` — `{ jobId }`.
-- `save_sequence` — `{ sequence }`.
+- `save_sequence` — `{ sequence }`. Cross-brand id reuse is rejected: 400 +
+  a `sequence.cross_brand_save_denied` audit (an id owned by one brand can
+  never be overwritten by another). Same-brand overwrites are unchanged.
 - `set_handoff_resume` — `{ handoffId, minutes }` (timed auto-resume).
 - `add_contact_note` / `delete_contact_note` — `{ contactId, text | noteId }`.
 - `set_lead_stage` — `{ contactId, stage }` (validated against lead stages).
@@ -134,7 +142,8 @@ Body: `{ action, ...params }`. Actions:
 - `ratelimit_usage` — `{ brand, channel }` current budget usage.
 - `classify_error` — `{ kind }` Meta send-error classification.
 - `authorize_outbound` — `{ brand, channel, recipientId }` dry-run of the
-  outbound seatbelt.
+  outbound seatbelt (also accepts `contactId`, `kind`, `consentAck`,
+  `handoffAck` to probe the consent/handoff carve-outs).
 - `job_status` — `{ jobId }`.
 - `ai_budget` — per-brand daily AI spend vs budget.
 - `outbound_auth_log` — recent allow/deny decisions with reasons.
@@ -154,8 +163,22 @@ Body: `{ action, ...params }`. Actions:
 
 ### `GET /api/admin/export?format=csv|json&brand=<brand>`
 - `format=json` → full JSON operational backup download
-  (`yochat-backup-<date>.json`) — the primary backup artifact.
-- `format=csv` (default) → contacts CSV (`brand` optional filter).
+  (`yochat-backup-<date>.json`) — the primary backup artifact: 21 top-level
+  fields (`exportedAt`, `backupNotes`, plus 19 state sections). Carries
+  settings, contacts, conversations, messages, handoffs, sequences,
+  enrollments, jobs, campaigns (+ enrollments/activity/subscriptions), flows,
+  knowledgeDocs, brandOverrides, ai settings, processedEventIds, analytics,
+  and audits. Per-brand exports (`?brand=`) scope audits to `detail.brand`;
+  audits without an explicit brand attribution appear only in the full
+  unscoped export (fail-closed — attribution is never guessed).
+  Contacts/transcripts are read from the keyed Redis structures
+  first (dual-read with blob fallback). Deliberately excluded: `brandSecrets`
+  (Wave 7 write-only — re-enter after any restore) and `security` (holds the
+  admin password hash override — re-set the admin password after any restore).
+  There is no automated restore path.
+- `format=csv` (default) → contacts CSV (`brand` optional filter). Cells
+  starting with `= + - @` are prefixed with a single quote (formula-injection
+  neutralization).
 
 ### `GET /api/admin/analytics?brand=<brand>&window=24h|7d|30d`
 - On-demand rollups: conversations, messages in/out, AI replies + cost,
@@ -185,7 +208,9 @@ Body `{ action, ... }`: `list` (`{ brand }`), `get` (`{ id }`), `create`
 (`{ brand, title, content }`), `update` (`{ id, content }` — bumps version,
 clears verification), `verify` (`{ id }` — sets `lastVerifiedAt`, no version
 bump), `delete` (`{ id }`). Docs are brand-scoped; listing is tenant-isolated.
-The AI may only cite verified knowledge (see `ARCHITECTURE.md`).
+The AI may only cite verified knowledge (`enabled && lastVerifiedAt` — enforced
+in `buildKnowledgeBlock`; adding or updating a document clears verification
+until it is verified again).
 
 ### `POST /api/admin/integrations` — secrets & allowlist
 Body `{ action, ... }`: `add_secret` / `delete_secret` (`{ brand, name }`),
@@ -198,8 +223,9 @@ flows may call.
   delivery job and processes due jobs.
 - Guards: test-channel conversations → "Test conversations cannot send real
   messages"; opted-out contacts → refused; last contact activity older than 23h
-  → "The Meta messaging window has closed". (Production path — this sends
-  through Meta.)
+  → "The Meta messaging window has closed". Manual replies bypass the
+  automation-pause and handoff-status seatbelts (but never the opt-out check).
+  (Production path — this sends through Meta.)
 
 ### `POST /api/admin/test` — Test Lab simulation
 - Body: `{ brand, trigger, text, persona? }`. Runs one message through the

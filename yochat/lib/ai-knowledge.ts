@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { addAudit, loadState, mutateState } from "@/lib/store";
+import { getDefaultBrands } from "@/lib/brands";
 import type { AiKnowledgeDoc, BrandConfig, BrandKey } from "@/lib/types";
 
 /**
@@ -12,9 +13,10 @@ import type { AiKnowledgeDoc, BrandConfig, BrandKey } from "@/lib/types";
  * confirming the content is still accurate.
  *
  * The AI prompt-stuffing path (buildKnowledgeBlock) draws ONLY from
- * these objects, truncation-aware and token-budget-aware (~4 chars /
- * token). Every object used is cited as "kb:<id>-v<version>" so the
- * system prompt can enforce grounding discipline.
+ * VERIFIED objects (lastVerifiedAt set) — edits clear verification so
+ * stale content is never cited — truncation-aware and token-budget-aware
+ * (~4 chars / token). Every object used is cited as "kb:<id>-v<version>"
+ * so the system prompt can enforce grounding discipline.
  */
 
 export const AI_KNOWLEDGE_TOKEN_BUDGET = 2500;
@@ -43,6 +45,11 @@ function slugify(title: string): string {
  * Seed-once migration: every entry in the effective brand knowledge
  * (brand override ?? defaults) becomes a version-1 doc. Idempotent —
  * existing docs are never overwritten.
+ *
+ * Seeded docs are operator-curated brand defaults, so they seed as
+ * VERIFIED (lastVerifiedAt = seed time). This preserves the prompt
+ * behavior the smoke suite asserts (seeded citations) now that
+ * buildKnowledgeBlock only stuffs verified docs.
  */
 export function seedKnowledgeDocs(
   docs: Record<string, AiKnowledgeDoc>,
@@ -61,8 +68,42 @@ export function seedKnowledgeDocs(
       enabled: entry.enabled,
       version: 1,
       updatedAt: now,
+      lastVerifiedAt: now,
     };
   }
+}
+
+/**
+ * One-time upgrade heal (war-room AI-01). Called at the top of
+ * buildKnowledgeBlock — the choke point whose new verified-only filter
+ * would otherwise silently strip ALL brand knowledge from AI prompts on
+ * existing deployments, because docs seeded before AI-01 have version 1
+ * and no lastVerifiedAt.
+ *
+ * Only unedited v1 docs occupying a CURRENT seed slot are healed (their
+ * content is the curated seed content). Edited docs (v2+) stay unverified
+ * until an operator re-verifies them, and admin-created docs never occupy
+ * seed ids. Idempotent: after the first heal there is nothing left to do,
+ * so the steady-state cost is one extra state read per prompt build.
+ */
+async function healPreVerificationSeedSlots(brand: BrandKey): Promise<void> {
+  const state = await loadState();
+  const brandConfig = getDefaultBrands().find((b) => b.key === brand);
+  if (!brandConfig) return;
+  const effective = (state.brandOverrides?.[brand]?.knowledge ?? brandConfig.knowledge) as BrandConfig["knowledge"];
+  const needsHeal = effective.some((entry) => {
+    const doc = state.knowledgeDocs[knowledgeDocId(brand, entry.id)];
+    return !!doc && doc.version === 1 && !doc.lastVerifiedAt;
+  });
+  if (!needsHeal) return;
+  await mutateState((draft) => {
+    for (const entry of effective) {
+      const doc = draft.knowledgeDocs[knowledgeDocId(brand, entry.id)];
+      if (doc && doc.version === 1 && !doc.lastVerifiedAt) {
+        doc.lastVerifiedAt = doc.updatedAt;
+      }
+    }
+  });
 }
 
 export async function listKnowledgeDocs(brand?: BrandKey): Promise<AiKnowledgeDoc[]> {
@@ -167,12 +208,23 @@ export type KnowledgeBlock = {
 
 /**
  * Builds the verified-knowledge block for the AI system prompt.
+ *
+ * VERIFIED-ONLY (war-room AI-01): docs are stuffed ONLY when the
+ * operator has verified them (`lastVerifiedAt` set). Any edit clears
+ * verification (see updateKnowledgeDoc), so stale/edited content can
+ * never be cited as verified knowledge until re-verified. New docs
+ * created via the API start unverified and are excluded until the
+ * operator runs the verify action. Seeded brand defaults seed as
+ * verified (see seedKnowledgeDocs).
+ *
  * Truncation-aware: docs are added newest-first until the char budget
  * (token budget × 4) is hit; `truncated` reports whether docs were cut.
  */
 export async function buildKnowledgeBlock(brand: BrandKey): Promise<KnowledgeBlock> {
+  // Upgrade heal for pre-AI-01 seeded docs (see healPreVerificationSeedSlots).
+  await healPreVerificationSeedSlots(brand);
   const docs = (await listKnowledgeDocs(brand))
-    .filter((doc) => doc.enabled)
+    .filter((doc) => doc.enabled && doc.lastVerifiedAt)
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const lines: string[] = [];
   const cited: string[] = [];

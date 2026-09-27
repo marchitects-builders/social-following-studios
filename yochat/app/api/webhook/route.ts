@@ -42,6 +42,11 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
+  // Webhook War (WH-02): JSON bodies like `null`, `"str"`, or `[]` parse fine
+  // but are not webhook payloads — reject before touching payload.object.
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
 
   const appSecret = payload.object === "instagram" ? process.env.META_INSTAGRAM_APP_SECRET : process.env.META_APP_SECRET;
   if (!appSecret) {
@@ -80,6 +85,35 @@ export async function POST(request: Request) {
     }
   }
 
+  // Record synchronously so the ledger reflects receipt even if background
+  // processing is delayed; processMetaWebhook updates status as it works.
+  // Webhook War (WH-04): a ledger-record failure must fail the webhook with a
+  // 500 so Meta retries the delivery. Returning 200 here would silently drop
+  // a verified event (it would sit in limbo with no durable record).
+  //
+  // BUG-CHAOS-1 repair: the after() registration used to live ABOVE this
+  // loop. When the ledger record failed -> 500, the already-registered
+  // after() still executed -> the event was fully processed even though we
+  // told Meta "not ingested" (duplicate-processing risk on Meta retry).
+  // after() is now registered only AFTER the record loop succeeds, so an
+  // HTTP 500 strictly means "not ingested" and the Meta retry becomes the
+  // single processing. The QStash branch above is unaffected (it returns
+  // before this point on success, and falls through to this path on failure).
+  for (const event of events) {
+    try {
+      await recordWebhookEvent(event);
+    } catch (error) {
+      try {
+        await logOps("warning", "ingest", "Failed to record webhook event", {
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+      } catch {
+        // Logging is best-effort; it must never mask the record failure.
+      }
+      return NextResponse.json({ error: "Failed to record webhook event" }, { status: 500 });
+    }
+  }
+
   after(async () => {
     try {
       await processMetaWebhook(payload);
@@ -89,18 +123,6 @@ export async function POST(request: Request) {
       });
     }
   });
-
-  // Record synchronously so the ledger reflects receipt even if background
-  // processing is delayed; processMetaWebhook updates status as it works.
-  for (const event of events) {
-    try {
-      await recordWebhookEvent(event);
-    } catch (error) {
-      await logOps("warning", "ingest", "Failed to record webhook event", {
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  }
 
   return new Response("EVENT_RECEIVED", { status: 200 });
 }

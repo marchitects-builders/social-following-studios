@@ -92,6 +92,15 @@ export function mergeContactsInState(state: YochatState, primaryId: string, seco
   for (const event of state.analytics) {
     if (event.contactId === secondaryId) event.contactId = primaryId;
   }
+  // War-room cross-domain RH-04: queued jobs must follow the merge too.
+  // Without this, a job queued for the secondary contact keeps
+  // metadata.contactId pointing at a deleted record — and the send-time
+  // seatbelt could not resolve the surviving contact's consent state.
+  for (const job of Object.values(state.jobs)) {
+    if (job.metadata && job.metadata.contactId === secondaryId) {
+      job.metadata.contactId = primaryId;
+    }
+  }
 
   delete state.contacts[secondaryId];
   addAudit(state, {

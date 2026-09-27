@@ -39,6 +39,8 @@ export async function POST(request: Request) {
     flowId?: string;
     jobId?: string;
     aiGenerated?: boolean;
+    consentAck?: boolean;
+    handoffAck?: boolean;
   };
 
   switch (body.action) {
@@ -84,6 +86,8 @@ export async function POST(request: Request) {
         contactId: body.contactId,
         flowId: body.flowId,
         aiGenerated: body.aiGenerated === true,
+        consentAck: body.consentAck === true,
+        handoffAck: body.handoffAck === true,
       };
       return NextResponse.json(await authorizeOutbound(auth));
     }

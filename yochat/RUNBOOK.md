@@ -31,6 +31,25 @@ exercised against real infrastructure, it says so — do not assume it works.
    `https://YOUR-YOCHAT-DOMAIN/api/webhook` and the verification token must
    match `META_VERIFY_TOKEN`.
 
+**Production blocker (human-gated):** the live production site is
+`https://yochat-messenger-webhook.vercel.app`, served by a Vercel project
+under **Rashida's Vercel scope** that is **not connected for GitHub
+auto-deploy**. Pushing or merging to `master` alone never updates the live
+site — deployments come only from her dashboard, so have her:
+1. Open her Vercel account → the project serving
+   `https://yochat-messenger-webhook.vercel.app`.
+2. **To wire auto-deploy:** Settings → Git → connect
+   `marchitects-builders/social-following-studios` → set **Production
+   Branch** to `master` and **Root Directory** to `yochat` → Save. The next
+   push/merge to `master` then deploys automatically.
+3. **To deploy right now without wiring Git:** Deployments tab → latest
+   deployment → `···` → **Redeploy** → confirm.
+4. **To roll back:** Deployments tab → last known-good deployment → `···` →
+   **Promote to Production**.
+5. After any production change: re-run the dashboard Test Lab + AAFC beta
+   suites, and confirm the live Meta webhook still points at
+   `https://yochat-messenger-webhook.vercel.app/api/webhook`.
+
 ## 2. Environment variables
 
 Copy `.env.example` to `.env.local` for local work. Never commit `.env.local`
@@ -95,6 +114,12 @@ effective barrier.
    `POST /api/webhook` requires the correct `x-hub-signature-256` per object
    type (Messenger → `META_APP_SECRET`, Instagram → `META_INSTAGRAM_APP_SECRET`);
    wrong signatures get 401, unsupported objects get 404, invalid JSON gets 400.
+   **500 semantics: a 500 means "not ingested."** The `after()` background
+   processing is registered only after the ledger record succeeds — if the
+   record fails, the webhook returns
+   `{"error":"Failed to record webhook event"}` and Meta retries the event;
+   the retry then becomes the single processing. Never treat a 500 as
+   "received anyway."
 4. Connect each brand's Page/IG account ID in `META_PAGE_ACCESS_TOKENS_JSON`
    and `META_INSTAGRAM_ACCESS_TOKENS_JSON` (the engine routes by the
    webhook's Page/account ID and refuses to send without a matching token).
@@ -108,7 +133,9 @@ effective barrier.
 ## 5. QStash configuration
 
 1. Set `QSTASH_TOKEN`, `QSTASH_URL` (or default), `CRON_SECRET`,
-   `YOCHAT_PUBLIC_URL`, and both QStash signing keys.
+   `YOCHAT_PUBLIC_URL`, and both QStash signing keys. Note: setting **only**
+   `QSTASH_CURRENT_SIGNING_KEY` works (the next key falls back to it); a
+   distinct `QSTASH_NEXT_SIGNING_KEY` enables zero-downtime rotation.
 2. Activate the scheduler from the dashboard (**Settings → Connection points →
    Activate scheduler**), which creates schedule `yochat-followups-v1`
    (`Upstash-Cron: */5 * * * *`, method GET, 3 retries) targeting
@@ -154,17 +181,86 @@ effective barrier.
 - **Local caveat**: without Redis configured, everything is in-memory and
   evaporates when the dev server stops. That is expected for local/test runs,
   never acceptable for production.
+- **Degraded mode (Redis reachable → unreachable at runtime):** a circuit
+  breaker spans the Redis scopes. On a network failure it opens immediately
+  (HTTP 5xx opens it after 3 consecutive); HTTP 4xx and Redis *command* errors
+  stay loud, and app-logic errors never trigger degradation. While open:
+  - requests do **not** 500 — the store degrades to process-local memory on
+    the first transport failure, webhooks still return 200, and the webhook
+    event ledger is recorded in memory (flushed to Redis on recovery);
+  - **no delivery jobs are sent.** Claimed jobs are returned to `pending`
+    (claim un-burned) — sending from degraded memory would risk a duplicate
+    customer-visible message after recovery;
+  - `redisConfigured()` returns false; health reports the outage from the
+    second check onward (the first request after failure is what trips the
+    breaker); `redisCredentialsConfigured()` stays pure (credential presence
+    only).
+  - A half-open probe fires after a cooldown (default 30s;
+    `YOCHAT_REDIS_CIRCUIT_COOLDOWN_MS`).
+- **What to do during a Redis outage:**
+  1. **Do NOT restart or redeploy the process while degraded** — outage-era
+     writes live in its memory journal; a crash before recovery loses them.
+  2. Check the Upstash dashboard; `redis_creds_status` (booleans only) shows
+     which credential scope is broken.
+  3. Re-enter the correct `UPSTASH_REDIS_REST_URL` /
+     `UPSTASH_REDIS_REST_TOKEN` (or `KV_REST_API_*`) in Vercel and redeploy,
+     or wait out a transient Upstash blip for the half-open probe.
+  4. Expect a held-back job backlog — sends resume automatically once the
+     circuit closes and the 5-minute cron drains them.
+- **Reconciliation after recovery (process-local only):** outage-era memory
+  writes are additive-merged on the next successful Redis load — new records
+  union, timestamp conflicts newest-first (ties → outage copy), messages union
+  by ID, append-only logs concatenated with exact-entry dedupe, processed-event
+  IDs union. For singleton `settings` / `security` / `ai`, **Redis wins** —
+  outage-era edits there are discarded. **Limitation:** this reconciles only
+  within the process that recorded the writes. If the process crashes before
+  recovery, its outage-era journal is gone — that is the one case where the
+  "no loss" promise does not hold.
+- After recovery: `keyed_migration_status` should report zero mismatches;
+  `keyed_probe` runs a round-trip check.
 
 ## 7. Backups and recovery
 
 - **JSON operational backup**: `GET /api/admin/export?format=json` downloads
   the full state as `yochat-backup-<date>.json` (auth required). This is the
-  primary backup artifact.
+  primary backup artifact — 21 top-level fields: `exportedAt`, `backupNotes`,
+  plus 19 state sections (settings, contacts, conversations, messages,
+  handoffs, sequences, enrollments, jobs, campaigns, campaignEnrollments,
+  campaignActivity, mailingListSubscriptions, flows, knowledgeDocs,
+  brandOverrides, ai settings, processedEventIds, analytics, audits).
+  Contacts and transcripts are read from the keyed Redis structures first
+  (dual-read with blob fallback), so the backup does not depend on blob
+  integrity alone. Deliberately excluded: `brandSecrets` (Wave 7 write-only
+  secret store — re-enter secrets after any restore) and `security` (holds
+  the admin password hash override — re-set the admin password after any
+  restore).
+- **Export scoping caveat:** a `?brand=` export filters audits to
+  `detail.brand` only — audits without explicit brand attribution appear
+  solely in the full unscoped export. For one brand's complete audit history,
+  take the full export.
 - **CSV contact export**: `GET /api/admin/export?format=csv&brand=<brand>`
-  (brand optional) — contacts only.
+  (brand optional) — contacts only. Cells starting with `= + - @` are
+  prefixed with a single quote (formula-injection neutralization; expect the
+  apostrophe to show in the sheet — that is the safety feature).
 - **Restore**: there is no automated restore path; restore means re-importing
   state from the JSON backup. Redis provider-level backups (Upstash dashboard)
   are the disaster-recovery backstop — enable them on the Upstash database.
+  **Manual restore sketch (operator-led, untested):**
+  1. Pause everything (`set_global_pause` on) so nothing sends while you
+     rebuild state.
+  2. Re-enter Vercel env vars and re-run **Activate scheduler** — none of
+     these live in the backup.
+  3. Re-enter `brandSecrets` via the integrations API and re-set the admin
+     password (`change_admin_password`) — both are deliberately excluded from
+     the backup.
+  4. Rebuild operational state by hand from the JSON sections: re-create
+     flows in the dashboard (draft → typed-PUBLISH), re-create knowledge docs
+     via `POST /api/admin/knowledge` `create` and **re-`verify` each one**
+     (the AI cites verified docs only), re-create sequences, restore brand
+     overrides (`update_brand`), restore AI budgets (`set_ai_budget`), and
+     restore contact notes/lead stages from the exported contact records.
+  5. Unpause, then verify: `keyed_migration_status` zero mismatches,
+     heartbeats fresh, event ledger flowing.
 - **Event ledger** (`GET /api/admin/events?limit=50`): every verified inbound
   event recorded with `receivedAt`, status, and outcome (48h TTL) — the
   first place to look when asking "did Meta's event reach us?".
@@ -192,8 +288,14 @@ effective barrier.
 - `template_rejected` → retried once as plain text (+1min, no attempt counted).
 - `transient` → exponential backoff.
 - Stuck `processing` jobs older than 10 minutes are counted as
-  `staleProcessingJobs` in the dashboard snapshot; the next cron run re-claims
-  them (claim-before-send prevents duplicate delivery).
+  `staleProcessingJobs` in the dashboard snapshot; the next cron run **settles
+  them as `failed`** — never re-claimed, never automatically resent, and the
+  linked message is marked `failed` so the inbox stops showing it as queued.
+  This is deliberate anti-duplicate behavior: a stuck job may have been sent by
+  a worker that died before marking it `sent`, and retrying it could send the
+  customer the same message twice. **Verify in Meta (did it actually send?)
+  and on the customer's side before any manual retry.** Each settle writes an
+  ops error entry and a `job.stuck_settled_failed` audit.
 
 **Rate limits** — `ratelimit_check` (reserve/release probe) and
 `ratelimit_usage` show per-brand/per-channel budgets. A denied slot requeues the
@@ -264,6 +366,10 @@ credentials into docs, issues, or chat.
   all other state.
 - Any external (non-Amaury) brand or user. The entire service is single-tenant
   and internal.
+- Any production traffic through the war-room-repaired paths (seatbelt
+  carve-outs, circuit breaker, reconciliation, merge remap, audit export
+  filter, knowledge verified-only gate, provider-error handoff) — verified on
+  synthetic local/dev infrastructure only.
 
 ## 12. Change discipline
 

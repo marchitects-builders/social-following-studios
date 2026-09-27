@@ -1,4 +1,4 @@
-import { redisCommand, redisConfigured } from "@/lib/redis";
+import { redisCommand, redisConfigured, redisHashGetAll } from "@/lib/redis";
 import type { IncomingEvent } from "@/lib/types";
 
 /**
@@ -53,6 +53,34 @@ function memoryIndex(): string[] {
   return global.__yochatEventIndex;
 }
 
+/**
+ * War-room (g): flush outage-era memory-ledger events to Redis (additive).
+ * Called on the Redis path of recordWebhookEvent; HEXISTS guards against
+ * duplicates. Single-process scope.
+ */
+async function reconcileMemoryLedger(): Promise<void> {
+  const ledger = memoryLedger();
+  if (ledger.size === 0) return;
+  const index = memoryIndex();
+  for (const [id, record] of ledger) {
+    try {
+      const exists = (await redisCommand<number>(["HEXISTS", KEY_PREFIX + id, "eventId"])) === 1;
+      if (!exists) {
+        await redisCommand(["HSET", KEY_PREFIX + id, ...Object.entries(serialize(record)).flat()]);
+        await redisCommand(["EXPIRE", KEY_PREFIX + id, EVENT_TTL_SECONDS]);
+        await redisCommand(["LPUSH", INDEX_KEY, id]);
+      }
+    } catch {
+      // Redis failed mid-flush; remaining events stay in memory for the next attempt.
+      return;
+    }
+  }
+  await redisCommand(["LTRIM", INDEX_KEY, 0, INDEX_CAP - 1]).catch(() => undefined);
+  await redisCommand(["EXPIRE", INDEX_KEY, EVENT_TTL_SECONDS]).catch(() => undefined);
+  ledger.clear();
+  index.length = 0;
+}
+
 function serialize(record: WebhookEventRecord): Record<string, string> {
   return {
     eventId: record.eventId,
@@ -102,10 +130,20 @@ export async function recordWebhookEvent(event: IncomingEvent): Promise<WebhookE
     return record;
   }
 
+  // Webhook War (WH-03): only index first-seen events. Replays overwrite the
+  // hash (refreshing status/TTL) but must not LPUSH a duplicate index entry —
+  // the memory fallback already deduped; the Redis path did not.
+  //
+  // War-room (g): flush any outage-era memory-ledger events to Redis first
+  // (additive; HEXISTS guards against duplicates).
+  await reconcileMemoryLedger();
+  const isNew = (await redisCommand<number>(["HEXISTS", KEY_PREFIX + event.id, "eventId"])) === 0;
   await redisCommand(["HSET", KEY_PREFIX + event.id, ...Object.entries(serialize(record)).flat()]);
   await redisCommand(["EXPIRE", KEY_PREFIX + event.id, EVENT_TTL_SECONDS]);
-  await redisCommand(["LPUSH", INDEX_KEY, event.id]);
-  await redisCommand(["LTRIM", INDEX_KEY, 0, INDEX_CAP - 1]);
+  if (isNew) {
+    await redisCommand(["LPUSH", INDEX_KEY, event.id]);
+    await redisCommand(["LTRIM", INDEX_KEY, 0, INDEX_CAP - 1]);
+  }
   await redisCommand(["EXPIRE", INDEX_KEY, EVENT_TTL_SECONDS]);
   return record;
 }
@@ -113,7 +151,10 @@ export async function recordWebhookEvent(event: IncomingEvent): Promise<WebhookE
 export async function getWebhookEvent(eventId: string): Promise<WebhookEventRecord | undefined> {
   if (!redisConfigured()) return memoryLedger().get(eventId);
 
-  const fields = await redisCommand<Record<string, string>>(["HGETALL", KEY_PREFIX + eventId]);
+  // War-room (g): use redisHashGetAll — raw Upstash REST returns HGETALL as a
+  // flat [field, value, ...] array, and reading `.eventId` off that array
+  // always yields undefined (every ledgered event looked "unknown").
+  const fields = await redisHashGetAll(KEY_PREFIX + eventId);
   if (!fields || Object.keys(fields).length === 0) return undefined;
   return deserialize(fields);
 }
@@ -149,6 +190,9 @@ export async function getRecentWebhookEvents(limit = 50): Promise<WebhookEventRe
       .filter((record): record is WebhookEventRecord => Boolean(record));
   }
 
+  // War-room (g): flush outage-era memory events before reading so the
+  // post-recovery view is complete.
+  await reconcileMemoryLedger();
   const ids = await redisCommand<string[]>(["LRANGE", INDEX_KEY, 0, capped - 1]);
   const records: WebhookEventRecord[] = [];
   for (const id of ids) {

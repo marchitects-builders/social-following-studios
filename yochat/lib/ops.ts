@@ -62,7 +62,12 @@ export async function heartbeat(worker: string): Promise<void> {
     memoryHeartbeats().set(worker, stamp);
     return;
   }
-  await redisCommand(["SET", HEARTBEAT_PREFIX + worker, stamp, "EX", HEARTBEAT_TTL_SECONDS]);
+  // War-room (g): degrade to memory on Redis failure instead of throwing.
+  try {
+    await redisCommand(["SET", HEARTBEAT_PREFIX + worker, stamp, "EX", HEARTBEAT_TTL_SECONDS]);
+  } catch {
+    memoryHeartbeats().set(worker, stamp);
+  }
 }
 
 export async function getHeartbeats(): Promise<
@@ -75,7 +80,13 @@ export async function getHeartbeats(): Promise<
   for (const worker of workers) {
     let stamp: string | undefined;
     if (redisConfigured()) {
-      stamp = (await redisCommand<string | null>(["GET", HEARTBEAT_PREFIX + worker])) ?? undefined;
+      // War-room (g): degrade to memory on Redis failure (first failure
+      // opens the circuit) instead of 500ing the caller.
+      try {
+        stamp = (await redisCommand<string | null>(["GET", HEARTBEAT_PREFIX + worker])) ?? undefined;
+      } catch {
+        stamp = memoryHeartbeats().get(worker);
+      }
     } else {
       stamp = memoryHeartbeats().get(worker);
     }
@@ -111,9 +122,17 @@ export async function logOps(
     return;
   }
 
-  await redisCommand(["LPUSH", OPS_KEY, JSON.stringify(event)]);
-  await redisCommand(["LTRIM", OPS_KEY, 0, OPS_CAP - 1]);
-  await redisCommand(["EXPIRE", OPS_KEY, OPS_TTL_SECONDS]);
+  // War-room (g): degrade to memory on Redis failure instead of throwing
+  // (which would 500 the calling request).
+  try {
+    await redisCommand(["LPUSH", OPS_KEY, JSON.stringify(event)]);
+    await redisCommand(["LTRIM", OPS_KEY, 0, OPS_CAP - 1]);
+    await redisCommand(["EXPIRE", OPS_KEY, OPS_TTL_SECONDS]);
+  } catch {
+    const ops = memoryOps();
+    ops.unshift(event);
+    while (ops.length > OPS_CAP) ops.pop();
+  }
 
   // Errors also go to the function log so Vercel captures them.
   if (level === "error") console.error(`[yochat:${area}] ${message}`, metadata ?? "");
@@ -126,16 +145,21 @@ export async function getRecentOps(limit = 50, level?: OpsLevel): Promise<OpsEve
   if (!redisConfigured()) {
     events = [...memoryOps()];
   } else {
-    const raw = await redisCommand<string[]>(["LRANGE", OPS_KEY, 0, capped - 1]);
-    events = raw
-      .map((item) => {
-        try {
-          return JSON.parse(item) as OpsEvent;
-        } catch {
-          return undefined;
-        }
-      })
-      .filter((event): event is OpsEvent => Boolean(event));
+    // War-room (g): degrade to memory on Redis failure instead of throwing.
+    try {
+      const raw = await redisCommand<string[]>(["LRANGE", OPS_KEY, 0, capped - 1]);
+      events = raw
+        .map((item) => {
+          try {
+            return JSON.parse(item) as OpsEvent;
+          } catch {
+            return undefined;
+          }
+        })
+        .filter((event): event is OpsEvent => Boolean(event));
+    } catch {
+      events = [...memoryOps()];
+    }
   }
 
   return level ? events.filter((event) => event.level === level).slice(0, capped) : events.slice(0, capped);

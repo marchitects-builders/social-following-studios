@@ -161,10 +161,26 @@ export async function POST(request: Request) {
         return [{ id: step.id?.slice(0, 100) || randomUUID(), delayMinutes: Math.min(1320, Math.max(1, Math.round(step.delayMinutes))), text: step.text.slice(0, 1000) }];
       }),
     };
-    await mutateState((state) => {
+    const saveResult = await mutateState((state) => {
+      const existing = state.sequences[sanitized.id];
+      // WAR ROOM TI-02 (RH-05b): sequence ids live in one global keyspace.
+      // Saving under another brand's id would silently hijack that brand's
+      // automation. Reject cross-brand id reuse (same-brand overwrite stays
+      // allowed — it is the normal edit path).
+      if (existing && existing.brand !== sanitized.brand) {
+        addAudit(state, {
+          action: "sequence.cross_brand_save_denied",
+          actor: "admin",
+          target: sanitized.id,
+          detail: { existingBrand: existing.brand, attemptedBrand: sanitized.brand },
+        });
+        return { error: `sequence id "${sanitized.id}" is owned by brand "${existing.brand}"` } as const;
+      }
       state.sequences[sanitized.id] = sanitized;
       addAudit(state, { action: "sequence.saved", actor: "admin", target: sanitized.id });
+      return { ok: true } as const;
     });
+    if ("error" in saveResult) return NextResponse.json({ error: saveResult.error }, { status: 400 });
     return NextResponse.json({ ok: true });
   }
 

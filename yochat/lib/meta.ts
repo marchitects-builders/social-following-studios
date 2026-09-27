@@ -91,40 +91,58 @@ function messagingTrigger(event: MessagingEvent): TriggerType {
   return "message";
 }
 
+/** Coerce an unknown value to string, or undefined when it is not a string. */
+function asText(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
 function messagingText(event: MessagingEvent): string {
+  // Webhook War (WH-01): every text source is type-guarded so a malformed
+  // (but validly signed) payload can never throw inside extraction.
+  const attachments = Array.isArray(event.message?.attachments)
+    ? event.message.attachments.map((attachment) => `[${asText(attachment?.type) ?? "attachment"}]`).join(" ")
+    : undefined;
   return (
-    event.message?.text ??
-    event.message?.quick_reply?.payload ??
-    event.postback?.title ??
-    event.postback?.payload ??
-    event.optin?.ref ??
-    event.referral?.ref ??
-    event.postback?.referral?.ref ??
-    event.message?.attachments?.map((attachment) => `[${attachment.type ?? "attachment"}]`).join(" ") ??
+    asText(event.message?.text) ??
+    asText(event.message?.quick_reply?.payload) ??
+    asText(event.postback?.title) ??
+    asText(event.postback?.payload) ??
+    asText(event.optin?.ref) ??
+    asText(event.referral?.ref) ??
+    asText(event.postback?.referral?.ref) ??
+    attachments ??
     ""
   ).trim();
 }
 
 export function extractIncomingEvents(payload: MetaWebhookPayload): IncomingEvent[] {
+  // Webhook War (WH-01): never throw on a malformed payload. Only Meta can
+  // produce a valid signature, but Meta itself can misdeliver; a 500 here
+  // would trigger pointless Meta retries, so malformed entries are skipped.
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return [];
   if (payload.object !== "page" && payload.object !== "instagram") return [];
   const channel = payload.object === "instagram" ? "instagram" : "messenger";
   const automatedAccountIds = configuredAccountIds(
     channel === "instagram" ? "META_INSTAGRAM_ACCESS_TOKENS_JSON" : "META_PAGE_ACCESS_TOKENS_JSON",
   );
   const events: IncomingEvent[] = [];
+  const entries = Array.isArray(payload.entry) ? payload.entry : [];
 
-  for (const entry of payload.entry ?? []) {
-    for (const messaging of entry.messaging ?? []) {
-      const accountId = entry.id ?? messaging.recipient?.id;
-      const senderId = messaging.sender?.id;
+  for (const entry of entries) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+    const messagingList = Array.isArray(entry.messaging) ? entry.messaging : [];
+    for (const messaging of messagingList) {
+      if (!messaging || typeof messaging !== "object" || Array.isArray(messaging)) continue;
+      const accountId = asText(entry.id) ?? asText(messaging.recipient?.id);
+      const senderId = asText(messaging.sender?.id);
       const text = messagingText(messaging);
       const isControlledTest = text === "Yochat test: say READY";
       if (!accountId || !senderId || !text || messaging.message?.is_echo) continue;
       if (automatedAccountIds.has(senderId) && !isControlledTest) continue;
       const timestamp = messaging.timestamp ?? entry.time ?? Date.now();
       const id =
-        messaging.message?.mid ??
-        messaging.postback?.mid ??
+        asText(messaging.message?.mid) ??
+        asText(messaging.postback?.mid) ??
         stableEventId(channel, { accountId, senderId, timestamp, text });
       events.push({
         id,
@@ -134,34 +152,38 @@ export function extractIncomingEvents(payload: MetaWebhookPayload): IncomingEven
         trigger: messagingTrigger(messaging),
         text: text.slice(0, 4000),
         timestamp: safeTimestamp(timestamp),
-        referral: messaging.referral?.ref ?? messaging.postback?.referral?.ref ?? messaging.optin?.ref,
+        referral: asText(messaging.referral?.ref) ?? asText(messaging.postback?.referral?.ref) ?? asText(messaging.optin?.ref),
         metadata: {
-          quickReply: messaging.message?.quick_reply?.payload,
-          attachments: messaging.message?.attachments,
-          source: messaging.referral?.source,
+          quickReply: asText(messaging.message?.quick_reply?.payload),
+          attachments: Array.isArray(messaging.message?.attachments) ? messaging.message.attachments : undefined,
+          source: asText(messaging.referral?.source),
         },
       });
     }
 
-    if (channel !== "instagram" || !entry.id) continue;
-    for (const change of entry.changes ?? []) {
+    const igAccountId = asText(entry.id);
+    if (channel !== "instagram" || !igAccountId) continue;
+    const changes = Array.isArray(entry.changes) ? entry.changes : [];
+    for (const change of changes) {
+      if (!change || typeof change !== "object" || Array.isArray(change)) continue;
       if (!change.field || !["comments", "live_comments", "mentions"].includes(change.field)) continue;
       const value = change.value;
-      const senderId = value?.from?.id ?? value?.user_id;
-      const commentId = value?.id ?? value?.comment_id;
-      const text = value?.text?.trim();
+      if (!value || typeof value !== "object" || Array.isArray(value)) continue;
+      const senderId = asText(value?.from?.id) ?? asText(value?.user_id);
+      const commentId = asText(value?.id) ?? asText(value?.comment_id);
+      const text = asText(value?.text)?.trim();
       if (!senderId || !commentId || !text) continue;
       events.push({
         id: `comment:${commentId}`,
         channel: "instagram",
-        accountId: entry.id,
+        accountId: igAccountId,
         senderId,
         trigger: change.field === "mentions" ? "mention" : "comment",
         text: text.slice(0, 4000),
         timestamp: safeTimestamp(entry.time),
         commentId,
-        mediaId: value?.media?.id ?? value?.media_id,
-        username: value?.from?.username ?? value?.username,
+        mediaId: asText(value?.media?.id) ?? asText(value?.media_id),
+        username: asText(value?.from?.username) ?? asText(value?.username),
         metadata: { webhookField: change.field },
       });
     }

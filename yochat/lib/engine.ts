@@ -24,7 +24,7 @@ import {
 } from "@/lib/flows";
 import { appendAndCompleteFlowRun, completeFlowRun, markFlowRunWaiting, startFlowRun } from "@/lib/flowruns";
 import { emitIntegrationEvent } from "@/lib/integrations";
-import { addAnalytics, getBrandConfig, getSystemSettings, loadState, mutateState } from "@/lib/store";
+import { addAnalytics, addAudit, getBrandConfig, getSystemSettings, loadState, mutateState } from "@/lib/store";
 import type {
   ActiveFlowWait,
   AutomationRule,
@@ -156,7 +156,22 @@ function maybeEnrollSequence(state: YochatState, contact: Contact, intent: Inten
           ? "aafc-interest"
           : undefined;
   const sequenceId = explicitSequenceId ?? defaultSequence;
-  if (!sequenceId || !state.sequences[sequenceId]?.enabled) return;
+  if (!sequenceId) return;
+  const sequence = state.sequences[sequenceId];
+  if (!sequence?.enabled) return;
+  // WAR ROOM TI-01: sequences are brand-scoped. Never enroll a contact into
+  // another brand's sequence — the step copy would be delivered to the wrong
+  // brand's customer. The attack path is an explicit startSequenceId on a
+  // rule pointing at a different brand's sequence.
+  if (sequence.brand !== contact.brand) {
+    addAudit(state, {
+      action: "sequence.cross_brand_denied",
+      actor: "system",
+      target: contact.id,
+      detail: { sequenceId, sequenceBrand: sequence.brand, contactBrand: contact.brand },
+    });
+    return;
+  }
   const existing = Object.values(state.enrollments).find(
     (enrollment) => enrollment.sequenceId === sequenceId && enrollment.contactId === contact.id && enrollment.status === "active",
   );
@@ -223,7 +238,9 @@ async function prepareEvent(event: IncomingEvent, brand: BrandConfig, automation
       lastSeenAt: now,
       source: event.referral ?? event.trigger,
     };
-    contact.lastSeenAt = now;
+    // War-room CR-03: ISO-8601 strings compare chronologically. Never let an
+    // out-of-order (older) event regress lastSeenAt.
+    if (now > contact.lastSeenAt) contact.lastSeenAt = now;
     if (event.username) contact.username = event.username;
     state.contacts[contactId] = contact;
 
@@ -241,7 +258,8 @@ async function prepareEvent(event: IncomingEvent, brand: BrandConfig, automation
       createdAt: now,
       updatedAt: now,
     };
-    conversation.updatedAt = now;
+    // War-room CR-03: same monotonicity guard as lastSeenAt above.
+    if (now > conversation.updatedAt) conversation.updatedAt = now;
     state.conversations[conversationId] = conversation;
 
     const matchedRule = matchRule(brand, event);
@@ -520,6 +538,17 @@ async function generateGroundedReply(
       const conversation = state.conversations[prepared.conversation.id];
       if (!contact || !conversation) throw new Error("contact/conversation missing for budget handoff");
       return createHandoff(state, contact, conversation, "ai_budget_exhausted");
+    });
+    return { reply: ai.reply, handoff, ai };
+  }
+  if (ai.outcome === "error") {
+    // War-room AI-02: an AI provider failure must reach a human too, not
+    // dead-end in a friendly reply with nobody queued to help.
+    const handoff = await mutateState((state) => {
+      const contact = state.contacts[prepared.contact.id];
+      const conversation = state.conversations[prepared.conversation.id];
+      if (!contact || !conversation) throw new Error("contact/conversation missing for provider-error handoff");
+      return createHandoff(state, contact, conversation, "ai_provider_error");
     });
     return { reply: ai.reply, handoff, ai };
   }
@@ -852,6 +881,11 @@ export async function processDueFlowWaits(
     }
     resumed += 1;
     const reply = result.reply ?? (applied.handoffCreated ? handoffFallbackReply(brand) : undefined);
+    // War-room cross-domain RH-02: when the reply IS the handoff fallback
+    // confirmation (no result.reply), flag it so the send-time seatbelt
+    // lets it through; a real result.reply is normal automation text and
+    // stays under the handoff seatbelt.
+    const isHandoffConfirmation = applied.handoffCreated && !result.reply;
     if (reply) {
       const fresh = await loadState();
       const freshContact = fresh.contacts[contactId];
@@ -862,6 +896,9 @@ export async function processDueFlowWaits(
           { ...preparedLike, contact: freshContact, conversation: freshConversation },
           reply,
           { flowId: flow.id, version: wait.flowVersion },
+          undefined,
+          undefined,
+          { handoffAck: isHandoffConfirmation },
         );
       }
     }
@@ -985,6 +1022,9 @@ async function finalizeReply(
   flowMeta?: { flowId: string; version: number },
   handoff?: Handoff,
   ai?: AiReplyOutcome,
+  // War-room cross-domain RH-02: the flow wait-timeout path (checkDueFlowWaits)
+  // queues the handoff confirmation without a Handoff object; it flags it here.
+  ack?: { handoffAck?: boolean },
 ): Promise<EngineResult> {
   const created = await mutateState((state) => {
     const contact = state.contacts[prepared.contact.id];
@@ -1034,7 +1074,16 @@ async function finalizeReply(
         attempts: 0,
         dueAt: now,
         createdAt: now,
-        metadata: { contactId: contact.id, aiGenerated: Boolean(ai) },
+        metadata: {
+          contactId: contact.id,
+          aiGenerated: Boolean(ai),
+          // War-room cross-domain RH-01: this send IS the opt-out/opt-in
+          // confirmation — the send-time seatbelt must let it through.
+          ...(prepared.intent === "opt_out" || prepared.intent === "opt_in" ? { consentAck: true } : {}),
+          // War-room cross-domain RH-02: this send IS the human-handoff
+          // confirmation — the send-time seatbelt must let it through.
+          ...(handoff || ack?.handoffAck ? { handoffAck: true } : {}),
+        },
       };
       state.jobs[job.id] = job;
     } else if (event.channel === "test") {

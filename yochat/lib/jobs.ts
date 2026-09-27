@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { getAiSpend, getDailyTokenBudget } from "@/lib/ai-budget";
 import { heartbeat, logOps } from "@/lib/ops";
+import { redisCircuitOpen } from "@/lib/redis";
 import { releaseSendSlot, reserveSendSlot } from "@/lib/rate-limit";
 import { classifySendError } from "@/lib/send-errors";
 import { addAnalytics, addAudit, getBrandConfig, loadState, mutateState } from "@/lib/store";
@@ -31,6 +32,13 @@ export type OutboundAuthContext = {
   flowId?: string;
   /** Wave 9: set when the send carries AI-generated text (budget-gated). */
   aiGenerated?: boolean;
+  /** War-room cross-domain RH-01: set when this send IS the opt-out/opt-in
+   *  confirmation queued by finalizeReply (narrow carve-out, not a general
+   *  opt-out bypass). */
+  consentAck?: boolean;
+  /** War-room cross-domain RH-02: set when this send IS the human-handoff
+   *  confirmation queued by finalizeReply. */
+  handoffAck?: boolean;
 };
 
 export type OutboundAuthResult = { allowed: boolean; reason?: string };
@@ -49,13 +57,36 @@ async function evaluateOutbound(auth: OutboundAuthContext): Promise<OutboundAuth
     : Object.values(state.contacts).find(
         (candidate) => candidate.brand === auth.brand && candidate.channel === auth.channel && candidate.externalId === auth.recipientId,
       );
+  // War-room cross-domain RH-04: fail CLOSED when an explicit contactId
+  // resolves to nothing. A queued job pointing at a deleted or merged-away
+  // contact must never send — the old fall-through to allowed:true let stale
+  // jobs bypass the surviving contact's consent. (An implicit recipient
+  // lookup with no match keeps the historical allow behavior; jobs that
+  // carry a contact id — the merge-remap path — are the fail-closed ones.)
+  if (auth.contactId && !contact) {
+    return { allowed: false, reason: `contact ${auth.contactId} not found` };
+  }
   if (contact) {
     // Wave 9 (item 4): tenant isolation — a contact's consent policy must never
     // bleed across brands. An explicit contactId from another brand is denied.
     if (contact.brand !== auth.brand) {
       return { allowed: false, reason: `contact ${contact.id} belongs to brand ${contact.brand}, not ${auth.brand}` };
     }
+    // War-room cross-domain RH-01: the opt-out/opt-in confirmation IS the
+    // consent-compliant send — it must reach the contact even though
+    // optedOut was just set. Narrow carve-out: only jobs flagged at queue
+    // time by finalizeReply for opt_out/opt_in intents.
+    if (auth.consentAck === true) return { allowed: true };
     if (contact.optedOut) return { allowed: false, reason: "contact opted out" };
+    // War-room cross-domain RH-03: manual replies are the human-takeover path
+    // and are not subject to the automation-pause seatbelt. Opted-out contacts
+    // are still denied (checked above).
+    if (auth.kind === "manual") return { allowed: true };
+    // War-room cross-domain RH-02: the handoff confirmation must reach the
+    // contact even though the conversation is in human-handoff status and
+    // automation was paused. Narrow carve-out: only jobs flagged at queue
+    // time by finalizeReply as handoff confirmations.
+    if (auth.handoffAck === true) return { allowed: true };
     if (contact.automationPaused) return { allowed: false, reason: "automation paused for contact" };
     const conversation = Object.values(state.conversations).find(
       (candidate) => candidate.contactId === contact.id && candidate.status === "handoff",
@@ -89,6 +120,8 @@ export async function authorizeOutbound(auth: OutboundAuthContext): Promise<Outb
         kind: auth.kind,
         flowId: auth.flowId,
         aiGenerated: auth.aiGenerated === true,
+        consentAck: auth.consentAck === true,
+        handoffAck: auth.handoffAck === true,
         allowed: result.allowed,
         reason: result.reason ?? "ok",
       },
@@ -157,6 +190,10 @@ async function scheduleSequenceJobs(state: YochatState, now: Date): Promise<void
       attempts: 0,
       dueAt: now.toISOString(),
       createdAt: now.toISOString(),
+      // War-room cross-domain RH-04: sequence jobs carry the contact id so
+      // contact merges remap them (mergeContactsInState) and the send-time
+      // seatbelt can fail closed on a dangling reference.
+      metadata: { contactId: contact.id, sequenceId: sequence.id, stepId: step.id },
     };
     const conversation = Object.values(state.conversations).find(
       (candidate) => candidate.contactId === contact.id && candidate.accountId === accountId,
@@ -212,12 +249,17 @@ export async function processDueJobs(
             message.status = "failed";
           }
         }
-        logOps("error", "jobs", `stuck delivery job ${job.id} settled as failed (anti-duplicate)`, {
+        // War-room (g): awaited (with catch) so the settle is never silently
+        // unlogged and a logging failure can't fail the state mutation.
+        await logOps("error", "jobs", `stuck delivery job ${job.id} settled as failed (anti-duplicate)`, {
           jobId: job.id,
           brand: job.brand,
           channel: job.channel,
           kind: job.kind,
-        });
+          recipientId: job.recipientId,
+          contactId: typeof job.metadata?.contactId === "string" ? job.metadata.contactId : undefined,
+          attempts: job.attempts,
+        }).catch(() => undefined);
         addAudit(state, {
           action: "job.stuck_settled_failed",
           actor: "worker",
@@ -239,6 +281,32 @@ export async function processDueJobs(
     return structuredClone(due);
   });
 
+  // War-room (g): fail-closed sends. If the claim above came from the
+  // degraded in-memory store (Redis circuit open), these jobs must NOT be
+  // sent: a crash before the outage writes are reconciled would leave Redis
+  // showing them pending and a later worker would resend — a duplicate
+  // customer-visible message. Hold them pending (without burning the claim
+  // attempt); the post-recovery cron reconciles, then sends.
+  if (dueJobs.length > 0 && redisCircuitOpen()) {
+    await mutateState((state) => {
+      for (const job of dueJobs) {
+        const stored = state.jobs[job.id];
+        if (stored && stored.status === "processing") {
+          stored.status = "pending";
+          stored.attempts = Math.max(0, stored.attempts - 1);
+          stored.lockedAt = undefined;
+        }
+      }
+    });
+    await logOps(
+      "warning",
+      "jobs",
+      `Redis degraded: held ${dueJobs.length} claimed job(s) without sending (fail-closed)`,
+      { jobIds: dueJobs.map((job) => job.id).slice(0, 25), count: dueJobs.length },
+    ).catch(() => undefined);
+    return { sent: 0, failed: 0, denied: 0 };
+  }
+
   let sent = 0;
   let failed = 0;
   let denied = 0;
@@ -256,6 +324,10 @@ export async function processDueJobs(
       contactId: typeof job.metadata?.contactId === "string" ? job.metadata.contactId : undefined,
       flowId: typeof job.metadata?.flowId === "string" ? job.metadata.flowId : undefined,
       aiGenerated: job.metadata?.aiGenerated === true,
+      // War-room cross-domain RH-01/RH-02: narrow seatbelt carve-outs for the
+      // consent and handoff confirmation sends (flagged at queue time).
+      consentAck: job.metadata?.consentAck === true,
+      handoffAck: job.metadata?.handoffAck === true,
     });
     if (!auth.allowed) {
       await mutateState((state) => {
@@ -263,6 +335,9 @@ export async function processDueJobs(
         if (!stored || stored.status !== "processing") return;
         stored.status = "cancelled";
         stored.lockedAt = undefined;
+        // War-room (g): denial is not an attempt — unburn the claim so a
+        // cancelled job doesn't consume retry budget it never used.
+        stored.attempts = Math.max(0, stored.attempts - 1);
         stored.lastError = `Outbound denied: ${auth.reason ?? "policy"}`;
       });
       await logOps("warning", "delivery", `Outbound send denied for job ${job.id}`, {
@@ -318,6 +393,18 @@ export async function processDueJobs(
       const message = error instanceof Error ? error.message.slice(0, 500) : "Unknown delivery error";
       const errorClass = classifySendError(error);
       if (hooks.afterFailure) await hooks.afterFailure(job, errorClass);
+      // War-room (g): observability — every delivery failure gets an ops entry
+      // carrying job/brand/channel for traceability.
+      await logOps("error", "delivery", `Delivery failed for job ${job.id} (${errorClass})`, {
+        jobId: job.id,
+        brand: job.brand,
+        channel: job.channel,
+        kind: job.kind,
+        recipientId: job.recipientId,
+        attempts: job.attempts,
+        errorClass,
+        error: message,
+      }).catch(() => undefined);
       await mutateState((state) => {
         const stored = state.jobs[job.id];
         if (!stored) return;

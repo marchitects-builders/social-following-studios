@@ -72,17 +72,27 @@ function normalizeIntent(raw: unknown): AiProposedIntent | undefined {
 /**
  * Extracts a proposed intent from the model reply. Protocol: the model
  * may append ONE final line starting with "AI_INTENT:" followed by JSON.
- * Returns the parsed intent (if any) and the reply with the line removed.
+ * Hardened (war-room AI-04): EVERY AI_INTENT: protocol line is stripped
+ * from the customer-visible text — a model that emits several protocol
+ * lines (or a malformed one) can never leak internal machinery to the
+ * visitor. Only the LAST proposal is parsed (the protocol's final line).
+ * `cleaned` is always trimmed, so a whitespace-only model reply collapses
+ * to "" and the caller's empty-output fallback engages (war-room AI-03).
+ * Returns the parsed intent (if any) and the reply with the line(s) removed.
  */
 export function parseAiIntent(replyText: string): { intent?: AiProposedIntent; raw?: unknown; cleaned: string } {
-  const match = replyText.match(/^AI_INTENT:\s*(\{.*\})\s*$/m);
-  if (!match) return { cleaned: replyText };
-  const cleaned = replyText.replace(match[0], "").trim();
+  const lineRe = /^AI_INTENT:\s*(\{.*\})\s*$/gm;
+  const proposals: string[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = lineRe.exec(replyText)) !== null) proposals.push(m[1]);
+  const cleaned = replyText.replace(/^AI_INTENT:.*$/gm, "").trim();
+  if (proposals.length === 0) return { cleaned };
+  const rawJson = proposals[proposals.length - 1];
   let parsed: unknown;
   try {
-    parsed = JSON.parse(match[1]);
+    parsed = JSON.parse(rawJson);
   } catch {
-    return { cleaned, raw: match[1] };
+    return { cleaned, raw: rawJson };
   }
   const intent = normalizeIntent(parsed);
   if (!intent) return { cleaned, raw: parsed };

@@ -80,11 +80,16 @@ export async function verifyQStashSignature(request: Request): Promise<QStashVer
   const signature = request.headers.get("upstash-signature");
   if (!signature) return { ok: false, reason: "missing Upstash-Signature" };
 
-  // The SDK requires both keys in config (or both in env) — pass the next
-  // key only when configured so the SDK can fall back to env resolution.
+  // The SDK requires both keys in config (or both in env) — with only one
+  // key configured it throws "No signing keys available" and every legit
+  // signed request is rejected. War-room workstream (h), SEC-01: fall back
+  // to the current key as the next key so single-key deployments get real
+  // verification instead of a hard fail-closed outage (or an operator
+  // "fixing" it by unsetting the key and going fail-open). Rotation still
+  // works when a distinct next key is configured.
   const receiver = new Receiver({
     currentSigningKey: keys[0],
-    ...(keys[1] ? { nextSigningKey: keys[1] } : {}),
+    nextSigningKey: keys[1] ?? keys[0],
   });
   try {
     await receiver.verify({
