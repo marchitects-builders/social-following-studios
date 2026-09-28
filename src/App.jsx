@@ -73,13 +73,7 @@ function buildNav() {
   const products = Object.entries(PRODUCTS)
     .filter(([key]) => showInNav(key))
     .map(([, product]) => ({ label: product.label, href: `#${product.route}` }));
-  return [
-    ...BASE_NAV,
-    ...products,
-    { label: "Proof", href: "#/case-studies" },
-    { label: "Assessment", href: "#/assessment" },
-    { label: "Contact", href: "#/contact" },
-  ];
+  return [...BASE_NAV, ...products, { label: "Proof", href: "#/case-studies" }];
 }
 
 /* ------------------------------------------------------------------ *
@@ -1238,8 +1232,8 @@ function Contact() {
     <div className="page-shell">
       <PageHead
         eyebrow="Contact"
-        title="Book your assessment."
-        lede="Every engagement begins with a database assessment."
+        title="Get in touch."
+        lede="Reach us directly, or start with the assessment below — every engagement begins there."
       />
       <section className="section assessment-grid">
         <div data-reveal>
