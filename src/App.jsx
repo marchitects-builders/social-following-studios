@@ -295,20 +295,144 @@ function ProofBar() {
 /* ------------------------------------------------------------------ *
  * SECTIONS
  * ------------------------------------------------------------------ */
-const RELATION_DOTS = [
-  [30, 30, -60, -40], [80, 30, 40, -70], [130, 30, -30, 60], [180, 30, 70, 20],
-  [30, 80, 50, 50], [80, 80, -70, 10], [130, 80, 20, -50], [180, 80, -40, -20],
-  [30, 130, -20, -60], [80, 130, 60, 30], [130, 130, -50, -30], [180, 130, 30, 60],
+/* AUDIENCE GRAPH — third framer-motion scoped exception (see the
+   Avatar Studio block below for the others). Draws Capture / Identify
+   / Activate / Stay Present as a node graph feeding into the two
+   proof-bar numbers instead of a card row. */
+const GRAPH_EASE = [0.22, 1, 0.36, 1];
+
+const GRAPH_NODES = [
+  { id: "root", x: 48, y: 110, r: 9, label: "Database", pulse: true, delay: 0 },
+  { id: "capture", x: 240, y: 30, r: 6, label: "Capture", delay: 1.2 },
+  { id: "identify", x: 240, y: 77, r: 6, label: "Identify", delay: 1.28 },
+  { id: "activate", x: 240, y: 143, r: 6, label: "Activate", delay: 1.36 },
+  { id: "present", x: 240, y: 190, r: 6, label: "Stay present", delay: 1.44 },
+  { id: "output", x: 424, y: 110, r: 9, label: "Owned audience", pulse: true, delay: 1.76 },
 ];
 
-function RelationVisual() {
+const graphNode = (id) => GRAPH_NODES.find((n) => n.id === id);
+
+const GRAPH_EDGES = [
+  { from: "root", to: "capture", delay: 0 },
+  { from: "root", to: "identify", delay: 0.08 },
+  { from: "root", to: "activate", delay: 0.16 },
+  { from: "root", to: "present", delay: 0.24 },
+  { from: "capture", to: "output", delay: 0.32 },
+  { from: "identify", to: "output", delay: 0.4 },
+  { from: "activate", to: "output", delay: 0.48 },
+  { from: "present", to: "output", delay: 0.56 },
+];
+
+function GraphEdge({ edge }) {
+  const from = graphNode(edge.from);
+  const to = graphNode(edge.to);
   return (
-    <div className="relation-visual" data-reveal aria-hidden="true">
-      <svg viewBox="0 0 210 160">
-        {RELATION_DOTS.map(([x, y, dx, dy], i) => (
-          <circle key={i} cx={x} cy={y} r="5" style={{ "--dx": `${dx}px`, "--dy": `${dy}px`, "--i": i }} />
-        ))}
-      </svg>
+    <motion.path
+      d={`M ${from.x} ${from.y} L ${to.x} ${to.y}`}
+      fill="none"
+      stroke="var(--line-strong)"
+      strokeWidth="1.5"
+      initial={{ pathLength: 0 }}
+      whileInView={{ pathLength: 1 }}
+      viewport={{ once: true, amount: 0.4 }}
+      transition={{ duration: 1.2, ease: GRAPH_EASE, delay: edge.delay }}
+    />
+  );
+}
+
+function GraphNode({ node }) {
+  const reduce = useReducedMotion();
+  return (
+    <g>
+      {node.pulse && !reduce && (
+        <motion.circle
+          cx={node.x}
+          cy={node.y}
+          fill="none"
+          stroke="var(--green)"
+          strokeWidth="1.5"
+          initial={{ r: node.r, opacity: 0.5 }}
+          animate={{ r: node.r * 1.9, opacity: 0 }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut", delay: node.delay + 0.6 }}
+        />
+      )}
+      <motion.circle
+        cx={node.x}
+        cy={node.y}
+        fill={node.pulse ? "var(--green)" : "var(--paper)"}
+        stroke="var(--ink)"
+        strokeWidth="1.5"
+        initial={reduce ? false : { r: 0, opacity: 0 }}
+        whileInView={{ r: node.r, opacity: 1 }}
+        whileHover={reduce ? undefined : { r: node.r * 1.15 }}
+        viewport={{ once: true, amount: 0.4 }}
+        transition={{ type: "spring", stiffness: 260, damping: 20, delay: reduce ? 0 : node.delay }}
+      >
+        <title>{node.label}</title>
+      </motion.circle>
+      <motion.text
+        x={node.x}
+        y={node.y + node.r + 16}
+        textAnchor="middle"
+        className="graph-label"
+        initial={reduce ? false : { opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true, amount: 0.4 }}
+        transition={{ duration: 0.6, delay: reduce ? 0 : node.delay + 0.3 }}
+      >
+        {node.label}
+      </motion.text>
+    </g>
+  );
+}
+
+function GraphMetric({ target, suffix, label, delay }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, amount: 0.6 });
+  const reduce = useReducedMotion();
+  const [value, setValue] = useState(reduce ? target : 0);
+  useEffect(() => {
+    if (!inView || reduce) return;
+    const controls = animate(0, target, {
+      duration: 1.4,
+      ease: "easeOut",
+      delay,
+      onUpdate: (v) => setValue(Math.round(v)),
+    });
+    return () => controls.stop();
+  }, [inView, reduce, target, delay]);
+  return (
+    <div className="stat-tile" ref={ref}>
+      <p className="stat-value">
+        {value}
+        {suffix}
+      </p>
+      <p className="stat-label">{label}</p>
+    </div>
+  );
+}
+
+function AudienceGraph() {
+  const reduce = useReducedMotion();
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const y = useTransform(scrollYProgress, [0, 1], [-16, 16]);
+  return (
+    <div className="audience-graph" data-reveal aria-hidden="true">
+      <motion.div ref={ref} className="audience-graph-canvas" style={reduce ? undefined : { y }}>
+        <svg viewBox="0 0 472 220">
+          {GRAPH_EDGES.map((edge, i) => (
+            <GraphEdge key={i} edge={edge} />
+          ))}
+          {GRAPH_NODES.map((node) => (
+            <GraphNode key={node.id} node={node} />
+          ))}
+        </svg>
+      </motion.div>
+      <div className="stat-row">
+        <GraphMetric target={20} suffix="M+" label="Daily communications" delay={1.8} />
+        <GraphMetric target={400} suffix="+" label="Engagements" delay={1.9} />
+      </div>
     </div>
   );
 }
@@ -328,7 +452,7 @@ function Problem() {
             reactivation.
           </p>
         </div>
-        <RelationVisual />
+        <AudienceGraph />
       </div>
     </section>
   );

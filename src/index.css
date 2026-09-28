@@ -405,22 +405,23 @@ p {
   line-height: 1.4;
 }
 
-.relation-visual svg {
+.audience-graph {
+  display: grid;
+  gap: 20px;
+}
+
+.audience-graph-canvas svg {
   width: 100%;
   height: auto;
 }
 
-.relation-visual circle {
-  fill: var(--green);
-  opacity: 0.3;
-  transform: translate(var(--dx), var(--dy));
-  transition: transform 0.9s var(--ease), opacity 0.9s var(--ease);
-  transition-delay: calc(var(--i) * 45ms);
-}
-
-.relation-visual.is-visible circle {
-  transform: translate(0, 0);
-  opacity: 1;
+.graph-label {
+  fill: var(--muted);
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 /* ---------------------------------------------------------------- *
@@ -959,8 +960,9 @@ p {
     max-width: none;
   }
 
-  .relation-visual {
-    max-width: 320px;
+  .audience-graph-canvas {
+    max-width: 360px;
+    margin-inline: auto;
   }
 }
 
