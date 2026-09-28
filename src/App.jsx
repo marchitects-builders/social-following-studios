@@ -73,13 +73,7 @@ function buildNav() {
   const products = Object.entries(PRODUCTS)
     .filter(([key]) => showInNav(key))
     .map(([, product]) => ({ label: product.label, href: `#${product.route}` }));
-  return [
-    ...BASE_NAV,
-    ...products,
-    { label: "Proof", href: "#/case-studies" },
-    { label: "Assessment", href: "#/assessment" },
-    { label: "Contact", href: "#/contact" },
-  ];
+  return [...BASE_NAV, ...products, { label: "Proof", href: "#/case-studies" }];
 }
 
 /* ------------------------------------------------------------------ *
