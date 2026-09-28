@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { motion, useReducedMotion, useScroll, useTransform, useInView, animate } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 
 const BRAND_LOGO = "/brand/sfs-logo.webp";
 const PUBLIC_ORIGIN = "https://www.socialfollowing.shop";
@@ -292,23 +292,12 @@ function Hero() {
   );
 }
 
-function ProofBar() {
-  return (
-    <section className="proof-bar" data-reveal>
-      <p>20M+ daily communications supported</p>
-      <p>400+ engagements</p>
-      <p>Systems built since 2017</p>
-    </section>
-  );
-}
-
 /* ------------------------------------------------------------------ *
  * SECTIONS
  * ------------------------------------------------------------------ */
 /* AUDIENCE GRAPH — third framer-motion scoped exception (see the
    Avatar Studio block below for the others). Draws Capture / Identify
-   / Activate / Stay Present as a node graph feeding into the two
-   proof-bar numbers instead of a card row. */
+   / Activate / Stay Present as a node graph instead of a card row. */
 const GRAPH_EASE = [0.22, 1, 0.36, 1];
 
 const GRAPH_NODES = [
@@ -396,32 +385,6 @@ function GraphNode({ node }) {
   );
 }
 
-function GraphMetric({ target, suffix, label, delay }) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, amount: 0.6 });
-  const reduce = useReducedMotion();
-  const [value, setValue] = useState(reduce ? target : 0);
-  useEffect(() => {
-    if (!inView || reduce) return;
-    const controls = animate(0, target, {
-      duration: 0.9,
-      ease: "easeOut",
-      delay,
-      onUpdate: (v) => setValue(Math.round(v)),
-    });
-    return () => controls.stop();
-  }, [inView, reduce, target, delay]);
-  return (
-    <div className="stat-tile" ref={ref}>
-      <p className="stat-value">
-        {value}
-        {suffix}
-      </p>
-      <p className="stat-label">{label}</p>
-    </div>
-  );
-}
-
 function AudienceGraph() {
   const reduce = useReducedMotion();
   const ref = useRef(null);
@@ -439,10 +402,6 @@ function AudienceGraph() {
           ))}
         </svg>
       </motion.div>
-      <div className="stat-row">
-        <GraphMetric target={20} suffix="M+" label="Daily communications" delay={0.4} />
-        <GraphMetric target={400} suffix="+" label="Engagements" delay={0.5} />
-      </div>
     </div>
   );
 }
@@ -827,7 +786,6 @@ function Home() {
   return (
     <>
       <Hero />
-      <ProofBar />
       <div className="page-shell">
         <Problem />
         <OperatingSystem />
