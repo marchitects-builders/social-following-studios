@@ -643,24 +643,74 @@ p {
   font-style: italic;
 }
 
-.logo-bar {
-  padding-block: var(--sp-section);
+.logo-marquee {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  padding-block: clamp(48px, 6.5vw, 84px);
   border-top: 1px solid var(--line);
   text-align: center;
 }
 
-.logo-bar .section-label {
-  margin-bottom: 22px;
+.logo-marquee .section-label {
+  margin-bottom: clamp(26px, 3.5vw, 40px);
 }
 
-.logo-bar img {
-  width: min(100%, 1040px);
-  aspect-ratio: 1458 / 140;
-  margin: 0 auto;
+.logo-marquee-viewport {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 64px, #000 calc(100% - 64px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 64px, #000 calc(100% - 64px), transparent 100%);
+}
+
+.logo-marquee-viewport--static {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.logo-marquee-track {
+  display: flex;
+  align-items: center;
+  gap: clamp(52px, 6vw, 96px);
+  width: max-content;
+  animation: logo-scroll 36s linear infinite;
+}
+
+.logo-marquee-viewport:hover .logo-marquee-track {
+  animation-play-state: paused;
+}
+
+.logo-marquee-viewport--static .logo-marquee-track {
+  animation: none;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  max-width: 1100px;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.logo-marquee-item {
+  height: clamp(36px, 4vw, 50px);
+  width: auto;
+  flex-shrink: 0;
   /* Standard logo-wall treatment: uniform dark monochrome, full contrast.
      The source art is light gray, so brightness(0) renders it as solid ink. */
   filter: brightness(0);
-  opacity: 0.82;
+  opacity: 0.92;
+}
+
+@keyframes logo-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-marquee-track {
+    animation: none !important;
+  }
 }
 
 .cross-links {

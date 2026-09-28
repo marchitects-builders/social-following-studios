@@ -2,8 +2,22 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion, useScroll, useTransform, useInView, animate } from "framer-motion";
 
 const BRAND_LOGO = "/brand/sfs-logo.webp";
-const LOGOS_APPROVED = "/logos-approved.png";
 const PUBLIC_ORIGIN = "https://www.socialfollowing.shop";
+
+const TRUSTED_LOGOS = [
+  ["kaiser-permanente", "Kaiser Permanente"],
+  ["stanford-university", "Stanford University"],
+  ["nvidia", "NVIDIA"],
+  ["pge", "PG&E"],
+  ["commonspirit-health", "CommonSpirit Health"],
+  ["drew-medical", "Drew Medical"],
+  ["the-anthemist", "The Anthemist"],
+  ["city-of-concord", "City of Concord"],
+  ["dgrp-baysound", "DGRP Baysound"],
+  ["rhythm-and-roux", "Rhythm & Roux"],
+  ["parade-of-youth", "Parade of Youth"],
+  ["chevron", "Chevron"],
+];
 
 /* ------------------------------------------------------------------ *
  * VISIBILITY CONTROL
@@ -640,10 +654,25 @@ function CaseStudyList() {
 }
 
 function LogoBar() {
+  const reduce = useReducedMotion();
+  const track = reduce ? TRUSTED_LOGOS : [...TRUSTED_LOGOS, ...TRUSTED_LOGOS];
   return (
-    <div className="logo-bar" data-reveal>
+    <div className="logo-marquee" data-reveal>
       <p className="section-label">Trusted by organizations that lead</p>
-      <img src={LOGOS_APPROVED} alt="Client organizations" />
+      <div className={`logo-marquee-viewport${reduce ? " logo-marquee-viewport--static" : ""}`}>
+        <div className="logo-marquee-track">
+          {track.map(([slug, name], i) => (
+            <img
+              key={`${slug}-${i}`}
+              className="logo-marquee-item"
+              src={`/logos/${slug}.webp`}
+              alt={name}
+              loading="lazy"
+              aria-hidden={i >= TRUSTED_LOGOS.length ? "true" : undefined}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
