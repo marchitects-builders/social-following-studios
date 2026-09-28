@@ -350,32 +350,6 @@ p {
 }
 
 /* ---------------------------------------------------------------- *
- * PROOF BAR
- * ---------------------------------------------------------------- */
-.proof-bar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  padding-block: 22px;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-
-.proof-bar p {
-  padding: 0 28px;
-  border-left: 1px solid var(--line);
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.proof-bar p:first-child {
-  border-left: 0;
-}
-
-/* ---------------------------------------------------------------- *
  * PROBLEM
  * ---------------------------------------------------------------- */
 .owned-relationship-grid {
