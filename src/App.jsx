@@ -465,8 +465,11 @@ function FlowDiagram({ steps }) {
 function OperatingSystem() {
   return (
     <section className="section">
-      <SectionHead label="The operating system" title="Capture. Identify. Activate. Stay present." />
-      <FlowDiagram steps={MECHANISM_STEPS} />
+      <SectionHead
+        label="The operating system"
+        title="Capture. Identify. Activate. Stay present."
+        lede="Four functions, run as one accountable program."
+      />
       <a className="text-link" href="#/what-we-do">
         What we do in full <Arrow />
       </a>
@@ -482,7 +485,6 @@ function AudienceBuilderFeature() {
         title="The reachable audience under every send."
         lede="Audience Builder turns a raw contact list into a segmented, deliverable audience."
       />
-      <FlowDiagram steps={AUDIENCE_BUILDER_STEPS} />
       <a className="text-link" href="#/audience-builder">
         Audience Builder in full <Arrow />
       </a>
@@ -517,8 +519,11 @@ function BuyingSituations() {
 function AssessmentDeliverables() {
   return (
     <section className="section">
-      <SectionHead label="The assessment" title="What the assessment produces." />
-      <IndexList items={ASSESSMENT_OUTPUTS} />
+      <SectionHead
+        label="The assessment"
+        title="What the assessment produces."
+        lede="Database health, reachable audience, deliverability, dormant revenue estimate, and deployment path."
+      />
       <a className="text-link" href="#/assessment">
         Book your assessment <Arrow />
       </a>
