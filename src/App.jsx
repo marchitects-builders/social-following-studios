@@ -1238,8 +1238,8 @@ function Contact() {
     <div className="page-shell">
       <PageHead
         eyebrow="Contact"
-        title="Book your assessment."
-        lede="Every engagement begins with a database assessment."
+        title="Get in touch."
+        lede="Reach us directly, or start with the assessment below — every engagement begins there."
       />
       <section className="section assessment-grid">
         <div data-reveal>
