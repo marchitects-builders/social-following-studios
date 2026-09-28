@@ -89,8 +89,7 @@ const PAGE_META = {
   },
   "/avatar-studio": {
     title: "Avatar Studio | Social Following Studios",
-    description:
-      "Avatar Studio builds a high-fidelity digital twin of your likeness and voice, then turns your knowledge into finished video content for continuous distribution.",
+    description: "Turn one recording into an always-on presence that looks, sounds, and speaks like you.",
   },
   "/assessment": {
     title: "Book Your Assessment | Social Following Studios",
@@ -767,7 +766,16 @@ function Header({ route }) {
   );
 }
 
-function Footer({ variant = "full" }) {
+function Footer({ variant = "full", product }) {
+  if (variant === "product") {
+    return (
+      <footer className="footer footer-product">
+        <Logo className="footer-product-logo" />
+        <p className="footer-product-name">{product} by Social Following Studios</p>
+        <p className="footer-product-tagline">Own Your Audience.</p>
+      </footer>
+    );
+  }
   return (
     <footer className={`footer ${variant === "minimal" ? "minimal" : ""}`}>
       <p className="footer-headline">Own your audience.</p>
@@ -972,36 +980,24 @@ function AvatarKickerRule() {
   );
 }
 
-/* Placeholder frame for the founder's likeness/video asset. Swap the
-   contents for the real photo or video once it's delivered; the motion
-   (settle loop + scroll parallax) is already wired to the wrapper. */
-function AvatarHeroVisual() {
-  const reduce = useReducedMotion();
-  const ref = useRef(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], [-24, 24]);
-  return (
-    <motion.div
-      ref={ref}
-      className="avatar-hero-visual"
-      style={reduce ? undefined : { y }}
-      animate={reduce ? undefined : { scale: [1, 1.035] }}
-      transition={reduce ? undefined : { duration: 9, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
-    >
-      <Logo className="avatar-hero-visual-mark" />
-      <p className="avatar-hero-visual-caption">Digital twin imagery — client asset pending</p>
-    </motion.div>
-  );
-}
-
 function AvatarHero() {
   const reduce = useReducedMotion();
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+  const y = useTransform(scrollYProgress, [0, 1], [0, 60]);
   return (
-    <section className="section avatar-hero">
-      <div className="avatar-hero-grid">
-        <AvatarHeroVisual />
+    <section className="avatar-hero-full" ref={ref}>
+      <motion.img
+        className="avatar-hero-image"
+        src="/avatar-studio/hero.webp"
+        alt="A woman looking at her digital twin through a mirror"
+        style={reduce ? undefined : { y }}
+        animate={reduce ? undefined : { scale: [1, 1.035] }}
+        transition={reduce ? undefined : { duration: 9, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+      />
+      <div className="avatar-hero-text">
         <motion.div
-          className="avatar-hero-copy"
+          className="avatar-hero-text-inner"
           initial={reduce ? false : "hidden"}
           animate="show"
           variants={avatarStagger}
@@ -1010,14 +1006,15 @@ function AvatarHero() {
             <p className="eyebrow">Avatar Studio</p>
             <AvatarKickerRule />
           </motion.div>
-          <motion.h1 variants={avatarRise}>Your twin, everywhere.</motion.h1>
+          <motion.h1 variants={avatarRise}>
+            Your twin, <em>working 24/7.</em>
+          </motion.h1>
           <motion.p className="lede" variants={avatarRise}>
-            We build a high-fidelity digital twin of your likeness and voice, then turn your knowledge into
-            finished video content built for continuous distribution.
+            Turn one recording into an always-on presence that looks, sounds, and speaks like you.
           </motion.p>
           <motion.div variants={avatarRise}>
             <MotionCTA href="#lead" onClick={scrollToAvatarLead}>
-              Build My Digital Twin
+              See Your Twin
             </MotionCTA>
           </motion.div>
         </motion.div>
@@ -1060,35 +1057,6 @@ function AvatarStatCallout({ children }) {
   );
 }
 
-const AVATAR_HOW_IT_WORKS = [
-  ["Record", "One session records your likeness, voice, and delivery."],
-  ["Produce", "Your knowledge becomes finished video for every channel."],
-  ["Distribute", "Every asset reads as you, at scale."],
-];
-
-function AvatarHowItWorks() {
-  const reduce = useReducedMotion();
-  return (
-    <motion.ol
-      className="index-list"
-      initial={reduce ? false : "hidden"}
-      whileInView="show"
-      viewport={{ once: true, amount: 0.2 }}
-      variants={avatarSectionStagger}
-    >
-      {AVATAR_HOW_IT_WORKS.map(([name, line], i) => (
-        <motion.li key={name} variants={avatarRise}>
-          <span className="index-num">{String(i + 1).padStart(2, "0")}</span>
-          <div>
-            <h3>{name}</h3>
-            <p>{line}</p>
-          </div>
-        </motion.li>
-      ))}
-    </motion.ol>
-  );
-}
-
 function AvatarCloseCta() {
   const reduce = useReducedMotion();
   return (
@@ -1100,15 +1068,16 @@ function AvatarCloseCta() {
       variants={avatarSectionStagger}
     >
       <motion.p className="section-label" variants={avatarRise}>
-        Get started
+        See it before you commit
       </motion.p>
       <motion.h2 variants={avatarRise}>Meet your twin.</motion.h2>
       <motion.p className="lede" variants={avatarRise}>
-        One session builds the twin. Every asset after that reads as you.
+        We will build a 60-second sample around your business so you can see the quality, hear the voice, and
+        watch your twin move before you buy.
       </motion.p>
       <motion.div variants={avatarRise}>
         <MotionCTA href="#lead" onClick={scrollToAvatarLead}>
-          Build My Digital Twin
+          See Your Twin
         </MotionCTA>
       </motion.div>
     </motion.section>
@@ -1117,32 +1086,64 @@ function AvatarCloseCta() {
 
 function AvatarStudioPage() {
   return (
-    <div className="page-shell avatar-studio-page">
+    <>
       <AvatarHero />
-      <AvatarSection eyebrow="What it is" title="A digital twin, built from one session.">
-        <motion.p className="lede" variants={avatarRise}>
-          We build a high-fidelity digital twin of your likeness and voice, then turn your knowledge into
-          finished video content built for continuous distribution.
-        </motion.p>
-        <AvatarStatCallout>
-          <p>One session. Every channel.</p>
-        </AvatarStatCallout>
-      </AvatarSection>
-      <AvatarSection eyebrow="The quality" title="Reads as you, at scale.">
-        <motion.p className="lede" variants={avatarRise}>
-          Every asset carries your likeness, voice, and delivery, produced to a standard that holds up across
-          every channel it runs on.
-        </motion.p>
-      </AvatarSection>
-      <AvatarSection eyebrow="How it works" title="One session in. Finished video out.">
-        <AvatarHowItWorks />
-      </AvatarSection>
-      <AvatarCloseCta />
-      <section className="section" id="lead">
-        <SectionHead label="Start the build" title="Build my digital twin." />
-        <BookingForm source="Avatar Studio" />
-      </section>
-    </div>
+      <div className="page-shell avatar-studio-page">
+        <AvatarSection eyebrow="What it is" title="Show up without showing up every time.">
+          <motion.p className="lede" variants={avatarRise}>
+            Avatar Studio builds a digital twin from your real face, voice, knowledge, and delivery. You record
+            once. We turn that source material into finished video you can use across the channels where your
+            audience already spends time.
+          </motion.p>
+          <motion.p className="lede" variants={avatarRise}>
+            Your twin looks like you, sounds like you, and speaks from your point of view. You stay present
+            without putting another recording session on your calendar.
+          </motion.p>
+          <AvatarStatCallout>
+            <p>
+              Personal profiles earn roughly 5x the engagement of company pages. The feed rewards people, not
+              logos. Your twin keeps <em>you</em> in the feed.{" "}
+              <a
+                href="https://medium.com/@zahrachemrah25/the-2-75x-impressions-and-5x-engagement-differential-between-personal-profiles-and-company-pages-is-86410fca276b"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                See the data.
+              </a>
+            </p>
+          </AvatarStatCallout>
+        </AvatarSection>
+        <AvatarSection eyebrow="The quality" title="The double take is the standard.">
+          <motion.p className="lede" variants={avatarRise}>
+            Your twin should look natural enough that the technology disappears. We match your voice, pacing,
+            expressions, and delivery, then finish every clip like a commercial production.
+          </motion.p>
+          <motion.p className="lede" variants={avatarRise}>
+            A real editor reviews every piece before it ships. If the movement, voice, or delivery breaks the
+            illusion, we fix it.
+          </motion.p>
+          <motion.p className="lede" variants={avatarRise}>
+            Every finished video includes clear AI disclosure. The goal is not to pretend the technology does
+            not exist. The goal is to make the experience feel unmistakably like you.
+          </motion.p>
+        </AvatarSection>
+        <AvatarSection eyebrow="How it works" title="You give us the source. We build the system.">
+          <motion.p className="lede" variants={avatarRise}>
+            One guided photo and voice session gives us what we need to build your twin. From there, Social
+            Following Studios handles the scripting, production, editing, formatting, and finishing.
+          </motion.p>
+          <motion.p className="lede" variants={avatarRise}>
+            You receive finished videos ready to publish. No camera setup. No repeated recording days. No
+            production workflow for you to manage.
+          </motion.p>
+        </AvatarSection>
+        <AvatarCloseCta />
+        <section className="section" id="lead">
+          <SectionHead label="Start the build" title="See your twin." />
+          <BookingForm source="Avatar Studio" />
+        </section>
+      </div>
+    </>
   );
 }
 
@@ -1258,7 +1259,7 @@ function resolvePage(route) {
     if (isUnlisted(key)) return { node: <ProductPage route={route} />, layout: "bare" };
     if (isLive(key)) {
       if (key === "audienceBuilder") return { node: <AudienceBuilder />, layout: "full" };
-      if (key === "avatarStudio") return { node: <AvatarStudioPage />, layout: "full" };
+      if (key === "avatarStudio") return { node: <AvatarStudioPage />, layout: "full", footerProduct: "Avatar Studio" };
       return { node: <ProductPage route={route} />, layout: "full" };
     }
     return { node: <Home />, layout: "full" };
@@ -1293,13 +1294,16 @@ function App() {
     window.scrollTo({ top: 0 });
   }, [route]);
 
-  const { node, layout } = useMemo(() => resolvePage(route), [route]);
+  const { node, layout, footerProduct } = useMemo(() => resolvePage(route), [route]);
 
   return (
     <>
       {layout === "bare" ? <BareHeader /> : <Header route={route} />}
       <main>{node}</main>
-      <Footer variant={layout === "bare" ? "minimal" : "full"} />
+      <Footer
+        variant={footerProduct ? "product" : layout === "bare" ? "minimal" : "full"}
+        product={footerProduct}
+      />
     </>
   );
 }

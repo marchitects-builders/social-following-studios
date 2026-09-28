@@ -850,49 +850,38 @@ p {
 /* ---------------------------------------------------------------- *
  * AVATAR STUDIO — framer-motion scoped exception, see App.jsx
  * ---------------------------------------------------------------- */
-.avatar-hero {
-  padding-top: clamp(28px, 4vw, 48px);
+.avatar-hero-full {
+  position: relative;
+  overflow: hidden;
 }
 
-.avatar-hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-  gap: clamp(32px, 5vw, 64px);
-  align-items: center;
+.avatar-hero-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  will-change: transform;
 }
 
-.avatar-hero-visual {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  aspect-ratio: 4 / 5;
-  padding: clamp(24px, 4vw, 40px);
-  border: 1px solid var(--ink);
+.avatar-hero-text {
   background: var(--paper);
-}
-
-.avatar-hero-visual-mark {
-  width: clamp(96px, 14vw, 140px);
-  opacity: 0.85;
-}
-
-.avatar-hero-visual-caption {
-  max-width: 22ch;
-  color: var(--muted);
-  font-family: var(--sans);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  padding: clamp(40px, 6vw, 64px) var(--gutter) clamp(48px, 7vw, 72px);
   text-align: center;
+}
+
+.avatar-hero-text-inner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.avatar-hero-text-inner .lede {
+  margin: 16px auto 0;
+  max-width: 56ch;
 }
 
 .avatar-eyebrow-block {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
 }
 
@@ -905,28 +894,68 @@ p {
 
 .avatar-body-section {
   max-width: 68ch;
+  margin-inline: auto;
 }
 
 .avatar-stat-callout {
   margin-top: 24px;
-  padding: 10px 22px;
+  padding: 14px 22px;
   border-left: 3px solid var(--green);
+  background: #fffdf8;
 }
 
 .avatar-stat-callout p {
-  font-family: var(--serif);
-  font-size: clamp(20px, 2.2vw, 27px);
-  color: var(--ink);
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.avatar-stat-callout a {
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.avatar-close-cta {
+  max-width: 680px;
+  margin-inline: auto;
+  text-align: center;
 }
 
 .avatar-close-cta h2 {
   margin-top: 14px;
-  max-width: 20ch;
 }
 
 .avatar-close-cta .lede {
   max-width: 52ch;
-  margin-bottom: 24px;
+  margin: 16px auto 24px;
+}
+
+.footer-product {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.footer-product-logo {
+  width: 120px;
+  height: auto;
+}
+
+.footer-product-name {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.footer-product-tagline {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 17px;
+  color: var(--ink);
 }
 
 /* ---------------------------------------------------------------- *
@@ -944,16 +973,6 @@ p {
 
   .owned-relationship-grid {
     grid-template-columns: 1fr;
-  }
-
-  .avatar-hero-grid {
-    grid-template-columns: 1fr;
-    gap: 28px;
-  }
-
-  .avatar-hero-visual {
-    max-width: 320px;
-    aspect-ratio: 1 / 1;
   }
 
   .owned-relationship {
