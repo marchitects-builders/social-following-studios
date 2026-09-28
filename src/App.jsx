@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
-const BRAND_LOGO = "/brand/sfs-logo.png";
+const BRAND_LOGO = "/brand/sfs-logo.webp";
 const LOGOS_APPROVED = "/logos-approved.png";
 const PUBLIC_ORIGIN = "https://www.socialfollowing.shop";
 
@@ -49,17 +49,19 @@ const crossLinkProducts = () =>
     .filter((key) => isReachable(key) && !showInNav(key))
     .map((key) => PRODUCTS[key]);
 
-const BASE_NAV = [
-  { label: "The System", href: "#/system" },
-  { label: "Case Studies", href: "#/case-studies" },
-  { label: "Assessment", href: "#/assessment" },
-];
+const BASE_NAV = [{ label: "What We Do", href: "#/what-we-do" }];
 
 function buildNav() {
   const products = Object.entries(PRODUCTS)
     .filter(([key]) => showInNav(key))
     .map(([, product]) => ({ label: product.label, href: `#${product.route}` }));
-  return [...BASE_NAV.slice(0, 2), ...products, ...BASE_NAV.slice(2), { label: "Contact", href: "#/contact" }];
+  return [
+    ...BASE_NAV,
+    ...products,
+    { label: "Proof", href: "#/case-studies" },
+    { label: "Assessment", href: "#/assessment" },
+    { label: "Contact", href: "#/contact" },
+  ];
 }
 
 /* ------------------------------------------------------------------ *
@@ -71,13 +73,13 @@ const PAGE_META = {
     description:
       "Social Following Studios is a full-service ESP and a strategic growth and communications agency. We build and run the audience infrastructure that turns existing customer data and new interest into direct relationships and measurable growth.",
   },
-  "/system": {
-    title: "The System | Social Following Studios",
+  "/what-we-do": {
+    title: "What We Do | Social Following Studios",
     description:
-      "Capture, identify, activate, stay present: YoChat, Audience Builder, full-service lifecycle email, and Avatar Studio, run as one operator.",
+      "Database Reactivation, Lifecycle Activation, YoChat, and Avatar Studio: the four capabilities that run under one operator.",
   },
   "/case-studies": {
-    title: "Case Studies | Social Following Studios",
+    title: "Proof | Social Following Studios",
     description: "Verified case studies from the actual work.",
   },
   "/audience-builder": {
@@ -123,7 +125,6 @@ function usePageMeta(route) {
     const productRoute = productByRoute(route);
     const key = productRoute && !isReachable(productRoute[0]) ? "/" : route;
     const meta = PAGE_META[key] || PAGE_META["/"];
-    const description = key === "/system" ? systemMetaDescription() : meta.description;
     const canonicalPath = key === "/" ? "/" : `/${key.replace(/^\//, "")}/`;
 
     document.title = meta.title;
@@ -132,7 +133,7 @@ function usePageMeta(route) {
       const el = document.createElement("meta");
       el.setAttribute("name", "description");
       return el;
-    }).setAttribute("content", description);
+    }).setAttribute("content", meta.description);
 
     setHeadTag('link[rel="canonical"]', () => {
       const el = document.createElement("link");
@@ -222,25 +223,6 @@ function useReveal(route) {
   }, [route]);
 }
 
-function useHeroMotion(ref) {
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || reducedMotion()) return;
-    let frame = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() =>
-        el.style.setProperty("--sy", String(Math.min(window.scrollY, 600)))
-      );
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(frame);
-    };
-  }, [ref]);
-}
-
 /* ------------------------------------------------------------------ *
  * PRIMITIVES
  * ------------------------------------------------------------------ */
@@ -308,71 +290,9 @@ function IndexList({ items }) {
 /* ------------------------------------------------------------------ *
  * HERO
  * ------------------------------------------------------------------ */
-function Chart() {
-  return (
-    <svg viewBox="0 0 420 190" role="img" aria-label="Reachable audience recovering month over month">
-      <defs>
-        <linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#0a7d59" stopOpacity=".18" />
-          <stop offset="1" stopColor="#0a7d59" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <g stroke="#e6e0d3" strokeWidth="1">
-        <path d="M0 45h420" />
-        <path d="M0 95h420" />
-        <path d="M0 145h420" />
-      </g>
-      <path d="M0 160 52 148 104 152 156 124 208 128 260 98 312 78 364 44 420 30 420 185 0 185Z" fill="url(#chartFill)" />
-      <path d="M0 160 52 148 104 152 156 124 208 128 260 98 312 78 364 44 420 30" fill="none" stroke="#0a7d59" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="420" cy="30" r="5" fill="#0a7d59" stroke="#eef4f0" strokeWidth="4" />
-    </svg>
-  );
-}
-
-function AssessmentPanel() {
-  return (
-    <aside className="panel" data-reveal aria-label="Assessment snapshot">
-      <div className="panel-head">
-        <p className="card-label">Assessment snapshot</p>
-        <span className="pill">
-          <span className="dot" />
-          Ready to deploy
-        </span>
-      </div>
-      <div className="panel-figure">
-        <div>
-          <p className="panel-figure-label">Dormant revenue estimate</p>
-          <p className="panel-figure-value">$3.8M</p>
-        </div>
-        <Chart />
-      </div>
-      <dl className="panel-metrics">
-        <div>
-          <dt>Reachable audience</dt>
-          <dd>246K</dd>
-        </div>
-        <div>
-          <dt>Database health</dt>
-          <dd>78%</dd>
-        </div>
-        <div>
-          <dt>Inbox placement</dt>
-          <dd>95%</dd>
-        </div>
-      </dl>
-      <p className="panel-caption">Single client, master ESP relationship across a multi-mailer network.</p>
-    </aside>
-  );
-}
-
 function Hero() {
-  const ref = useRef(null);
-  useHeroMotion(ref);
   return (
-    <section className="hero" ref={ref}>
-      <div className="hero-grid" aria-hidden="true">
-        <div className="hero-grid-plane" />
-      </div>
+    <section className="hero">
       <div className="hero-inner">
         <div className="hero-copy" data-reveal>
           <p className="eyebrow">Social Following Studios</p>
@@ -390,8 +310,17 @@ function Hero() {
           <p className="hero-category">Audience Infrastructure · Since 2017</p>
           <Button>Book Your Assessment</Button>
         </div>
-        <AssessmentPanel />
       </div>
+    </section>
+  );
+}
+
+function ProofBar() {
+  return (
+    <section className="proof-bar" data-reveal>
+      <p>20M+ daily communications supported</p>
+      <p>400+ engagements</p>
+      <p>Systems built since 2017</p>
     </section>
   );
 }
@@ -417,10 +346,10 @@ function RelationVisual() {
   );
 }
 
-function OwnedRelationship() {
+function Problem() {
   return (
     <section className="section">
-      <SectionHead label="Owned relationship" title="You know who raised their hand." />
+      <SectionHead label="Problem" title="Your audience should be an asset, not a list." />
       <div className="owned-relationship-grid">
         <div className="owned-relationship" data-reveal>
           <p>
@@ -439,36 +368,99 @@ function OwnedRelationship() {
 }
 
 const MECHANISM_STEPS = [
-  ["01", "Capture", "YoChat turns comments, messages, and keyword responses into direct conversations."],
-  ["02", "Identify", "Audience Builder organizes intent, behavior, and location signals into usable segments."],
-  ["03", "Activate", "Full-service lifecycle email moves each segment through timely follow-up and reactivation."],
-  ["04", "Stay Present", "Avatar Studio gives the brand a consistent face and voice with a sustainable filming rhythm."],
+  ["Capture", "YoChat turns comments, messages, and keyword responses into direct conversations."],
+  ["Identify", "Audience Builder organizes intent, behavior, and location signals into usable segments."],
+  ["Activate", "Full-service lifecycle email moves each segment through timely follow-up and reactivation."],
+  ["Stay Present", "Avatar Studio gives the brand a consistent face and voice with a sustainable filming rhythm."],
 ];
 
-const systemMetaDescription = () =>
-  "Capture, identify, activate, stay present: YoChat, Audience Builder, full-service lifecycle email, and Avatar Studio, run as one operator.";
+const AUDIENCE_BUILDER_STEPS = [
+  ["Ingest", "We pull the data your program already owns."],
+  ["Resolve", "Records are deduplicated, corrected, and unified into one clean contact layer."],
+  ["Segment", "Contacts are grouped by buying signal, channel behavior, and compliance state."],
+  ["Activate", "Each segment gets a sequence."],
+];
 
-function MechanismFlow() {
+function FlowDiagram({ steps }) {
   return (
-    <ol className="mechanism-flow" data-reveal>
-      {MECHANISM_STEPS.map(([num, name, line]) => (
-        <li className="mechanism-step" key={name}>
-          <span className="mechanism-num">{num}</span>
-          <h3>{name}</h3>
-          <p>{line}</p>
-        </li>
+    <div className="mechanism-flow" data-reveal>
+      {steps.map(([name, line], i) => (
+        <React.Fragment key={name}>
+          <div className="mechanism-step">
+            <span className="mechanism-num">{String(i + 1).padStart(2, "0")}</span>
+            <h3>{name}</h3>
+            <p>{line}</p>
+          </div>
+          {i < steps.length - 1 && (
+            <span className="mechanism-arrow" aria-hidden="true">
+              →
+            </span>
+          )}
+        </React.Fragment>
       ))}
-    </ol>
+    </div>
   );
 }
 
-function SystemSummary() {
+function OperatingSystem() {
   return (
     <section className="section">
-      <SectionHead label="The system" title="Four functions. One operator." />
-      <MechanismFlow />
-      <a className="text-link" href="#/system">
-        The system in full <Arrow />
+      <SectionHead label="The operating system" title="Capture. Identify. Activate. Stay present." />
+      <FlowDiagram steps={MECHANISM_STEPS} />
+      <a className="text-link" href="#/what-we-do">
+        What we do in full <Arrow />
+      </a>
+    </section>
+  );
+}
+
+function AudienceBuilderFeature() {
+  return (
+    <section className="section">
+      <SectionHead
+        label="Audience Builder"
+        title="The reachable audience under every send."
+        lede="Audience Builder turns a raw contact list into a segmented, deliverable audience."
+      />
+      <FlowDiagram steps={AUDIENCE_BUILDER_STEPS} />
+      <a className="text-link" href="#/audience-builder">
+        Audience Builder in full <Arrow />
+      </a>
+    </section>
+  );
+}
+
+const BUYING_SITUATIONS = [
+  [
+    "Founders",
+    "The database has outgrown what one person can run by hand, and dormant contacts sit unworked.",
+  ],
+  [
+    "Hospitality",
+    "Past guests and clients have gone quiet while acquisition spend keeps paying for people already reached once.",
+  ],
+  [
+    "Compliance-heavy organizations",
+    "Outreach has to be documented and authenticated, not improvised channel by channel.",
+  ],
+];
+
+function BuyingSituations() {
+  return (
+    <section className="section">
+      <SectionHead label="When we're needed" title="Buying situations." />
+      <IndexList items={BUYING_SITUATIONS} />
+    </section>
+  );
+}
+
+function AssessmentDeliverables() {
+  return (
+    <section className="section">
+      <SectionHead label="The assessment" title="What the assessment produces." />
+      <IndexList items={ASSESSMENT_OUTPUTS} />
+      <a className="text-link" href="#/assessment">
+        Book your assessment <Arrow />
       </a>
     </section>
   );
@@ -584,7 +576,7 @@ function CaseTeaser() {
 function CaseStudiesSummary() {
   return (
     <section className="section">
-      <SectionHead label="Case studies" title="Verified case studies from the actual work." />
+      <SectionHead label="Proof" title="Verified case studies from the actual work." />
       <CaseTeaser />
     </section>
   );
@@ -710,21 +702,72 @@ function Home() {
   return (
     <>
       <Hero />
+      <ProofBar />
       <div className="page-shell">
-        <OwnedRelationship />
-        <SystemSummary />
+        <Problem />
+        <OperatingSystem />
+        <AudienceBuilderFeature />
         <CaseStudiesSummary />
+        <BuyingSituations />
+        <AssessmentDeliverables />
+        <CtaBand title="Book your assessment." />
       </div>
     </>
   );
 }
 
-function SystemPage() {
+const WHAT_WE_DO = [
+  [
+    "Database Reactivation",
+    "We identify and reactivate the contacts already inside your database: dormant clients, past guests, and cold leads who already know you.",
+    null,
+  ],
+  [
+    "Lifecycle Activation",
+    "Full-service lifecycle email moves each segment through timely follow-up and reactivation.",
+    null,
+  ],
+  [
+    "YoChat",
+    "YoChat runs the conversational layer of your program across Messenger and Instagram, with a protected control room, CRM, transcripts, and human handoff.",
+    "#/yochat",
+  ],
+  [
+    "Avatar Studio",
+    "We build a high-fidelity digital twin of your likeness and voice, then turn your knowledge into finished video content built for continuous distribution.",
+    "#/avatar-studio",
+  ],
+];
+
+function WhatWeDoPage() {
   return (
     <div className="page-shell">
-      <PageHead eyebrow="The system" title="Four functions. One operator." />
+      <PageHead
+        eyebrow="What we do"
+        title="Four capabilities. One operator."
+        lede="Capture, identify, activate, and stay present, run as a single accountable program."
+      />
       <section className="section">
-        <MechanismFlow />
+        <FlowDiagram steps={MECHANISM_STEPS} />
+      </section>
+      <section className="section">
+        <SectionHead
+          label="The capabilities"
+          title="Database Reactivation, Lifecycle Activation, YoChat, Avatar Studio."
+        />
+        <div className="capability-list" data-reveal>
+          {WHAT_WE_DO.map(([name, line, href]) => (
+            <article className="capability" key={name}>
+              <h3>{name}</h3>
+              <p>{line}</p>
+              {href && (
+                <a className="text-link" href={href}>
+                  Learn more <Arrow />
+                </a>
+              )}
+            </article>
+          ))}
+        </div>
       </section>
       <CtaBand title="Your program, under management." />
     </div>
@@ -735,7 +778,7 @@ function CaseStudiesPage() {
   return (
     <div className="page-shell">
       <PageHead
-        eyebrow="Case studies"
+        eyebrow="Proof"
         title="Verified case studies from the actual work."
         lede="Documented customer acquisition, database reactivation, deliverability, hospitality, communications, and growth."
       />
@@ -797,14 +840,7 @@ function AudienceBuilder() {
         lede="Audience Builder turns a raw contact list into a segmented, deliverable audience."
       />
       <section className="section">
-        <IndexList
-          items={[
-            ["Ingest", "We pull the data your program already owns."],
-            ["Resolve", "Records are deduplicated, corrected, and unified into one clean contact layer."],
-            ["Segment", "Contacts are grouped by buying signal, channel behavior, and compliance state."],
-            ["Activate", "Each segment gets a sequence."],
-          ]}
-        />
+        <FlowDiagram steps={AUDIENCE_BUILDER_STEPS} />
       </section>
       <CtaBand title="Your audience, built and maintained." />
     </div>
@@ -912,8 +948,9 @@ function resolvePage(route) {
     return { node: <Home />, layout: "full" };
   }
   switch (route) {
+    case "/what-we-do":
     case "/system":
-      return { node: <SystemPage />, layout: "full" };
+      return { node: <WhatWeDoPage />, layout: "full" };
     case "/case-studies":
       return { node: <CaseStudiesPage />, layout: "full" };
     case "/assessment":
