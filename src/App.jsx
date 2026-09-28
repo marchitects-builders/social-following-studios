@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { motion, useReducedMotion, useScroll, useTransform, useInView, animate } from "framer-motion";
 
 const BRAND_LOGO = "/brand/sfs-logo.webp";
 const LOGOS_APPROVED = "/logos-approved.png";
@@ -21,7 +22,7 @@ const PRODUCTS = {
     blurb: "Turns a raw contact list into a segmented, deliverable audience.",
   },
   avatarStudio: {
-    status: "HIDDEN",
+    status: "LIVE",
     nav: false,
     label: "Avatar Studio",
     route: "/avatar-studio",
@@ -85,6 +86,11 @@ const PAGE_META = {
   "/audience-builder": {
     title: "Audience Builder | Social Following Studios",
     description: "Audience Builder turns a raw contact list into a segmented, deliverable audience.",
+  },
+  "/avatar-studio": {
+    title: "Avatar Studio | Social Following Studios",
+    description:
+      "Avatar Studio builds a high-fidelity digital twin of your likeness and voice, then turns your knowledge into finished video content for continuous distribution.",
   },
   "/assessment": {
     title: "Book Your Assessment | Social Following Studios",
@@ -696,7 +702,7 @@ const WHAT_WE_DO = [
   [
     "Video Presence",
     "A high-fidelity digital twin of your likeness and voice turns your knowledge into finished video content built for continuous distribution.",
-    null,
+    "#/avatar-studio",
   ],
 ];
 
@@ -787,6 +793,230 @@ function AssessmentPage() {
       <section className="section assessment-grid">
         <IndexList items={ASSESSMENT_OUTPUTS} />
         <BookingForm source="Website Assessment" />
+      </section>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * AVATAR STUDIO — a scoped exception to the site's fade/rise-only
+ * motion rule. Everywhere else keeps the [data-reveal] system; this
+ * page and the homepage graph run framer-motion per the Sept 2026
+ * motion spec.
+ * ------------------------------------------------------------------ */
+const AVATAR_EASE = [0.22, 1, 0.36, 1];
+
+const avatarStagger = { hidden: {}, show: { transition: { staggerChildren: 0.12 } } };
+const avatarRise = {
+  hidden: { opacity: 0, y: 22 },
+  show: { opacity: 1, y: 0, transition: { duration: 1, ease: AVATAR_EASE } },
+};
+const avatarSectionStagger = { hidden: {}, show: { transition: { staggerChildren: 0.1 } } };
+
+const scrollToAvatarLead = (e) => {
+  e.preventDefault();
+  document.getElementById("lead")?.scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
+function MotionCTA({ children, href = "#lead", onClick, className = "" }) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.a
+      className={`btn ${className}`}
+      href={href}
+      onClick={onClick}
+      whileHover={reduce ? undefined : { y: -2, boxShadow: "0 10px 24px rgba(10,125,89,0.28)" }}
+      whileTap={reduce ? undefined : { scale: 0.97 }}
+      transition={{ duration: 0.25, ease: AVATAR_EASE }}
+    >
+      <span>{children}</span>
+      <Arrow />
+    </motion.a>
+  );
+}
+
+function AvatarKickerRule() {
+  const reduce = useReducedMotion();
+  return (
+    <motion.span
+      className="avatar-kicker-rule"
+      style={{ originX: 0.5 }}
+      initial={reduce ? false : { scaleX: 0 }}
+      animate={reduce ? undefined : { scaleX: 1 }}
+      transition={{ duration: 1.2, delay: 0.5, ease: AVATAR_EASE }}
+    />
+  );
+}
+
+/* Placeholder frame for the founder's likeness/video asset. Swap the
+   contents for the real photo or video once it's delivered; the motion
+   (settle loop + scroll parallax) is already wired to the wrapper. */
+function AvatarHeroVisual() {
+  const reduce = useReducedMotion();
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const y = useTransform(scrollYProgress, [0, 1], [-24, 24]);
+  return (
+    <motion.div
+      ref={ref}
+      className="avatar-hero-visual"
+      style={reduce ? undefined : { y }}
+      animate={reduce ? undefined : { scale: [1, 1.035] }}
+      transition={reduce ? undefined : { duration: 9, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+    >
+      <Logo className="avatar-hero-visual-mark" />
+      <p className="avatar-hero-visual-caption">Digital twin imagery — client asset pending</p>
+    </motion.div>
+  );
+}
+
+function AvatarHero() {
+  const reduce = useReducedMotion();
+  return (
+    <section className="section avatar-hero">
+      <div className="avatar-hero-grid">
+        <AvatarHeroVisual />
+        <motion.div
+          className="avatar-hero-copy"
+          initial={reduce ? false : "hidden"}
+          animate="show"
+          variants={avatarStagger}
+        >
+          <motion.div className="avatar-eyebrow-block" variants={avatarRise}>
+            <p className="eyebrow">Avatar Studio</p>
+            <AvatarKickerRule />
+          </motion.div>
+          <motion.h1 variants={avatarRise}>Your twin, everywhere.</motion.h1>
+          <motion.p className="lede" variants={avatarRise}>
+            We build a high-fidelity digital twin of your likeness and voice, then turn your knowledge into
+            finished video content built for continuous distribution.
+          </motion.p>
+          <motion.div variants={avatarRise}>
+            <MotionCTA href="#lead" onClick={scrollToAvatarLead}>
+              Build My Digital Twin
+            </MotionCTA>
+          </motion.div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+function AvatarSection({ eyebrow, title, children }) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.section
+      className="section avatar-body-section"
+      initial={reduce ? false : "hidden"}
+      whileInView="show"
+      viewport={{ once: true, amount: 0.25 }}
+      variants={avatarSectionStagger}
+    >
+      <motion.p className="section-label" variants={avatarRise}>
+        {eyebrow}
+      </motion.p>
+      <motion.h2 variants={avatarRise}>{title}</motion.h2>
+      {children}
+    </motion.section>
+  );
+}
+
+function AvatarStatCallout({ children }) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.div
+      className="avatar-stat-callout"
+      initial={reduce ? false : { opacity: 0, x: -24 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true, amount: 0.4 }}
+      transition={{ duration: 0.9, ease: AVATAR_EASE }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+const AVATAR_HOW_IT_WORKS = [
+  ["Record", "One session records your likeness, voice, and delivery."],
+  ["Produce", "Your knowledge becomes finished video for every channel."],
+  ["Distribute", "Every asset reads as you, at scale."],
+];
+
+function AvatarHowItWorks() {
+  const reduce = useReducedMotion();
+  return (
+    <motion.ol
+      className="index-list"
+      initial={reduce ? false : "hidden"}
+      whileInView="show"
+      viewport={{ once: true, amount: 0.2 }}
+      variants={avatarSectionStagger}
+    >
+      {AVATAR_HOW_IT_WORKS.map(([name, line], i) => (
+        <motion.li key={name} variants={avatarRise}>
+          <span className="index-num">{String(i + 1).padStart(2, "0")}</span>
+          <div>
+            <h3>{name}</h3>
+            <p>{line}</p>
+          </div>
+        </motion.li>
+      ))}
+    </motion.ol>
+  );
+}
+
+function AvatarCloseCta() {
+  const reduce = useReducedMotion();
+  return (
+    <motion.section
+      className="section avatar-close-cta"
+      initial={reduce ? false : "hidden"}
+      whileInView="show"
+      viewport={{ once: true, amount: 0.3 }}
+      variants={avatarSectionStagger}
+    >
+      <motion.p className="section-label" variants={avatarRise}>
+        Get started
+      </motion.p>
+      <motion.h2 variants={avatarRise}>Meet your twin.</motion.h2>
+      <motion.p className="lede" variants={avatarRise}>
+        One session builds the twin. Every asset after that reads as you.
+      </motion.p>
+      <motion.div variants={avatarRise}>
+        <MotionCTA href="#lead" onClick={scrollToAvatarLead}>
+          Build My Digital Twin
+        </MotionCTA>
+      </motion.div>
+    </motion.section>
+  );
+}
+
+function AvatarStudioPage() {
+  return (
+    <div className="page-shell avatar-studio-page">
+      <AvatarHero />
+      <AvatarSection eyebrow="What it is" title="A digital twin, built from one session.">
+        <motion.p className="lede" variants={avatarRise}>
+          We build a high-fidelity digital twin of your likeness and voice, then turn your knowledge into
+          finished video content built for continuous distribution.
+        </motion.p>
+        <AvatarStatCallout>
+          <p>One session. Every channel.</p>
+        </AvatarStatCallout>
+      </AvatarSection>
+      <AvatarSection eyebrow="The quality" title="Reads as you, at scale.">
+        <motion.p className="lede" variants={avatarRise}>
+          Every asset carries your likeness, voice, and delivery, produced to a standard that holds up across
+          every channel it runs on.
+        </motion.p>
+      </AvatarSection>
+      <AvatarSection eyebrow="How it works" title="One session in. Finished video out.">
+        <AvatarHowItWorks />
+      </AvatarSection>
+      <AvatarCloseCta />
+      <section className="section" id="lead">
+        <SectionHead label="Start the build" title="Build my digital twin." />
+        <BookingForm source="Avatar Studio" />
       </section>
     </div>
   );
@@ -904,6 +1134,7 @@ function resolvePage(route) {
     if (isUnlisted(key)) return { node: <ProductPage route={route} />, layout: "bare" };
     if (isLive(key)) {
       if (key === "audienceBuilder") return { node: <AudienceBuilder />, layout: "full" };
+      if (key === "avatarStudio") return { node: <AvatarStudioPage />, layout: "full" };
       return { node: <ProductPage route={route} />, layout: "full" };
     }
     return { node: <Home />, layout: "full" };

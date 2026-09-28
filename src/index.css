@@ -847,6 +847,88 @@ p {
 }
 
 /* ---------------------------------------------------------------- *
+ * AVATAR STUDIO — framer-motion scoped exception, see App.jsx
+ * ---------------------------------------------------------------- */
+.avatar-hero {
+  padding-top: clamp(28px, 4vw, 48px);
+}
+
+.avatar-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: clamp(32px, 5vw, 64px);
+  align-items: center;
+}
+
+.avatar-hero-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  aspect-ratio: 4 / 5;
+  padding: clamp(24px, 4vw, 40px);
+  border: 1px solid var(--ink);
+  background: var(--paper);
+}
+
+.avatar-hero-visual-mark {
+  width: clamp(96px, 14vw, 140px);
+  opacity: 0.85;
+}
+
+.avatar-hero-visual-caption {
+  max-width: 22ch;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.avatar-eyebrow-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.avatar-kicker-rule {
+  display: block;
+  width: 64px;
+  height: 2px;
+  background: var(--green);
+}
+
+.avatar-body-section {
+  max-width: 68ch;
+}
+
+.avatar-stat-callout {
+  margin-top: 24px;
+  padding: 10px 22px;
+  border-left: 3px solid var(--green);
+}
+
+.avatar-stat-callout p {
+  font-family: var(--serif);
+  font-size: clamp(20px, 2.2vw, 27px);
+  color: var(--ink);
+}
+
+.avatar-close-cta h2 {
+  margin-top: 14px;
+  max-width: 20ch;
+}
+
+.avatar-close-cta .lede {
+  max-width: 52ch;
+  margin-bottom: 24px;
+}
+
+/* ---------------------------------------------------------------- *
  * RESPONSIVE
  * ---------------------------------------------------------------- */
 @media (max-width: 1000px) {
@@ -861,6 +943,16 @@ p {
 
   .owned-relationship-grid {
     grid-template-columns: 1fr;
+  }
+
+  .avatar-hero-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .avatar-hero-visual {
+    max-width: 320px;
+    aspect-ratio: 1 / 1;
   }
 
   .owned-relationship {
