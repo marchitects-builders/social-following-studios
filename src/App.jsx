@@ -21,14 +21,14 @@ const PRODUCTS = {
     blurb: "Turns a raw contact list into a segmented, deliverable audience.",
   },
   avatarStudio: {
-    status: "UNLISTED",
+    status: "HIDDEN",
     nav: false,
     label: "Avatar Studio",
     route: "/avatar-studio",
     blurb: "A digital twin of your likeness and voice, turned into finished video.",
   },
   yochat: {
-    status: "UNLISTED",
+    status: "HIDDEN",
     nav: false,
     label: "YoChat",
     route: "/yochat",
@@ -76,7 +76,7 @@ const PAGE_META = {
   "/what-we-do": {
     title: "What We Do | Social Following Studios",
     description:
-      "Database Reactivation, Lifecycle Activation, YoChat, and Avatar Studio: the four capabilities that run under one operator.",
+      "Database Reactivation, Lifecycle Activation, Conversational Response, and Video Presence: the four capabilities that run under one operator.",
   },
   "/case-studies": {
     title: "Proof | Social Following Studios",
@@ -90,16 +90,6 @@ const PAGE_META = {
     title: "Book Your Assessment | Social Following Studios",
     description:
       "Database health, reachable audience, deliverability, dormant revenue estimate, and deployment path.",
-  },
-  "/avatar-studio": {
-    title: "Avatar Studio | Social Following Studios",
-    description:
-      "Avatar Studio builds a high-fidelity digital twin of your likeness and voice, then turns your knowledge into finished video content for continuous distribution.",
-  },
-  "/yochat": {
-    title: "YoChat | Social Following Studios",
-    description:
-      "YoChat runs the conversational layer of your program across Messenger and Instagram, with a protected control room, CRM, transcripts, and human handoff.",
   },
   "/contact": {
     title: "Contact | Social Following Studios",
@@ -146,36 +136,7 @@ function usePageMeta(route) {
 /* ------------------------------------------------------------------ *
  * AD FUNNEL CONTENT (unlisted campaign landing pages)
  * ------------------------------------------------------------------ */
-const CAMPAIGN_CONTENT = {
-  "/avatar-studio": {
-    eyebrow: "Avatar Studio",
-    title: "Your twin, everywhere.",
-    support:
-      "We build a high-fidelity digital twin of your likeness and voice, then turn your knowledge into finished video content built for continuous distribution.",
-    cta: "Build My Digital Twin",
-    points: [
-      "One session records your likeness, voice, and delivery.",
-      "Your knowledge becomes finished video for every channel.",
-      "Every asset reads as you, at scale.",
-    ],
-    formLabel: "Start the build",
-    formTitle: "Build my digital twin.",
-  },
-  "/yochat": {
-    eyebrow: "YoChat",
-    title: "Always-on conversation.",
-    support:
-      "YoChat runs the conversational layer of your program across Messenger and Instagram, with a protected control room, CRM, transcripts, and human handoff.",
-    cta: "Book Your Assessment",
-    points: [
-      "Every message answered, across Messenger and Instagram.",
-      "CRM, transcripts, and human handoff in one protected view.",
-      "Connected to the same audience the rest of the system runs on.",
-    ],
-    formLabel: "Start the conversation",
-    formTitle: "Put a staffed conversation on every channel.",
-  },
-};
+const CAMPAIGN_CONTENT = {};
 
 /* ------------------------------------------------------------------ *
  * HOOKS
@@ -368,10 +329,10 @@ function Problem() {
 }
 
 const MECHANISM_STEPS = [
-  ["Capture", "YoChat turns comments, messages, and keyword responses into direct conversations."],
+  ["Capture", "Comments, messages, and keyword responses become direct conversations, routed into the same system."],
   ["Identify", "Audience Builder organizes intent, behavior, and location signals into usable segments."],
   ["Activate", "Full-service lifecycle email moves each segment through timely follow-up and reactivation."],
-  ["Stay Present", "Avatar Studio gives the brand a consistent face and voice with a sustainable filming rhythm."],
+  ["Stay Present", "The brand keeps a consistent face and voice on camera, on a sustainable filming rhythm."],
 ];
 
 const AUDIENCE_BUILDER_STEPS = [
@@ -728,14 +689,14 @@ const WHAT_WE_DO = [
     null,
   ],
   [
-    "YoChat",
-    "YoChat runs the conversational layer of your program across Messenger and Instagram, with a protected control room, CRM, transcripts, and human handoff.",
-    "#/yochat",
+    "Conversational Response",
+    "Comments, messages, and keyword responses across Messenger and Instagram become direct conversations, with a protected control room, CRM, transcripts, and human handoff.",
+    null,
   ],
   [
-    "Avatar Studio",
-    "We build a high-fidelity digital twin of your likeness and voice, then turn your knowledge into finished video content built for continuous distribution.",
-    "#/avatar-studio",
+    "Video Presence",
+    "A high-fidelity digital twin of your likeness and voice turns your knowledge into finished video content built for continuous distribution.",
+    null,
   ],
 ];
 
@@ -753,7 +714,7 @@ function WhatWeDoPage() {
       <section className="section">
         <SectionHead
           label="The capabilities"
-          title="Database Reactivation, Lifecycle Activation, YoChat, Avatar Studio."
+          title="Database Reactivation, Lifecycle Activation, Conversational Response, Video Presence."
         />
         <div className="capability-list" data-reveal>
           {WHAT_WE_DO.map(([name, line, href]) => (

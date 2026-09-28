@@ -18,28 +18,9 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DIST = resolve(ROOT, "dist");
 const ORIGIN = "https://www.socialfollowing.shop";
 
-const ENTRYPOINTS = [
-  {
-    slug: "avatar-studio",
-    name: "Avatar Studio",
-    eyebrow: "Avatar Studio",
-    title: "Avatar Studio | Social Following Studios",
-    heading: "Your twin, everywhere.",
-    description:
-      "Avatar Studio builds a high-fidelity digital twin of your likeness and voice, then turns your knowledge into finished video content for continuous distribution.",
-    serviceType: "Video production",
-  },
-  {
-    slug: "yochat",
-    name: "YoChat",
-    eyebrow: "YoChat",
-    title: "YoChat | Social Following Studios",
-    heading: "Always-on conversation.",
-    description:
-      "YoChat runs the conversational layer of your program across Messenger and Instagram, with a protected control room, CRM, transcripts, and human handoff.",
-    serviceType: "Conversational messaging management",
-  },
-];
+// Both products are currently HIDDEN in src/App.jsx (route dead, name never
+// renders). No standalone static entrypoint gets built for a hidden product.
+const ENTRYPOINTS = [];
 
 const escapeHtml = (value) =>
   value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
