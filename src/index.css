@@ -254,6 +254,7 @@ p {
 .logo {
   width: 100%;
   height: auto;
+  aspect-ratio: 2000 / 667;
   mix-blend-mode: multiply;
 }
 
@@ -654,6 +655,7 @@ p {
 
 .logo-bar img {
   width: min(100%, 1040px);
+  aspect-ratio: 1458 / 140;
   margin: 0 auto;
   /* Standard logo-wall treatment: uniform dark monochrome, full contrast.
      The source art is light gray, so brightness(0) renders it as solid ink. */
@@ -739,6 +741,7 @@ p {
 .field input:focus,
 .field textarea:focus {
   border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(10, 125, 89, 0.22);
 }
 
 .form .btn {
@@ -859,6 +862,7 @@ p {
   display: block;
   width: 100%;
   height: auto;
+  aspect-ratio: 2048 / 1152;
   will-change: transform;
 }
 

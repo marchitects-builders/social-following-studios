@@ -24,7 +24,10 @@ const PRODUCTS = {
   avatarStudio: {
     status: "LIVE",
     nav: false,
-    label: "Avatar Studio",
+    // "Avatar Studio" is named only on its own page (per the naming rule in
+    // DIRECTIVE.md). Every off-page mention — cross-links, thank-you addons —
+    // reads from this label, so it stays "Video Presence" everywhere else.
+    label: "Video Presence",
     route: "/avatar-studio",
     blurb: "A digital twin of your likeness and voice, turned into finished video.",
   },
@@ -393,7 +396,7 @@ function GraphMetric({ target, suffix, label, delay }) {
   useEffect(() => {
     if (!inView || reduce) return;
     const controls = animate(0, target, {
-      duration: 1.4,
+      duration: 0.9,
       ease: "easeOut",
       delay,
       onUpdate: (v) => setValue(Math.round(v)),
@@ -419,7 +422,7 @@ function AudienceGraph() {
   return (
     <div className="audience-graph" data-reveal aria-hidden="true">
       <motion.div ref={ref} className="audience-graph-canvas" style={reduce ? undefined : { y }}>
-        <svg viewBox="0 0 472 220">
+        <svg viewBox="0 0 486 220">
           {GRAPH_EDGES.map((edge, i) => (
             <GraphEdge key={i} edge={edge} />
           ))}
@@ -429,8 +432,8 @@ function AudienceGraph() {
         </svg>
       </motion.div>
       <div className="stat-row">
-        <GraphMetric target={20} suffix="M+" label="Daily communications" delay={1.8} />
-        <GraphMetric target={400} suffix="+" label="Engagements" delay={1.9} />
+        <GraphMetric target={20} suffix="M+" label="Daily communications" delay={0.4} />
+        <GraphMetric target={400} suffix="+" label="Engagements" delay={0.5} />
       </div>
     </div>
   );
