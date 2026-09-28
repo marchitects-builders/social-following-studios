@@ -835,7 +835,7 @@ function Home() {
         <CaseStudiesSummary />
         <BuyingSituations />
         <AssessmentDeliverables />
-        <CtaBand title="Book your assessment." />
+        <CtaBand title="Every engagement starts with an assessment." />
       </div>
     </>
   );
