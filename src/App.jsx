@@ -1,5 +1,22 @@
+"use client";
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+const subscribeReducedMotion = (notify) => {
+  const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+  media.addEventListener("change", notify);
+  return () => media.removeEventListener("change", notify);
+};
+
+function useReducedMotion() {
+  return React.useSyncExternalStore(
+    subscribeReducedMotion,
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    () => false,
+  );
+}
 
 const BRAND_LOGO = "/brand/sfs-logo.webp";
 const PUBLIC_ORIGIN = "https://www.socialfollowing.shop";
@@ -67,13 +84,17 @@ const crossLinkProducts = () =>
     .filter((key) => isReachable(key) && !showInNav(key))
     .map((key) => PRODUCTS[key]);
 
-const BASE_NAV = [{ label: "What We Do", href: "#/what-we-do" }];
+const BASE_NAV = [
+  { label: "What We Do", href: "#/what-we-do" },
+  { label: "Full-Service ESP", href: "#/full-service-esp" },
+  { label: "Industries", href: "#/industries" },
+  { label: "Results", href: "#/results" },
+  { label: "Insights", href: "#/insights" },
+  { label: "About", href: "#/about" },
+];
 
 function buildNav() {
-  const products = Object.entries(PRODUCTS)
-    .filter(([key]) => showInNav(key))
-    .map(([, product]) => ({ label: product.label, href: `#${product.route}` }));
-  return [...BASE_NAV, ...products, { label: "Proof", href: "#/case-studies" }];
+  return BASE_NAV;
 }
 
 /* ------------------------------------------------------------------ *
@@ -157,14 +178,14 @@ const CAMPAIGN_CONTENT = {};
 /* ------------------------------------------------------------------ *
  * HOOKS
  * ------------------------------------------------------------------ */
-function useHashRoute() {
+function useHashRoute(initialRoute = "/") {
   const getRoute = () => {
     const hash = window.location.hash.replace(/^#/, "");
     if (hash) return hash.startsWith("/") ? hash : `/${hash}`;
     const path = window.location.pathname.replace(/\/+$/, "");
     return path || "/";
   };
-  const [route, setRoute] = useState("/");
+  const [route, setRoute] = useState(initialRoute);
   useEffect(() => {
     const sync = () => setRoute(getRoute());
     sync();
@@ -267,26 +288,102 @@ function IndexList({ items }) {
 /* ------------------------------------------------------------------ *
  * HERO
  * ------------------------------------------------------------------ */
+function AssessmentChart() {
+  return (
+    <svg viewBox="0 0 420 210" role="img" aria-label="Audience reactivation potential increasing from January to June">
+      <defs>
+        <linearGradient id="assessment-chart-fill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="#008b61" stopOpacity=".2" />
+          <stop offset="1" stopColor="#008b61" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <g stroke="#e4ded6" strokeWidth="1">
+        <path d="M0 38h420" />
+        <path d="M0 78h420" />
+        <path d="M0 118h420" />
+        <path d="M0 158h420" />
+      </g>
+      <path d="M0 170 22 140 42 125 63 137 86 112 108 92 130 88 152 105 174 110 196 103 218 112 240 104 262 74 284 70 306 58 328 55 350 36 372 14 420 14 420 190 0 190Z" fill="url(#assessment-chart-fill)" />
+      <motion.path
+        d="M0 170c18-26 25-38 42-45s23 13 44-13 32-28 54-16 28 16 50 10 22 6 44-14 18-20 40-21 23-13 44-17 20-14 36-27 11-13 30-13h36"
+        fill="none"
+        stroke="#008b61"
+        strokeWidth="3"
+        strokeLinecap="round"
+        initial={{ pathLength: 0 }}
+        whileInView={{ pathLength: 1 }}
+        viewport={{ once: true, amount: 0.4 }}
+        transition={{ duration: 1.5, ease: GRAPH_EASE }}
+      />
+      <circle cx="420" cy="14" r="6" fill="#008b61" stroke="#dfece5" strokeWidth="5" />
+      <g fill="#6a706b" fontFamily="DM Sans, Arial, sans-serif" fontSize="11">
+        <text x="0" y="207">JAN</text>
+        <text x="78" y="207">FEB</text>
+        <text x="155" y="207">MAR</text>
+        <text x="235" y="207">APR</text>
+        <text x="312" y="207">MAY</text>
+        <text x="392" y="207">JUN</text>
+      </g>
+    </svg>
+  );
+}
+
+function AssessmentMetric({ label, value, caption }) {
+  return (
+    <div className="hero-stat">
+      <p className="metric-label">{label}</p>
+      <p className="hero-stat-value">{value}</p>
+      <p className="stat-caption">{caption}</p>
+    </div>
+  );
+}
+
+function HeroAssessmentSummary() {
+  return (
+    <article className="visual-panel hero-assessment-card" aria-label="Assessment summary">
+      <div className="panel-head">
+        <p className="card-label">Assessment Summary</p>
+        <span className="status-pill"><span className="dot" />Ready to Reactivate</span>
+      </div>
+      <div className="summary-main">
+        <div className="summary-score">
+          <p className="small-serif">Audience Reactivation Potential</p>
+          <p className="big-percent">83%</p>
+          <p className="summary-copy">High potential to reach dormant connections across your channels.</p>
+        </div>
+        <div className="assessment-chart"><AssessmentChart /></div>
+      </div>
+      <div className="stats-row">
+        <AssessmentMetric label="Reachable Contacts" value="246K" caption="+18% vs. previous six months" />
+        <AssessmentMetric label="Dormant Revenue" value="$3.8M" caption="Estimated opportunity" />
+        <AssessmentMetric label="Data Health" value="78%" caption="Above industry average" />
+      </div>
+      <div className="panel-foot"><span className="check-icon">✓</span>Infrastructure in place. Channels connected. Ready to deploy.</div>
+    </article>
+  );
+}
+
 function Hero() {
   return (
     <section className="hero">
       <div className="hero-inner">
         <div className="hero-copy" data-reveal>
-          <p className="eyebrow">Social Following Studios</p>
+          <p className="eyebrow">Full-service ESP</p>
           <h1 className="hero-title" aria-label="Own your audience.">
             Own your
             <br />
             audience.
           </h1>
           <p className="hero-descriptor">
-            Social Following Studios is a full-service ESP and a strategic growth and communications agency.
+            Social Following Studios is the full-service ESP plus deployment layer.
           </p>
           <p className="hero-support">
-            We connect the relationship from first interaction through conversion, retention, and reactivation.
+            We build and run unified conversion systems.
           </p>
-          <p className="hero-category">Audience Infrastructure · Since 2017</p>
+          <p className="hero-category">Infrastructure · Deployment · Operation</p>
           <Button>Book Your Assessment</Button>
         </div>
+        <HeroAssessmentSummary />
       </div>
     </section>
   );
@@ -326,16 +423,19 @@ function GraphEdge({ edge }) {
   const from = graphNode(edge.from);
   const to = graphNode(edge.to);
   return (
-    <motion.path
-      d={`M ${from.x} ${from.y} L ${to.x} ${to.y}`}
-      fill="none"
-      stroke="var(--line-strong)"
-      strokeWidth="1.5"
-      initial={{ pathLength: 0 }}
-      whileInView={{ pathLength: 1 }}
-      viewport={{ once: true, amount: 0.4 }}
-      transition={{ duration: 1.2, ease: GRAPH_EASE, delay: edge.delay }}
-    />
+    <g>
+      <path d={`M ${from.x} ${from.y} L ${to.x} ${to.y}`} fill="none" stroke="var(--line-strong)" strokeWidth="1.5" />
+      <motion.path
+        d={`M ${from.x} ${from.y} L ${to.x} ${to.y}`}
+        fill="none"
+        stroke="var(--green)"
+        strokeWidth="1.8"
+        initial={{ pathLength: 0, opacity: 0.85 }}
+        whileInView={{ pathLength: 1, opacity: 0.35 }}
+        viewport={{ once: true, amount: 0.15 }}
+        transition={{ duration: 1.2, ease: GRAPH_EASE, delay: edge.delay }}
+      />
+    </g>
   );
 }
 
@@ -361,7 +461,7 @@ function GraphNode({ node }) {
         fill={node.pulse ? "var(--green)" : "var(--paper)"}
         stroke="var(--ink)"
         strokeWidth="1.5"
-        initial={reduce ? false : { r: 0, opacity: 0 }}
+        initial={false}
         whileInView={{ r: node.r, opacity: 1 }}
         whileHover={reduce ? undefined : { r: node.r * 1.15 }}
         viewport={{ once: true, amount: 0.4 }}
@@ -374,7 +474,7 @@ function GraphNode({ node }) {
         y={node.y + node.r + 16}
         textAnchor="middle"
         className="graph-label"
-        initial={reduce ? false : { opacity: 0 }}
+        initial={false}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true, amount: 0.4 }}
         transition={{ duration: 0.6, delay: reduce ? 0 : node.delay + 0.3 }}
@@ -391,9 +491,9 @@ function AudienceGraph() {
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], [-16, 16]);
   return (
-    <div className="audience-graph" data-reveal aria-hidden="true">
+    <div className="audience-graph" role="img" aria-label="Audience Graph: a controlled database connects capture, identification, activation, and presence to an owned audience.">
       <motion.div ref={ref} className="audience-graph-canvas" style={reduce ? undefined : { y }}>
-        <svg viewBox="0 0 486 220">
+        <svg viewBox="0 0 486 220" aria-hidden="true">
           {GRAPH_EDGES.map((edge, i) => (
             <GraphEdge key={i} edge={edge} />
           ))}
@@ -406,10 +506,10 @@ function AudienceGraph() {
   );
 }
 
-function Problem() {
+function AudienceAsset() {
   return (
-    <section className="section">
-      <SectionHead label="Problem" title="Your audience should be an asset, not a list." />
+    <section className="section" id="audience-asset">
+      <SectionHead label="Audience asset" title="Your audience is your business’s greatest asset." />
       <div className="owned-relationship-grid">
         <div className="owned-relationship" data-reveal>
           <p>
@@ -433,6 +533,106 @@ const MECHANISM_STEPS = [
   ["Activate", "Full-service lifecycle email moves each segment through timely follow-up and reactivation."],
   ["Stay Present", "The brand keeps a consistent face and voice on camera, on a sustainable filming rhythm."],
 ];
+
+const CONVERSION_FLOW = ["Discovery", "Capture", "Identify", "Activate", "Conversation", "Conversion", "Reactivation", "Retention"];
+
+const OPERATIONS = [
+  ["Lifecycle communication", "Ongoing sequences that keep direct relationships active after the first interaction."],
+  ["Database reactivation", "Dormant records are organized into reachable segments and returned to useful conversation."],
+  ["Deliverability", "Authentication, reputation, sending health, and inbox performance are actively governed."],
+  ["Automation", "Behavior and timing move people through relevant next steps without losing operational control."],
+  ["Channel orchestration", "Email, SMS and conversation work as one managed operating system."],
+  ["Audience Builder", "The reachable audience under every send is cleaned, segmented, and maintained."],
+  ["Conversion systems", "Signals, conversations, and follow-up align around the path from interest to retention."],
+];
+
+const INDUSTRIES = [
+  ["Regulated organizations", "Documented, authenticated communication for programs that cannot rely on improvised outreach."],
+  ["Healthcare and hospitality", "Lifecycle communication that protects trust while reconnecting people who already know the organization."],
+  ["Public sector and compliance-heavy programs", "Clear operational ownership across large, sensitive, or highly governed audiences."],
+];
+
+const IMPLEMENTATION_STEPS = [
+  ["Assessment", "Review the database, deliverability posture, reachable audience, and deployment opportunity."],
+  ["Architecture", "Define the data layer, segments, channels, and lifecycle logic the program needs."],
+  ["Deployment", "Build, authenticate, and launch the system with the correct controls in place."],
+  ["Operation", "Run the program continuously: optimize, respond, protect deliverability, and improve conversion."],
+];
+
+function CategoryContrast() {
+  return (
+    <section className="section" id="full-service-esp">
+      <SectionHead
+        label="Full-service ESP"
+        title="Software gives you access. We run the system."
+        lede="Social Following Studios is the full-service ESP plus deployment layer. We build and run unified conversion systems."
+      />
+      <div className="contrast-grid" data-reveal>
+        <article><p className="card-label">Software-only ESP</p><p>Access to a platform, with strategy, deployment, deliverability, and lifecycle operation left to the organization.</p></article>
+        <article><p className="card-label">Social Following Studios</p><p>One accountable model for strategy, deployment, lifecycle, deliverability, conversion, optimization, and operation.</p></article>
+      </div>
+    </section>
+  );
+}
+
+function ThreeLayerModel() {
+  return (
+    <section className="section">
+      <SectionHead label="The model" title="Infrastructure. Deployment. Operation." lede="Three layers, owned and run as one unified conversion system." />
+      <ol className="layer-model" data-reveal>
+        {[["01", "Infrastructure", "Data, deliverability, automation, audience architecture, and technical controls."], ["02", "Deployment", "The campaigns, lifecycle programs, and channel coordination that put the system to work."], ["03", "Operation", "Continuous management, measurement, optimization, and accountable execution."]].map(([number, title, copy]) => (
+          <li key={title}><span>{number}</span><div><h3>{title}</h3><p>{copy}</p></div></li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function UnifiedConversionSystem() {
+  return (
+    <section className="section">
+      <SectionHead label="Unified conversion system" title="One operating flow, from discovery to retention." />
+      <ol className="conversion-flow" data-reveal>{CONVERSION_FLOW.map((step, index) => <li key={step}><span>{String(index + 1).padStart(2, "0")}</span>{step}</li>)}</ol>
+    </section>
+  );
+}
+
+function WhatWeOperate() {
+  return (
+    <section className="section" id="what-we-operate">
+      <SectionHead label="What we operate" title="The managed work behind the system." lede="The operating model covers the work a platform alone does not do." />
+      <IndexList items={OPERATIONS} />
+    </section>
+  );
+}
+
+function OperatingDiscipline() {
+  return (
+    <>
+      <section className="section" id="lifecycle"><SectionHead label="Lifecycle" title="Operation continues after the campaign." lede="We run ongoing lifecycle communication so each audience segment receives relevant next steps, not one-time blasts." /></section>
+      <section className="section" id="database-reactivation"><SectionHead label="Database + reactivation" title="Dormant relationships are active revenue channels." lede="Existing databases become useful when records are made reachable, organized by signal, and put into the right sequence." /></section>
+      <section className="section" id="deliverability"><SectionHead label="Deliverability" title="Inbox performance is part of the operating system." lede="Infrastructure, reputation, authentication, and deployment are managed together so messages have a credible path to the inbox." /></section>
+      <section className="section" id="channel-orchestration"><SectionHead label="Channel orchestration" title="Every channel works from the same system." lede="Email, SMS and conversation, automation, and supporting channels coordinate around the same audience and outcome." /></section>
+    </>
+  );
+}
+
+function Industries() {
+  return <section className="section" id="industries"><SectionHead label="Industries" title="Built for regulated and compliance-heavy operating environments." /><IndexList items={INDUSTRIES} /></section>;
+}
+
+function Implementation() {
+  return <section className="section" id="implementation"><SectionHead label="Implementation" title="Assessment. Architecture. Deployment. Operation." lede="A working sequence that turns the assessment into a managed operating system." /><FlowDiagram steps={IMPLEMENTATION_STEPS} /></section>;
+}
+
+function InsightsAndAbout() {
+  return (
+    <>
+      <section className="section" id="insights"><SectionHead label="Insights" title="Operational knowledge, drawn from the work." lede="The system is built around what it takes to maintain reachability, relevance, and direct relationships over time." /></section>
+      <section className="section" id="about"><SectionHead label="About" title="Social Following Studios is the execution layer." lede="We build and run unified conversion systems for organizations that need direct audience relationships to perform." /></section>
+    </>
+  );
+}
 
 const AUDIENCE_BUILDER_STEPS = [
   ["Ingest", "We pull the data your program already owns."],
@@ -713,8 +913,15 @@ function BareHeader() {
 
 function Header({ route }) {
   const [open, setOpen] = useState(false);
+  const reduce = useReducedMotion();
   const nav = useMemo(() => buildNav(), []);
   useEffect(() => setOpen(false), [route]);
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event) => event.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [open]);
 
   return (
     <header className="header">
@@ -742,16 +949,26 @@ function Header({ route }) {
         <span />
         <span />
       </button>
-      {open && (
-        <nav id="mobile-nav" className="mobile-nav" aria-label="Mobile">
-          {nav.map((item) => (
-            <a key={item.href} href={item.href}>
-              {item.label}
-            </a>
-          ))}
-          <a href="#/assessment">Book Your Assessment</a>
-        </nav>
-      )}
+      <AnimatePresence>
+        {open && (
+          <motion.nav
+            id="mobile-nav"
+            className="mobile-nav"
+            aria-label="Mobile"
+            initial={reduce ? false : { opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduce ? undefined : { opacity: 0, y: -10 }}
+            transition={{ duration: 0.24, ease: GRAPH_EASE }}
+          >
+            {nav.map((item) => (
+              <a key={item.href} href={item.href} onClick={() => setOpen(false)}>
+                {item.label}
+              </a>
+            ))}
+            <a href="#/assessment" onClick={() => setOpen(false)}>Book Your Assessment</a>
+          </motion.nav>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
@@ -771,7 +988,7 @@ function Footer({ variant = "full", product }) {
       <p className="footer-headline">Own your audience.</p>
       <p className="footer-name">Social Following Studios</p>
       <p className="footer-imprint">An imprint of Marchitects.</p>
-      <p className="footer-proof">20M+ daily communications supported · 400+ engagements · Building systems since 2017.</p>
+      <p className="footer-proof">The execution layer behind direct audience relationships.</p>
       <div className="footer-bottom">
         <span>© 2026 Social Following Studios</span>
         <span className="footer-legal">
@@ -787,17 +1004,27 @@ function Footer({ variant = "full", product }) {
 /* ------------------------------------------------------------------ *
  * PAGES
  * ------------------------------------------------------------------ */
-function Home() {
+function Home({ route = "/" }) {
+  useEffect(() => {
+    const target = route.replace(/^\//, "");
+    if (!target) return;
+    window.requestAnimationFrame(() => document.getElementById(target)?.scrollIntoView({ block: "start" }));
+  }, [route]);
+
   return (
     <>
       <Hero />
       <div className="page-shell">
-        <Problem />
-        <OperatingSystem />
-        <AudienceBuilderFeature />
-        <CaseStudiesSummary />
-        <BuyingSituations />
-        <AssessmentDeliverables />
+        <CategoryContrast />
+        <ThreeLayerModel />
+        <UnifiedConversionSystem />
+        <WhatWeOperate />
+        <OperatingDiscipline />
+        <AudienceAsset />
+        <Industries />
+        <section className="section" id="results"><SectionHead label="Operating record" title="Verified case studies and actual results." /><CaseTeaser /></section>
+        <Implementation />
+        <InsightsAndAbout />
         <CtaBand title="Every engagement starts with an assessment." />
       </div>
     </>
@@ -912,7 +1139,15 @@ function AssessmentPage() {
     <div className="page-shell">
       <PageHead eyebrow="The assessment" title="Book your assessment." />
       <section className="section assessment-grid">
-        <IndexList items={ASSESSMENT_OUTPUTS} />
+        <Card className="assessment-summary">
+          <CardHeader className="assessment-summary-head">
+            <p className="card-label">Assessment summary</p>
+            <CardTitle>What the assessment covers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <IndexList items={ASSESSMENT_OUTPUTS} />
+          </CardContent>
+        </Card>
         <BookingForm source="Website Assessment" />
       </section>
     </div>
@@ -1251,7 +1486,7 @@ function resolvePage(route) {
       if (key === "avatarStudio") return { node: <AvatarStudioPage />, layout: "full", footerProduct: "Avatar Studio" };
       return { node: <ProductPage route={route} />, layout: "full" };
     }
-    return { node: <Home />, layout: "full" };
+    return { node: <Home route={route} />, layout: "full" };
   }
   switch (route) {
     case "/what-we-do":
@@ -1259,6 +1494,12 @@ function resolvePage(route) {
       return { node: <WhatWeDoPage />, layout: "full" };
     case "/case-studies":
       return { node: <CaseStudiesPage />, layout: "full" };
+    case "/full-service-esp":
+    case "/industries":
+    case "/results":
+    case "/insights":
+    case "/about":
+      return { node: <Home route={route} />, layout: "full" };
     case "/assessment":
       return { node: <AssessmentPage />, layout: "full" };
     case "/contact":
@@ -1270,17 +1511,17 @@ function resolvePage(route) {
     case "/thank-you":
       return { node: <ThankYou />, layout: "full" };
     default:
-      return { node: <Home />, layout: "full" };
+      return { node: <Home route={route} />, layout: "full" };
   }
 }
 
-function App() {
-  const route = useHashRoute();
+function App({ initialRoute = "/" }) {
+  const route = useHashRoute(initialRoute);
   useReveal(route);
   usePageMeta(route);
 
   useEffect(() => {
-    window.scrollTo({ top: 0 });
+    if (!["/full-service-esp", "/industries", "/results", "/insights", "/about"].includes(route)) window.scrollTo({ top: 0 });
   }, [route]);
 
   const { node, layout, footerProduct } = useMemo(() => resolvePage(route), [route]);
