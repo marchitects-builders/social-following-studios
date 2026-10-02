@@ -85,12 +85,12 @@ const crossLinkProducts = () =>
     .map((key) => PRODUCTS[key]);
 
 const BASE_NAV = [
-  { label: "What We Do", href: "#/what-we-do" },
-  { label: "Full-Service ESP", href: "#/full-service-esp" },
-  { label: "Industries", href: "#/industries" },
-  { label: "Results", href: "#/results" },
-  { label: "Insights", href: "#/insights" },
-  { label: "About", href: "#/about" },
+  { label: "What We Do", href: "/what-we-do" },
+  { label: "Full-Service ESP", href: "/full-service-esp" },
+  { label: "Industries", href: "/industries" },
+  { label: "Results", href: "/results" },
+  { label: "Insights", href: "/insights" },
+  { label: "About", href: "/about" },
 ];
 
 function buildNav() {
@@ -232,7 +232,7 @@ function Arrow() {
   );
 }
 
-function Button({ children = "Book Your Assessment", className = "", href = "#/assessment" }) {
+function Button({ children = "Book Your Assessment", className = "", href = "/assessment" }) {
   return (
     <a className={`btn ${className}`} href={href}>
       <span>{children}</span>
@@ -670,7 +670,7 @@ function OperatingSystem() {
         title="Capture. Identify. Activate. Stay present."
         lede="Four functions, run as one accountable program."
       />
-      <a className="text-link" href="#/what-we-do">
+      <a className="text-link" href="/what-we-do">
         What we do in full <Arrow />
       </a>
     </section>
@@ -685,7 +685,7 @@ function AudienceBuilderFeature() {
         title="The reachable audience under every send."
         lede="Audience Builder turns a raw contact list into a segmented, deliverable audience."
       />
-      <a className="text-link" href="#/audience-builder">
+      <a className="text-link" href="/audience-builder">
         Audience Builder in full <Arrow />
       </a>
     </section>
@@ -724,7 +724,7 @@ function AssessmentDeliverables() {
         title="What the assessment produces."
         lede="Database health, reachable audience, deliverability, dormant revenue estimate, and deployment path."
       />
-      <a className="text-link" href="#/assessment">
+      <a className="text-link" href="/assessment">
         Book your assessment <Arrow />
       </a>
     </section>
@@ -846,7 +846,7 @@ function CaseTeaser() {
           ["Multi-Million $", "Case resolution"],
         ]}
       />
-      <a className="text-link" href="#/case-studies">
+      <a className="text-link" href="/case-studies">
         Read the case study <Arrow />
       </a>
     </article>
@@ -925,17 +925,17 @@ function Header({ route }) {
 
   return (
     <header className="header">
-      <a className="brand" href="#/" aria-label="Social Following Studios home">
+      <a className="brand" href="/" aria-label="Social Following Studios home">
         <Logo />
       </a>
       <nav className="nav" aria-label="Primary">
         {nav.map((item) => (
-          <a key={item.href} href={item.href} className={route === item.href.replace(/^#/, "") ? "current" : ""}>
+          <a key={item.href} href={item.href} className={route === item.href ? "current" : ""}>
             {item.label}
           </a>
         ))}
       </nav>
-      <a className="btn nav-cta" href="#/assessment">
+      <a className="btn nav-cta" href="/assessment">
         <span>Book Your Assessment</span>
       </a>
       <button
@@ -965,7 +965,7 @@ function Header({ route }) {
                 {item.label}
               </a>
             ))}
-            <a href="#/assessment" onClick={() => setOpen(false)}>Book Your Assessment</a>
+            <a href="/assessment" onClick={() => setOpen(false)}>Book Your Assessment</a>
           </motion.nav>
         )}
       </AnimatePresence>
@@ -1004,30 +1004,81 @@ function Footer({ variant = "full", product }) {
 /* ------------------------------------------------------------------ *
  * PAGES
  * ------------------------------------------------------------------ */
-function Home({ route = "/" }) {
-  useEffect(() => {
-    const target = route.replace(/^\//, "");
-    if (!target) return;
-    window.requestAnimationFrame(() => document.getElementById(target)?.scrollIntoView({ block: "start" }));
-  }, [route]);
+function Home() {
+  return <Hero />;
+}
 
+function FullServiceESPPage() {
   return (
-    <>
-      <Hero />
-      <div className="page-shell">
-        <CategoryContrast />
-        <ThreeLayerModel />
-        <UnifiedConversionSystem />
-        <WhatWeOperate />
-        <OperatingDiscipline />
-        <AudienceAsset />
-        <Industries />
-        <section className="section" id="results"><SectionHead label="Operating record" title="Verified case studies and actual results." /><CaseTeaser /></section>
-        <Implementation />
-        <InsightsAndAbout />
-        <CtaBand title="Every engagement starts with an assessment." />
-      </div>
-    </>
+    <div className="page-shell">
+      <PageHead
+        eyebrow="Full-service ESP"
+        title="The platform is only one layer of the work."
+        lede="Social Following Studios builds and runs unified conversion systems: infrastructure, deployment, and ongoing operation."
+      />
+      <CategoryContrast />
+      <ThreeLayerModel />
+      <UnifiedConversionSystem />
+      <WhatWeOperate />
+      <OperatingDiscipline />
+      <Implementation />
+      <CtaBand title="Put one operating model behind your audience." />
+    </div>
+  );
+}
+
+function IndustriesPage() {
+  return (
+    <div className="page-shell">
+      <PageHead
+        eyebrow="Industries"
+        title="Built for operating environments where the details matter."
+        lede="The system is designed for teams that need compliant, accountable communication—not improvised campaigns."
+      />
+      <Industries />
+      <BuyingSituations />
+      <CtaBand title="Assess the operating conditions around your audience." />
+    </div>
+  );
+}
+
+function InsightsPage() {
+  return (
+    <div className="page-shell">
+      <PageHead
+        eyebrow="Insights"
+        title="Operational knowledge from the work."
+        lede="Reachability, relevance, and direct audience relationships need a system that keeps running."
+      />
+      <section className="section">
+        <SectionHead
+          label="The point of view"
+          title="Own the relationship, then operate it with care."
+          lede="The useful work is rarely one campaign. It is the durable sequence of data stewardship, deliverability, conversation, and timely follow-through."
+        />
+      </section>
+      <CtaBand title="See what your assessment makes visible." />
+    </div>
+  );
+}
+
+function AboutPage() {
+  return (
+    <div className="page-shell">
+      <PageHead
+        eyebrow="About"
+        title="The execution layer behind unified conversion systems."
+        lede="Social Following Studios combines audience infrastructure with the people and operating discipline needed to put it to work."
+      />
+      <section className="section">
+        <SectionHead
+          label="How we work"
+          title="One accountable model, from assessment through operation."
+          lede="We stay close to the database, the channels, and the work that makes a direct relationship useful over time."
+        />
+      </section>
+      <CtaBand title="Work from the audience you already own." />
+    </div>
   );
 }
 
@@ -1382,6 +1433,7 @@ function AudienceBuilder() {
       <section className="section">
         <FlowDiagram steps={AUDIENCE_BUILDER_STEPS} />
       </section>
+      <AudienceAsset />
       <CtaBand title="Your audience, built and maintained." />
     </div>
   );
@@ -1416,7 +1468,7 @@ function ProductPage({ route }) {
   );
 }
 
-function CtaBand({ title, href = "#/assessment", cta = "Book Your Assessment" }) {
+function CtaBand({ title, href = "/assessment", cta = "Book Your Assessment" }) {
   return (
     <section className="cta-band" data-reveal>
       <h2>{title}</h2>
@@ -1452,7 +1504,7 @@ function PolicyPage({ title }) {
         title={title}
         lede="This page is being updated. Contact hello@socialfollowingstudios.com for the current policy details."
       />
-      <Button href="#/contact">Contact</Button>
+      <Button href="/contact">Contact</Button>
     </div>
   );
 }
@@ -1462,7 +1514,7 @@ function ThankYou() {
   return (
     <div className="page-shell">
       <PageHead eyebrow="Request received" title="Thanks. We have your request." lede="Our team will follow up shortly." />
-      <Button href="#/">Back home</Button>
+      <Button href="/">Back home</Button>
       {addons.length > 0 && (
         <section className="section">
           <SectionHead label="Add-on activations" title="Once your program is running, these activate inside it." />
@@ -1486,7 +1538,7 @@ function resolvePage(route) {
       if (key === "avatarStudio") return { node: <AvatarStudioPage />, layout: "full", footerProduct: "Avatar Studio" };
       return { node: <ProductPage route={route} />, layout: "full" };
     }
-    return { node: <Home route={route} />, layout: "full" };
+    return { node: <Home />, layout: "full" };
   }
   switch (route) {
     case "/what-we-do":
@@ -1495,11 +1547,15 @@ function resolvePage(route) {
     case "/case-studies":
       return { node: <CaseStudiesPage />, layout: "full" };
     case "/full-service-esp":
+      return { node: <FullServiceESPPage />, layout: "full" };
     case "/industries":
+      return { node: <IndustriesPage />, layout: "full" };
     case "/results":
+      return { node: <CaseStudiesPage />, layout: "full" };
     case "/insights":
+      return { node: <InsightsPage />, layout: "full" };
     case "/about":
-      return { node: <Home route={route} />, layout: "full" };
+      return { node: <AboutPage />, layout: "full" };
     case "/assessment":
       return { node: <AssessmentPage />, layout: "full" };
     case "/contact":
@@ -1511,7 +1567,7 @@ function resolvePage(route) {
     case "/thank-you":
       return { node: <ThankYou />, layout: "full" };
     default:
-      return { node: <Home route={route} />, layout: "full" };
+      return { node: <Home />, layout: "full" };
   }
 }
 
@@ -1520,9 +1576,7 @@ function App({ initialRoute = "/" }) {
   useReveal(route);
   usePageMeta(route);
 
-  useEffect(() => {
-    if (!["/full-service-esp", "/industries", "/results", "/insights", "/about"].includes(route)) window.scrollTo({ top: 0 });
-  }, [route]);
+  useEffect(() => window.scrollTo({ top: 0 }), [route]);
 
   const { node, layout, footerProduct } = useMemo(() => resolvePage(route), [route]);
 

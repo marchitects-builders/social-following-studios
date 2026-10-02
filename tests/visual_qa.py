@@ -1,9 +1,10 @@
 """Local visual and route gate. Run with: python tests/visual_qa.py"""
 
+import os
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
-BASE = "http://127.0.0.1:3007"
+BASE = os.getenv("BASE", "http://127.0.0.1:3007")
 OUT = Path("artifacts/visual-qa")
 OUT.mkdir(parents=True, exist_ok=True)
 ROUTES = [
@@ -38,16 +39,8 @@ def check(page, name):
     assert "246K" in dashboard.inner_text()
     assert "$3.8M" in dashboard.inner_text()
     assert "Infrastructure in place. Channels connected. Ready to deploy." in dashboard.inner_text()
-    graph = page.locator(".audience-graph")
-    graph.scroll_into_view_if_needed()
-    assert graph.is_visible()
-    assert graph.locator("path").count() >= 8
-    assert graph.locator("circle").count() >= 6
-    assert "Your audience is your business’s greatest asset." in page.locator("body").inner_text()
-    assert "Assessment" in page.locator("body").inner_text()
-    assert "Architecture" in page.locator("body").inner_text()
-    assert "Deployment" in page.locator("body").inner_text()
-    assert "Operation" in page.locator("body").inner_text()
+    assert page.locator(".audience-graph").count() == 0
+    assert page.locator(".home-route-index").count() == 0
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 2"), f"overflow on {name}"
     page.screenshot(path=str(OUT / f"home-{name}.png"), full_page=True)
     for route, expected in ROUTES[1:]:
@@ -55,12 +48,18 @@ def check(page, name):
         assert response.status == 200, (route, response.status)
         assert expected.lower() in page.locator("body").inner_text().lower(), route
         assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 2"), f"overflow on {route} at {name}"
+    page.goto(BASE + "/audience-builder", wait_until="networkidle")
+    graph = page.locator(".audience-graph")
+    graph.scroll_into_view_if_needed()
+    assert graph.is_visible()
+    assert graph.locator("path").count() >= 8
+    assert graph.locator("circle").count() >= 6
+    assert "Your audience is your business’s greatest asset." in page.locator("body").inner_text()
+    page.screenshot(path=str(OUT / f"audience-builder-{name}.png"), full_page=True)
     page.goto(BASE + "/assessment", wait_until="networkidle")
     assert page.locator(".assessment-summary").is_visible()
     assert page.locator(".assessment-summary .index-list li").count() == 5
     page.screenshot(path=str(OUT / f"assessment-{name}.png"), full_page=True)
-    page.goto(BASE + "/#/audience-builder", wait_until="networkidle")
-    assert "The reachable audience" in page.locator("h1").inner_text()
     assert page.goto(BASE + "/yochat", wait_until="networkidle").status == 404
     if name == "mobile":
         page.goto(BASE + "/", wait_until="networkidle")
@@ -84,7 +83,7 @@ with sync_playwright() as playwright:
     motion_page = browser.new_page(viewport={"width": 1440, "height": 900}, reduced_motion="no-preference")
     motion_errors = []
     motion_page.on("pageerror", lambda error: motion_errors.append(str(error)))
-    motion_page.goto(BASE + "/", wait_until="domcontentloaded")
+    motion_page.goto(BASE + "/audience-builder", wait_until="domcontentloaded")
     graph = motion_page.locator(".audience-graph")
     graph.scroll_into_view_if_needed()
     animated_edge = graph.locator("path").nth(1)
