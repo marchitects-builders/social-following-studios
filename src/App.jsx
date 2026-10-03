@@ -967,7 +967,6 @@ function Footer({ variant = "full", product }) {
   }
   return (
     <footer className={`footer ${variant === "minimal" ? "minimal" : ""}`}>
-      <p className="footer-headline">Own your audience.</p>
       <p className="footer-name">Social Following Studios</p>
       <p className="footer-imprint">An imprint of Marchitects.</p>
       <p className="footer-proof">The execution layer behind direct audience relationships.</p>
