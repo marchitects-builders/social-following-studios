@@ -2673,3 +2673,81 @@ p {
 
   .footer:not(.footer-product) { padding-bottom: 22px; }
 }
+
+/* Historical SFS hero object restoration. The assessment canvas deliberately
+   owns the larger right-hand half of the hero; all type remains the locked
+   DM Sans system. */
+.hero {
+  min-height: 585px;
+  padding-block: clamp(58px, 8vw, 104px) clamp(54px, 7vw, 88px);
+}
+
+.hero-inner {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(32px, 4vw, 64px);
+}
+
+.hero-assessment-card {
+  min-width: 0;
+}
+
+.hero-assessment-card .card-label,
+.hero-assessment-card .metric-label,
+.hero-assessment-card .status-pill,
+.hero-assessment-card .summary-copy,
+.hero-assessment-card .stat-caption {
+  font-family: var(--sans);
+}
+
+.hero-assessment-card .small-serif,
+.hero-assessment-card .big-percent,
+.hero-assessment-card .hero-stat-value,
+.hero-assessment-card .panel-foot {
+  font-family: var(--sans);
+}
+
+.hero-assessment-card .small-serif {
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+
+.hero-assessment-card .big-percent {
+  font-weight: 600;
+  letter-spacing: -0.07em;
+  line-height: 0.9;
+}
+
+.hero-assessment-card .hero-stat-value {
+  font-weight: 600;
+  letter-spacing: -0.05em;
+}
+
+.hero-assessment-card .panel-foot {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.28;
+}
+
+@media (max-width: 1000px) {
+  .hero { min-height: auto; }
+  .hero-inner { grid-template-columns: 1fr; gap: 40px; }
+}
+
+@media (max-width: 760px) {
+  .hero { padding-block: 54px 68px; }
+  .summary-main,
+  .stats-row { grid-template-columns: 1fr; }
+  .summary-score,
+  .hero-stat { border-right: 0; border-bottom: 1px solid var(--line); }
+  .hero-stat:last-child { border-bottom: 0; }
+}
+
+@media (max-width: 520px) {
+  .panel-head,
+  .panel-foot { padding-inline: 22px; }
+  .panel-head { min-height: 68px; }
+  .status-pill { padding: 0 10px; font-size: 12px; }
+  .big-percent { font-size: 64px; }
+  .assessment-chart { padding-top: 24px; }
+  .assessment-chart svg { height: auto; }
+}

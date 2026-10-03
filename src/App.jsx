@@ -327,26 +327,38 @@ function AssessmentChart() {
   );
 }
 
+function AssessmentMetric({ label, value, caption }) {
+  return (
+    <div className="hero-stat">
+      <p className="metric-label">{label}</p>
+      <p className="hero-stat-value">{value}</p>
+      <p className="stat-caption">{caption}</p>
+    </div>
+  );
+}
+
 function HeroAssessmentSummary() {
   return (
-    <aside className="hero-growth-visual" aria-label="Audience reactivation potential: 83 percent">
-      <div className="hero-growth-head">
-        <p>Audience reactivation</p>
-        <span><i />Ready to reactivate</span>
+    <article className="visual-panel hero-assessment-card" aria-label="Assessment summary">
+      <div className="panel-head">
+        <p className="card-label">Assessment Summary</p>
+        <span className="status-pill"><span className="dot" />Ready to Reactivate</span>
       </div>
-      <div className="hero-growth-main">
-        <div className="hero-growth-score">
-          <strong>83%</strong>
-          <p>reachable opportunity across current customer activity and existing records</p>
+      <div className="summary-main">
+        <div className="summary-score">
+          <p className="small-serif">Audience Reactivation Potential</p>
+          <p className="big-percent">83%</p>
+          <p className="summary-copy">High potential to reach dormant connections across your channels.</p>
         </div>
-        <div className="hero-growth-chart"><AssessmentChart /></div>
+        <div className="assessment-chart"><AssessmentChart /></div>
       </div>
-      <div className="hero-growth-foot">
-        <span><b>246K</b>reachable contacts</span>
-        <span><b>+18%</b>six-month growth</span>
-        <span><b>$3.8M</b>dormant revenue</span>
+      <div className="stats-row">
+        <AssessmentMetric label="Reachable Contacts" value="246K" caption="+18% vs. previous six months" />
+        <AssessmentMetric label="Dormant Revenue" value="$3.8M" caption="Estimated opportunity" />
+        <AssessmentMetric label="Data Health" value="78%" caption="Above industry average" />
       </div>
-    </aside>
+      <div className="panel-foot"><span className="check-icon">✓</span>Infrastructure in place. Channels connected. Ready to deploy.</div>
+    </article>
   );
 }
 
@@ -380,41 +392,41 @@ function Hero() {
 const GRAPH_EASE = [0.22, 1, 0.36, 1];
 
 const GRAPH_NODES = [
-  { id: "root", x: 54, y: 172, r: 10, label: "Database", pulse: true, delay: 0 },
-  { id: "capture", x: 146, y: 145, r: 6, label: "Capture", delay: 0.22 },
-  { id: "identify", x: 236, y: 116, r: 6, label: "Identify", delay: 0.44 },
-  { id: "activate", x: 326, y: 84, r: 6, label: "Activate", delay: 0.66 },
-  { id: "present", x: 416, y: 54, r: 6, label: "Stay present", delay: 0.88 },
-  { id: "output", x: 510, y: 24, r: 12, label: "Owned audience", pulse: true, delay: 1.12 },
+  { id: "root", x: 48, y: 110, r: 9, label: "Database", pulse: true, delay: 0 },
+  { id: "capture", x: 240, y: 30, r: 6, label: "Capture", delay: 1.2 },
+  { id: "identify", x: 240, y: 77, r: 6, label: "Identify", delay: 1.28 },
+  { id: "activate", x: 240, y: 143, r: 6, label: "Activate", delay: 1.36 },
+  { id: "present", x: 240, y: 190, r: 6, label: "Stay present", delay: 1.44 },
+  { id: "output", x: 424, y: 110, r: 9, label: "Owned audience", pulse: true, delay: 1.76 },
 ];
 
 const graphNode = (id) => GRAPH_NODES.find((n) => n.id === id);
 
 const GRAPH_EDGES = [
   { from: "root", to: "capture", delay: 0 },
-  { from: "capture", to: "identify", delay: 0.16 },
-  { from: "identify", to: "activate", delay: 0.32 },
-  { from: "activate", to: "present", delay: 0.48 },
-  { from: "present", to: "output", delay: 0.64 },
+  { from: "root", to: "identify", delay: 0.08 },
+  { from: "root", to: "activate", delay: 0.16 },
+  { from: "root", to: "present", delay: 0.24 },
+  { from: "capture", to: "output", delay: 0.32 },
+  { from: "identify", to: "output", delay: 0.4 },
+  { from: "activate", to: "output", delay: 0.48 },
+  { from: "present", to: "output", delay: 0.56 },
 ];
 
 function GraphEdge({ edge }) {
   const from = graphNode(edge.from);
   const to = graphNode(edge.to);
   return (
-    <g>
-      <path d={`M ${from.x} ${from.y} L ${to.x} ${to.y}`} fill="none" stroke="var(--line-strong)" strokeWidth="1.5" />
-      <motion.path
-        d={`M ${from.x} ${from.y} L ${to.x} ${to.y}`}
-        fill="none"
-        stroke="var(--green)"
-        strokeWidth="1.8"
-        initial={{ pathLength: 0, opacity: 0.85 }}
-        whileInView={{ pathLength: 1, opacity: 0.35 }}
-        viewport={{ once: true, amount: 0.15 }}
-        transition={{ duration: 1.2, ease: GRAPH_EASE, delay: edge.delay }}
-      />
-    </g>
+    <motion.path
+      d={`M ${from.x} ${from.y} L ${to.x} ${to.y}`}
+      fill="none"
+      stroke="var(--line-strong)"
+      strokeWidth="1.5"
+      initial={{ pathLength: 0 }}
+      whileInView={{ pathLength: 1 }}
+      viewport={{ once: true, amount: 0.4 }}
+      transition={{ duration: 1.2, ease: GRAPH_EASE, delay: edge.delay }}
+    />
   );
 }
 
@@ -440,7 +452,7 @@ function GraphNode({ node }) {
         fill={node.pulse ? "var(--green)" : "var(--paper)"}
         stroke="var(--ink)"
         strokeWidth="1.5"
-        initial={false}
+        initial={reduce ? false : { r: 0, opacity: 0 }}
         whileInView={{ r: node.r, opacity: 1 }}
         whileHover={reduce ? undefined : { r: node.r * 1.15 }}
         viewport={{ once: true, amount: 0.4 }}
@@ -453,41 +465,13 @@ function GraphNode({ node }) {
         y={node.y + node.r + 16}
         textAnchor="middle"
         className="graph-label"
-        initial={false}
+        initial={reduce ? false : { opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true, amount: 0.4 }}
         transition={{ duration: 0.6, delay: reduce ? 0 : node.delay + 0.3 }}
       >
         {node.label}
       </motion.text>
-    </g>
-  );
-}
-
-function GraphGrowthField({ reduce }) {
-  const area = "M 48 182 C 136 156, 202 134, 286 99 S 428 55, 520 17 L 520 200 L 48 200 Z";
-  const curve = "M 48 182 C 136 156, 202 134, 286 99 S 428 55, 520 17";
-  return (
-    <g aria-hidden="true">
-      <motion.path
-        d={area}
-        fill="var(--green)"
-        initial={reduce ? false : { opacity: 0 }}
-        whileInView={{ opacity: 0.1 }}
-        viewport={{ once: true, amount: 0.25 }}
-        transition={{ duration: 0.8, ease: GRAPH_EASE }}
-      />
-      <motion.path
-        d={curve}
-        fill="none"
-        stroke="var(--green-deep)"
-        strokeWidth="2.25"
-        strokeLinecap="round"
-        initial={reduce ? false : { pathLength: 0, opacity: 0 }}
-        whileInView={{ pathLength: 1, opacity: 0.42 }}
-        viewport={{ once: true, amount: 0.25 }}
-        transition={{ duration: 1.1, ease: GRAPH_EASE }}
-      />
     </g>
   );
 }
@@ -500,8 +484,7 @@ function AudienceGraph() {
   return (
     <div className="audience-graph" role="img" aria-label="Audience Graph: a controlled database connects capture, identification, activation, and presence to an owned audience.">
       <motion.div ref={ref} className="audience-graph-canvas" style={reduce ? undefined : { y }}>
-        <svg viewBox="0 0 560 230" aria-hidden="true">
-          <GraphGrowthField reduce={reduce} />
+        <svg viewBox="0 0 472 220" aria-hidden="true">
           {GRAPH_EDGES.map((edge, i) => (
             <GraphEdge key={i} edge={edge} />
           ))}
