@@ -328,21 +328,24 @@ function AssessmentChart() {
 
 function HeroAssessmentSummary() {
   return (
-    <article className="visual-panel hero-assessment-card" aria-label="Assessment summary">
-      <div className="panel-head">
-        <p className="card-label">Assessment Summary</p>
-        <span className="status-pill"><span className="dot" />Ready to Reactivate</span>
+    <aside className="hero-growth-visual" aria-label="Audience reactivation potential: 83 percent">
+      <div className="hero-growth-head">
+        <p>Audience reactivation</p>
+        <span><i />Ready to reactivate</span>
       </div>
-      <div className="summary-main">
-        <div className="summary-score">
-          <p className="small-serif">Audience Reactivation Potential</p>
-          <p className="big-percent">83%</p>
-          <p className="summary-copy">High potential to reach dormant connections across your channels.</p>
+      <div className="hero-growth-main">
+        <div className="hero-growth-score">
+          <strong>83%</strong>
+          <p>reachable opportunity across current customer activity and existing records</p>
         </div>
-        <div className="assessment-chart"><AssessmentChart /></div>
+        <div className="hero-growth-chart"><AssessmentChart /></div>
       </div>
-      <div className="panel-foot"><span className="check-icon">✓</span>Infrastructure in place. Channels connected. Ready to deploy.</div>
-    </article>
+      <div className="hero-growth-foot">
+        <span><b>246K</b>reachable contacts</span>
+        <span><b>+18%</b>six-month growth</span>
+        <span><b>$3.8M</b>dormant revenue</span>
+      </div>
+    </aside>
   );
 }
 
@@ -353,9 +356,7 @@ function Hero() {
         <div className="hero-copy" data-reveal>
           <p className="eyebrow">Full-service ESP</p>
           <h1 className="hero-title" aria-label="Own your audience.">
-            Own your
-            <br />
-            audience.
+            Own your audience.
           </h1>
           <p className="hero-descriptor">
             Social Following Studios builds and runs unified conversion systems.
@@ -990,23 +991,24 @@ function HomeProblem() {
     <section className="home-problem" aria-labelledby="relationship-problem-title">
       <div className="home-beat-inner home-problem-grid">
         <div>
-          <p className="home-kicker">The break</p>
           <h2 id="relationship-problem-title">Most customer attention never becomes a direct relationship.</h2>
           <p className="home-problem-copy">
             Businesses generate attention through search, websites, social platforms, inquiries, reservations, purchases, and existing databases. That activity often stays disconnected.
           </p>
-          <p className="home-problem-emphasis">Attention happened. The relationship did not continue.</p>
         </div>
         <div className="fragmentation-visual" aria-label="Fragmented customer activity becoming one direct relationship">
           <span className="fragment-source source-search">Search</span>
           <span className="fragment-source source-social">Social</span>
-          <span className="fragment-source source-inquiry">Inquiry</span>
-          <span className="fragment-source source-purchase">Purchase</span>
-          <span className="fragment-source source-database">Database</span>
+          <span className="fragment-source source-website">Website</span>
+          <span className="fragment-source source-reviews">Reviews</span>
+          <span className="fragment-source source-reservations">Reservations / purchases</span>
+          <span className="fragment-source source-events">Events / inquiries</span>
           <span className="fragment-path path-one" />
           <span className="fragment-path path-two" />
           <span className="fragment-path path-three" />
           <span className="fragment-path path-four" />
+          <span className="fragment-path path-five" />
+          <span className="fragment-path path-six" />
           <span className="fragment-destination">Reachable<br />customer</span>
         </div>
       </div>
@@ -1019,7 +1021,6 @@ function HomeSystem() {
   return (
     <section className="home-system" id="system" aria-labelledby="system-title">
       <div className="home-beat-inner">
-        <p className="home-kicker home-kicker--green">The operating sequence</p>
         <h2 id="system-title" className="home-system-title">How the system works</h2>
         <div className="home-system-intro">
           <p>A business gets attention every day. Social Following Studios turns that activity into a communication system the business can keep using.</p>
@@ -1031,12 +1032,37 @@ function HomeSystem() {
       </div>
       <div className="home-graph-stage">
         <div className="home-beat-inner">
-          <p className="home-graph-intro">Every identified customer adds to the audience the business can reach directly.</p>
+          <p className="home-graph-intro">Customer and database activity becomes a direct, usable audience.</p>
           <AudienceGraph />
+          <p className="home-graph-statement">Every identified customer adds to the audience the business can reach directly.</p>
           <p className="home-graph-conclusion">Your audience is your business’s greatest asset.</p>
         </div>
       </div>
     </section>
+  );
+}
+
+function HomeProofLogos() {
+  const reduce = useReducedMotion();
+  const logos = TRUSTED_LOGOS.slice(0, 6);
+  const track = reduce ? logos : [...logos, ...logos];
+  return (
+    <div className={`home-proof-logos${reduce ? " home-proof-logos--static" : ""}`} aria-label="Organizations supported">
+      <span>Trusted by organizations that lead</span>
+      <div className="home-proof-logos-viewport">
+        <div className="home-proof-logos-track">
+          {track.map(([slug, name], index) => (
+            <img
+              key={`${slug}-${index}`}
+              src={`/logos/${slug}.webp`}
+              alt={name}
+              loading="lazy"
+              aria-hidden={index >= logos.length ? "true" : undefined}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1051,30 +1077,24 @@ function HomeProof() {
             <p className="home-case-label">Legal / Mass tort</p>
             <h2 id="proof-title">A dormant plaintiff database reached a multi-million dollar resolution.</h2>
             <p>We protected inbox placement, sequenced the outreach, and built the program around claimant trust.</p>
-            <div className="home-case-metric"><strong>95%</strong><span>Inbox placement held</span></div>
+            <div className="home-case-metric"><strong>95%</strong><span>fewer placements lost</span></div>
             <blockquote>Our messaging reached our claimants. That was the difference.<cite>Michael T., Esquire · Managing Attorney, mass tort firm</cite></blockquote>
           </div>
         </article>
-        <div className="home-proof-references" aria-label="Additional documented results">
-          {CASE_STUDIES.slice(0, 3).map((study) => <p key={study.title}><span>{study.type}</span>{study.stat ? study.stat[1] : study.title}</p>)}
+        <HomeProofLogos />
+        <div className="home-proof-close" id="operating-contexts">
+          <p className="home-proof-context">Built for regulated programs, healthcare and hospitality, and public-sector audiences where direct communication carries real responsibility.</p>
+          <div className="home-assessment-explainer">
+            <p className="home-kicker">Start with the assessment</p>
+            <p>The assessment identifies where customer information enters, where communication breaks, what usable audience already exists, and what the first deployment should be.</p>
+          </div>
+          <div className="home-final-cta" aria-label="Book your assessment">
+            <h2>Own your audience.</h2>
+            <p>Start with an assessment of the audience, customer data, and communication paths you already have.</p>
+            <Button>Book Your Assessment</Button>
+          </div>
         </div>
       </div>
-      <LogoBar />
-      <div className="home-beat-inner home-close-context" id="operating-contexts">
-        <p className="home-kicker">Operating contexts</p>
-        <p>Built for regulated programs, healthcare and hospitality, and public-sector audiences where direct communication carries real responsibility.</p>
-        <div className="home-assessment-explainer">
-          <p className="home-kicker">Start with the assessment</p>
-          <p>The assessment identifies where customer information enters, where communication breaks, what usable audience already exists, and what the first deployment should be.</p>
-        </div>
-      </div>
-      <section className="home-final-cta" aria-label="Book your assessment">
-        <div className="home-beat-inner">
-          <h2>Own your audience.</h2>
-          <p>Start with an assessment of the audience, customer data, and communication paths you already have.</p>
-          <Button>Book Your Assessment</Button>
-        </div>
-      </section>
     </section>
   );
 }
