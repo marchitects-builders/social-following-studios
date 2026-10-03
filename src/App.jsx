@@ -992,16 +992,18 @@ function Footer({ variant = "full", product }) {
   }
   return (
     <footer className={`footer ${variant === "minimal" ? "minimal" : ""}`}>
-      <p className="footer-name">Social Following Studios</p>
-      <p className="footer-imprint">An imprint of Marchitects.</p>
-      <p className="footer-proof">The execution layer behind direct audience relationships.</p>
-      <div className="footer-bottom">
+      <div className="footer-line">
+        <span>Social Following Studios</span>
+        <span aria-hidden="true">·</span>
+        <span>An imprint of Marchitects.</span>
+        <span aria-hidden="true">·</span>
         <span>© 2026 Social Following Studios</span>
-        <span className="footer-legal">
-          <a href="/#/terms">Terms</a>
-          <a href="/#/privacy">Privacy</a>
-          <a href="/#/contact">Contact</a>
-        </span>
+        <span aria-hidden="true">·</span>
+        <a href="/#/terms">Terms</a>
+        <span aria-hidden="true">·</span>
+        <a href="/#/privacy">Privacy</a>
+        <span aria-hidden="true">·</span>
+        <a href="/#/contact">Contact</a>
       </div>
     </footer>
   );
