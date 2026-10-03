@@ -961,7 +961,6 @@ function Footer({ variant = "full", product }) {
       <footer className="footer footer-product">
         <Logo className="footer-product-logo" />
         <p className="footer-product-name">{product} by Social Following Studios</p>
-        <p className="footer-product-tagline">Own Your Audience.</p>
       </footer>
     );
   }
