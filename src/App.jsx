@@ -379,25 +379,22 @@ function Hero() {
 const GRAPH_EASE = [0.22, 1, 0.36, 1];
 
 const GRAPH_NODES = [
-  { id: "root", x: 48, y: 110, r: 9, label: "Database", pulse: true, delay: 0 },
-  { id: "capture", x: 240, y: 30, r: 6, label: "Capture", delay: 1.2 },
-  { id: "identify", x: 240, y: 77, r: 6, label: "Identify", delay: 1.28 },
-  { id: "activate", x: 240, y: 143, r: 6, label: "Activate", delay: 1.36 },
-  { id: "present", x: 240, y: 190, r: 6, label: "Stay present", delay: 1.44 },
-  { id: "output", x: 424, y: 110, r: 9, label: "Owned audience", pulse: true, delay: 1.76 },
+  { id: "root", x: 54, y: 172, r: 10, label: "Database", pulse: true, delay: 0 },
+  { id: "capture", x: 146, y: 145, r: 6, label: "Capture", delay: 0.22 },
+  { id: "identify", x: 236, y: 116, r: 6, label: "Identify", delay: 0.44 },
+  { id: "activate", x: 326, y: 84, r: 6, label: "Activate", delay: 0.66 },
+  { id: "present", x: 416, y: 54, r: 6, label: "Stay present", delay: 0.88 },
+  { id: "output", x: 510, y: 24, r: 12, label: "Owned audience", pulse: true, delay: 1.12 },
 ];
 
 const graphNode = (id) => GRAPH_NODES.find((n) => n.id === id);
 
 const GRAPH_EDGES = [
   { from: "root", to: "capture", delay: 0 },
-  { from: "root", to: "identify", delay: 0.08 },
-  { from: "root", to: "activate", delay: 0.16 },
-  { from: "root", to: "present", delay: 0.24 },
-  { from: "capture", to: "output", delay: 0.32 },
-  { from: "identify", to: "output", delay: 0.4 },
-  { from: "activate", to: "output", delay: 0.48 },
-  { from: "present", to: "output", delay: 0.56 },
+  { from: "capture", to: "identify", delay: 0.16 },
+  { from: "identify", to: "activate", delay: 0.32 },
+  { from: "activate", to: "present", delay: 0.48 },
+  { from: "present", to: "output", delay: 0.64 },
 ];
 
 function GraphEdge({ edge }) {
@@ -466,6 +463,34 @@ function GraphNode({ node }) {
   );
 }
 
+function GraphGrowthField({ reduce }) {
+  const area = "M 48 182 C 136 156, 202 134, 286 99 S 428 55, 520 17 L 520 200 L 48 200 Z";
+  const curve = "M 48 182 C 136 156, 202 134, 286 99 S 428 55, 520 17";
+  return (
+    <g aria-hidden="true">
+      <motion.path
+        d={area}
+        fill="var(--green)"
+        initial={reduce ? false : { opacity: 0 }}
+        whileInView={{ opacity: 0.1 }}
+        viewport={{ once: true, amount: 0.25 }}
+        transition={{ duration: 0.8, ease: GRAPH_EASE }}
+      />
+      <motion.path
+        d={curve}
+        fill="none"
+        stroke="var(--green-deep)"
+        strokeWidth="2.25"
+        strokeLinecap="round"
+        initial={reduce ? false : { pathLength: 0, opacity: 0 }}
+        whileInView={{ pathLength: 1, opacity: 0.42 }}
+        viewport={{ once: true, amount: 0.25 }}
+        transition={{ duration: 1.1, ease: GRAPH_EASE }}
+      />
+    </g>
+  );
+}
+
 function AudienceGraph() {
   const reduce = useReducedMotion();
   const ref = useRef(null);
@@ -474,7 +499,8 @@ function AudienceGraph() {
   return (
     <div className="audience-graph" role="img" aria-label="Audience Graph: a controlled database connects capture, identification, activation, and presence to an owned audience.">
       <motion.div ref={ref} className="audience-graph-canvas" style={reduce ? undefined : { y }}>
-        <svg viewBox="0 0 486 220" aria-hidden="true">
+        <svg viewBox="0 0 560 230" aria-hidden="true">
+          <GraphGrowthField reduce={reduce} />
           {GRAPH_EDGES.map((edge, i) => (
             <GraphEdge key={i} edge={edge} />
           ))}
