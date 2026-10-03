@@ -87,6 +87,7 @@ const crossLinkProducts = () =>
 const BASE_NAV = [
   { label: "What We Do", href: "/what-we-do" },
   { label: "Full-Service ESP", href: "/full-service-esp" },
+  { label: "Audience Builder", href: "/audience-builder" },
   { label: "Results", href: "/results" },
   { label: "Insights", href: "/insights" },
 ];
@@ -542,7 +543,7 @@ const MECHANISM_STEPS = [
 ];
 
 const CONVERSION_FLOW = ["Discovery", "Capture", "Identify", "Activate", "Conversation", "Conversion", "Reactivation", "Retention"];
-const HOMEPAGE_SYSTEM_FLOW = ["Discover", "Identify", "Reach", "Follow up", "Convert", "Reactivate"];
+const HOMEPAGE_SYSTEM_FLOW = ["Discover", "Identify", "Build audience", "Reach", "Follow up", "Convert", "Reactivate"];
 
 const OPERATIONS = [
   ["Lifecycle communication", "Ongoing sequences that keep direct relationships active after the first interaction."],
@@ -1058,6 +1059,7 @@ function HomeSystem() {
       </div>
       <div className="home-graph-stage">
         <div className="home-beat-inner">
+          <p className="home-graph-label">Audience Builder</p>
           <p className="home-graph-intro">Customer and database activity becomes a direct, usable audience.</p>
           <AudienceGraph />
           <p className="home-graph-statement">Every identified customer adds to the audience the business can reach directly.</p>
@@ -1545,16 +1547,30 @@ function AvatarStudioPage() {
 
 function AudienceBuilder() {
   return (
-    <div className="page-shell">
+    <div className="page-shell audience-builder-page">
       <PageHead
         eyebrow="Audience Builder"
-        title="The reachable audience under every send."
-        lede="Audience Builder turns a raw contact list into a segmented, deliverable audience."
+        title="The audience your business can reach directly."
+        lede="Audience Builder identifies customer activity and turns it into a direct, usable audience that Social Following Studios operates across email and SMS."
       />
-      <section className="section">
-        <FlowDiagram steps={AUDIENCE_BUILDER_STEPS} />
+      <section className="audience-builder-visual" aria-labelledby="audience-builder-visual-title">
+        <div className="audience-builder-visual-head">
+          <p className="section-label">Known audience growth</p>
+          <p id="audience-builder-visual-title">Customer activity enters fragmented. Identified relationships accumulate into direct reach.</p>
+        </div>
+        <AudienceGraph />
+        <p className="audience-builder-visual-caption">The graph shows the operating shift: customer activity is identified, added to the audience, and made available for follow-up, conversion, and reactivation.</p>
       </section>
-      <AudienceAsset />
+      <section className="section audience-builder-system" aria-labelledby="audience-builder-system-title">
+        <SectionHead
+          label="The operated system"
+          title="The audience is built, then put to work."
+          lede="Social Following Studios connects the customer touchpoints, operates email and SMS, and keeps the audience growing through ongoing activity."
+        />
+        <ol className="home-system-flow audience-builder-flow" aria-label="Audience Builder operating sequence">
+          {HOMEPAGE_SYSTEM_FLOW.map((step, index) => <li key={step}><span>{String(index + 1).padStart(2, "0")}</span>{step}</li>)}
+        </ol>
+      </section>
       <CtaBand title="Your audience, built and maintained." />
     </div>
   );
