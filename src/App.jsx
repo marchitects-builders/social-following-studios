@@ -87,10 +87,8 @@ const crossLinkProducts = () =>
 const BASE_NAV = [
   { label: "What We Do", href: "/what-we-do" },
   { label: "Full-Service ESP", href: "/full-service-esp" },
-  { label: "Industries", href: "/industries" },
   { label: "Results", href: "/results" },
   { label: "Insights", href: "/insights" },
-  { label: "About", href: "/about" },
 ];
 
 function buildNav() {
@@ -328,16 +326,6 @@ function AssessmentChart() {
   );
 }
 
-function AssessmentMetric({ label, value, caption }) {
-  return (
-    <div className="hero-stat">
-      <p className="metric-label">{label}</p>
-      <p className="hero-stat-value">{value}</p>
-      <p className="stat-caption">{caption}</p>
-    </div>
-  );
-}
-
 function HeroAssessmentSummary() {
   return (
     <article className="visual-panel hero-assessment-card" aria-label="Assessment summary">
@@ -352,11 +340,6 @@ function HeroAssessmentSummary() {
           <p className="summary-copy">High potential to reach dormant connections across your channels.</p>
         </div>
         <div className="assessment-chart"><AssessmentChart /></div>
-      </div>
-      <div className="stats-row">
-        <AssessmentMetric label="Reachable Contacts" value="246K" caption="+18% vs. previous six months" />
-        <AssessmentMetric label="Dormant Revenue" value="$3.8M" caption="Estimated opportunity" />
-        <AssessmentMetric label="Data Health" value="78%" caption="Above industry average" />
       </div>
       <div className="panel-foot"><span className="check-icon">✓</span>Infrastructure in place. Channels connected. Ready to deploy.</div>
     </article>
@@ -375,12 +358,9 @@ function Hero() {
             audience.
           </h1>
           <p className="hero-descriptor">
-            Social Following Studios is the full-service ESP plus deployment layer.
+            Social Following Studios builds and runs unified conversion systems.
           </p>
-          <p className="hero-support">
-            We build and run unified conversion systems.
-          </p>
-          <p className="hero-category">Infrastructure · Deployment · Operation</p>
+          <p className="hero-support">We turn customer activity and existing data into direct relationships your business can keep using.</p>
           <Button>Book Your Assessment</Button>
         </div>
         <HeroAssessmentSummary />
@@ -535,6 +515,7 @@ const MECHANISM_STEPS = [
 ];
 
 const CONVERSION_FLOW = ["Discovery", "Capture", "Identify", "Activate", "Conversation", "Conversion", "Reactivation", "Retention"];
+const HOMEPAGE_SYSTEM_FLOW = ["Discover", "Identify", "Reach", "Follow up", "Convert", "Reactivate"];
 
 const OPERATIONS = [
   ["Lifecycle communication", "Ongoing sequences that keep direct relationships active after the first interaction."],
@@ -547,9 +528,9 @@ const OPERATIONS = [
 ];
 
 const INDUSTRIES = [
-  ["Regulated organizations", "Documented, authenticated communication for programs that cannot rely on improvised outreach."],
-  ["Healthcare and hospitality", "Lifecycle communication that protects trust while reconnecting people who already know the organization."],
-  ["Public sector and compliance-heavy programs", "Clear operational ownership across large, sensitive, or highly governed audiences."],
+  ["Regulated programs", "Communication has to be documented, authenticated, and governed at every stage of deployment."],
+  ["Healthcare and hospitality", "Existing relationships carry history and expectation; lifecycle communication has to preserve both."],
+  ["Public sector", "Large constituent audiences need a clear operating model for reachability, relevance, and follow-through."],
 ];
 
 const IMPLEMENTATION_STEPS = [
@@ -618,7 +599,7 @@ function OperatingDiscipline() {
 }
 
 function Industries() {
-  return <section className="section" id="industries"><SectionHead label="Industries" title="Built for regulated and compliance-heavy operating environments." /><IndexList items={INDUSTRIES} /></section>;
+  return <section className="section" id="industries"><SectionHead label="Where the model fits" title="For organizations where direct communication carries real responsibility." /><IndexList items={INDUSTRIES} /></section>;
 }
 
 function Implementation() {
@@ -694,16 +675,16 @@ function AudienceBuilderFeature() {
 
 const BUYING_SITUATIONS = [
   [
-    "Founders",
-    "The database has outgrown what one person can run by hand, and dormant contacts sit unworked.",
+    "The database outgrows the team",
+    "Contacts, segments, and follow-up have become too consequential to run by hand.",
   ],
   [
-    "Hospitality",
-    "Past guests and clients have gone quiet while acquisition spend keeps paying for people already reached once.",
+    "Acquisition keeps replacing reactivation",
+    "New spend rises while the people who already know the organization are left inactive.",
   ],
   [
-    "Compliance-heavy organizations",
-    "Outreach has to be documented and authenticated, not improvised channel by channel.",
+    "The program needs an owner",
+    "Strategy, deliverability, deployment, and optimization need to operate as one accountable system.",
   ],
 ];
 
@@ -1004,8 +985,102 @@ function Footer({ variant = "full", product }) {
 /* ------------------------------------------------------------------ *
  * PAGES
  * ------------------------------------------------------------------ */
+function HomeProblem() {
+  return (
+    <section className="home-problem" aria-labelledby="relationship-problem-title">
+      <div className="home-beat-inner home-problem-grid">
+        <div>
+          <p className="home-kicker">The break</p>
+          <h2 id="relationship-problem-title">Most customer attention never becomes a direct relationship.</h2>
+          <p className="home-problem-copy">
+            Businesses generate attention through search, websites, social platforms, inquiries, reservations, purchases, and existing databases. That activity often stays disconnected.
+          </p>
+          <p className="home-problem-emphasis">Attention happened. The relationship did not continue.</p>
+        </div>
+        <div className="fragmentation-visual" aria-label="Fragmented customer activity becoming one direct relationship">
+          <span className="fragment-source source-search">Search</span>
+          <span className="fragment-source source-social">Social</span>
+          <span className="fragment-source source-inquiry">Inquiry</span>
+          <span className="fragment-source source-purchase">Purchase</span>
+          <span className="fragment-source source-database">Database</span>
+          <span className="fragment-path path-one" />
+          <span className="fragment-path path-two" />
+          <span className="fragment-path path-three" />
+          <span className="fragment-path path-four" />
+          <span className="fragment-destination">Reachable<br />customer</span>
+        </div>
+      </div>
+      <p className="home-problem-transition">The business changes when a customer becomes reachable.</p>
+    </section>
+  );
+}
+
+function HomeSystem() {
+  return (
+    <section className="home-system" id="system" aria-labelledby="system-title">
+      <div className="home-beat-inner">
+        <p className="home-kicker home-kicker--green">The operating sequence</p>
+        <h2 id="system-title" className="home-system-title">How the system works</h2>
+        <div className="home-system-intro">
+          <p>A business gets attention every day. Social Following Studios turns that activity into a communication system the business can keep using.</p>
+          <p>We identify the customer, build the audience, connect email and SMS, run the follow-up, and move people toward the next action.</p>
+        </div>
+        <ol className="home-system-flow" aria-label="Operating sequence">
+          {HOMEPAGE_SYSTEM_FLOW.map((step, index) => <li key={step}><span>{String(index + 1).padStart(2, "0")}</span>{step}</li>)}
+        </ol>
+      </div>
+      <div className="home-graph-stage">
+        <div className="home-beat-inner">
+          <p className="home-graph-intro">Every identified customer adds to the audience the business can reach directly.</p>
+          <AudienceGraph />
+          <p className="home-graph-conclusion">Your audience is your business’s greatest asset.</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HomeProof() {
+  return (
+    <section className="home-proof" id="results" aria-labelledby="proof-title">
+      <div className="home-beat-inner">
+        <p className="home-kicker">What changes when it is operated</p>
+        <article className="home-featured-case" data-reveal>
+          <div className="home-case-context"><span>Operating problem</span><p>A dormant plaintiff database had stopped responding while competing firms reached the same claimant pool.</p></div>
+          <div className="home-case-result">
+            <p className="home-case-label">Legal / Mass tort</p>
+            <h2 id="proof-title">A dormant plaintiff database reached a multi-million dollar resolution.</h2>
+            <p>We protected inbox placement, sequenced the outreach, and built the program around claimant trust.</p>
+            <div className="home-case-metric"><strong>95%</strong><span>Inbox placement held</span></div>
+            <blockquote>Our messaging reached our claimants. That was the difference.<cite>Michael T., Esquire · Managing Attorney, mass tort firm</cite></blockquote>
+          </div>
+        </article>
+        <div className="home-proof-references" aria-label="Additional documented results">
+          {CASE_STUDIES.slice(0, 3).map((study) => <p key={study.title}><span>{study.type}</span>{study.stat ? study.stat[1] : study.title}</p>)}
+        </div>
+      </div>
+      <LogoBar />
+      <div className="home-beat-inner home-close-context" id="operating-contexts">
+        <p className="home-kicker">Operating contexts</p>
+        <p>Built for regulated programs, healthcare and hospitality, and public-sector audiences where direct communication carries real responsibility.</p>
+        <div className="home-assessment-explainer">
+          <p className="home-kicker">Start with the assessment</p>
+          <p>The assessment identifies where customer information enters, where communication breaks, what usable audience already exists, and what the first deployment should be.</p>
+        </div>
+      </div>
+      <section className="home-final-cta" aria-label="Book your assessment">
+        <div className="home-beat-inner">
+          <h2>Own your audience.</h2>
+          <p>Start with an assessment of the audience, customer data, and communication paths you already have.</p>
+          <Button>Book Your Assessment</Button>
+        </div>
+      </section>
+    </section>
+  );
+}
+
 function Home() {
-  return <Hero />;
+  return <><Hero /><HomeProblem /><HomeSystem /><HomeProof /></>;
 }
 
 function FullServiceESPPage() {
@@ -1033,7 +1108,7 @@ function IndustriesPage() {
       <PageHead
         eyebrow="Industries"
         title="Built for operating environments where the details matter."
-        lede="The system is designed for teams that need compliant, accountable communication—not improvised campaigns."
+        lede="A full-service model for organizations that need their direct audience to be managed with care."
       />
       <Industries />
       <BuyingSituations />
@@ -1525,6 +1600,13 @@ function ThankYou() {
   );
 }
 
+function RetiredRoute({ to }) {
+  useEffect(() => {
+    window.location.replace(to);
+  }, [to]);
+  return null;
+}
+
 /* ------------------------------------------------------------------ *
  * APP
  * ------------------------------------------------------------------ */
@@ -1549,13 +1631,13 @@ function resolvePage(route) {
     case "/full-service-esp":
       return { node: <FullServiceESPPage />, layout: "full" };
     case "/industries":
-      return { node: <IndustriesPage />, layout: "full" };
+      return { node: <RetiredRoute to="/#operating-contexts" />, layout: "full" };
     case "/results":
       return { node: <CaseStudiesPage />, layout: "full" };
     case "/insights":
       return { node: <InsightsPage />, layout: "full" };
     case "/about":
-      return { node: <AboutPage />, layout: "full" };
+      return { node: <RetiredRoute to="/full-service-esp" />, layout: "full" };
     case "/assessment":
       return { node: <AssessmentPage />, layout: "full" };
     case "/contact":
@@ -1576,7 +1658,9 @@ function App({ initialRoute = "/" }) {
   useReveal(route);
   usePageMeta(route);
 
-  useEffect(() => window.scrollTo({ top: 0 }), [route]);
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [route]);
 
   const { node, layout, footerProduct } = useMemo(() => resolvePage(route), [route]);
 
