@@ -2190,7 +2190,7 @@ p {
 }
 
 .home-proof .logo-marquee-item {
-  height: clamp(28px, 2.8vw, 38px);
+  height: clamp(36px, 4vw, 50px);
 }
 
 .home-proof .logo-marquee-viewport--static {

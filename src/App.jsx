@@ -1053,30 +1053,6 @@ function HomeSystem() {
   );
 }
 
-function HomeProofLogos() {
-  const reduce = useReducedMotion();
-  const logos = TRUSTED_LOGOS.slice(0, 6);
-  const track = reduce ? logos : [...logos, ...logos];
-  return (
-    <div className={`home-proof-logos${reduce ? " home-proof-logos--static" : ""}`} aria-label="Organizations supported">
-      <span>Trusted by organizations that lead</span>
-      <div className="home-proof-logos-viewport">
-        <div className="home-proof-logos-track">
-          {track.map(([slug, name], index) => (
-            <img
-              key={`${slug}-${index}`}
-              src={`/logos/${slug}.webp`}
-              alt={name}
-              loading="lazy"
-              aria-hidden={index >= logos.length ? "true" : undefined}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function HomeProof() {
   return (
     <section className="home-proof" id="results" aria-labelledby="proof-title">
@@ -1092,7 +1068,7 @@ function HomeProof() {
             <blockquote>Our messaging reached our claimants. That was the difference.<cite>Michael T., Esquire · Managing Attorney, mass tort firm</cite></blockquote>
           </div>
         </article>
-        <HomeProofLogos />
+        <LogoBar />
         <div className="home-proof-close" id="operating-contexts">
           <p className="home-proof-context">Built for regulated programs, healthcare and hospitality, and public-sector audiences where direct communication carries real responsibility.</p>
           <div className="home-assessment-explainer">
